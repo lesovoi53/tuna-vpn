@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="profiles_bypass_tab">Allowlist bypass</string>
+    <string name="profiles_local_tab">My servers</string>
+    <string name="profiles_subscriptions_tab">Subscriptions</string>
+    <string name="profiles_create_group">＋ Create group</string>
+    <string name="profile_probe_label">URL test</string>
+    <string name="profile_probe_all">Test all servers</string>
+    <string name="profile_probe_stop">Stop · %1$d/%2$d</string>
+    <string name="profile_probe_waiting">Waiting</string>
+    <string name="profile_probe_running">Testing…</string>
+    <string name="profile_probe_cancelled">Cancelled</string>
+    <string name="profile_probe_timeout">Timed out</string>
+    <string name="profile_probe_failed">URL test failed</string>
+    <string name="profile_probe_active_wg">WG account in use by another connection</string>
+    <string name="profile_probe_latency">%1$d ms</string>
+</resources>

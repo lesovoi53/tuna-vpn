@@ -1,0 +1,13 @@
+<resources>
+    <string name="profile_sort_title">Server order</string>
+    <string name="profile_sort_original">Original order</string>
+    <string name="profile_sort_name_asc">Name: A–Z</string>
+    <string name="profile_sort_name_desc">Name: Z–A</string>
+    <string name="profile_sort_protocol">Protocol</string>
+    <string name="profile_favorite_add">Add to favorites</string>
+    <string name="profile_favorite_remove">Remove from favorites</string>
+    <string name="profile_favorite">Favorite server</string>
+    <string name="profile_favorites_only">Favorites only</string>
+    <string name="profile_favorites_note">The new interface shows favorites in their own category at the top. Subscription updates preserve them.</string>
+    <string name="profile_sorted_note">Choose Original order to reorder servers manually.</string>
+</resources>

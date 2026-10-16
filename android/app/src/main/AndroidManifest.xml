@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Lets HevVpnService track the true underlying network for setUnderlyingNetworks(). -->
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+    <!-- Android 17+ (targetSdk 37) blocks outbound connections to LAN/local addresses
+         (e.g. local subscription servers) unless this is granted at runtime. -->
+    <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE"
+        tools:ignore="ForegroundServicesPolicy"
+    />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission
+        android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"
+        tools:ignore="BatteryLife" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"
+        tools:ignore="RequestInstallPackagesPolicy" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="PackageVisibilityPolicy,QueryAllPackagesPermission" />
+
+    <application
+        android:name=".vk.VkHostApplication"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="${appName}"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:localeConfig="@xml/locales_config"
+        android:theme="@style/Theme.wireturn"
+        android:usesCleartextTraffic="true"
+        android:enableOnBackInvokedCallback="true"
+        tools:targetApi="33">
+
+        <service android:name=".domain.RoutingUpdateJob" android:permission="android.permission.BIND_JOB_SERVICE" android:exported="false" />
+
+        <activity android:name=".ui.activities.kernel.MasterDnsConfigActivity" android:exported="false" />
+        <activity android:name=".ui.activities.kernel.WebdavConfigActivity" android:exported="false" />
+        <activity android:name=".ui.activities.ProtocolGuideActivity" android:exported="false" />
+        <activity
+            android:name=".ui.activities.MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:theme="@style/Theme.wireturn.Splash"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
+            </intent-filter>
+            <!-- wireturn:// / wt:// deep links: opening one from a browser, messenger or QR
+                 scanner brings this task to front (see launchMode above) and MainActivity shows
+                 an import confirmation dialog instead of importing silently. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="tuna" />
+                <data android:scheme="wireturn" />
+                <data android:scheme="wt" />
+                <data android:scheme="wg" />
+                <data android:scheme="awg" />
+                <data android:scheme="wireguard" />
+                <data android:scheme="vpn" />
+                <data android:scheme="tt" />
+                <data android:scheme="trusttunnel" />
+                <data android:scheme="snell" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name=".CoreService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse"
+            tools:targetApi="34">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Maintaining a persistent network proxy connection via TURN servers to bypass network restrictions." />
+        </service>
+
+        <service
+            android:name=".XrayService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse"
+            tools:targetApi="34">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Maintaining a WireGuard tunnel via Xray for traffic routing." />
+        </service>
+
+        <service
+            android:name=".HevVpnService"
+            android:exported="false"
+            android:permission="android.permission.BIND_VPN_SERVICE"
+            android:foregroundServiceType="specialUse"
+            tools:targetApi="34"
+            tools:ignore="VpnServicePolicy">
+            <intent-filter>
+                <action android:name="android.net.VpnService" />
+            </intent-filter>
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Maintaining a VPN tunnel via hev-socks5-tunnel to route system traffic through a SOCKS5 proxy." />
+        </service>
+
+        <activity
+            android:name=".ui.activities.AppExceptionsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.wireturn"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ui.activities.CaptchaActivity"
+            android:theme="@style/Theme.AppCompat.Dialog"
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance"
+            android:taskAffinity="" />
+
+        <activity
+            android:name=".ui.activities.ProfileDialogActivity"
+            android:theme="@style/Theme.wireturn.Transparent"
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance"
+            android:taskAffinity="" />
+
+        <activity
+            android:name=".ui.activities.AddProfileActivity"
+            android:theme="@style/Theme.wireturn"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ui.activities.SubscriptionConfigActivity"
+            android:theme="@style/Theme.wireturn"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ui.activities.CreateProfileActivity"
+            android:theme="@style/Theme.wireturn"
+            android:windowSoftInputMode="adjustResize" />
+
+
+
+
+
+
+
+
+
+        <activity
+            android:name=".ui.activities.kernel.QwdttConfigActivity"
+            android:theme="@style/Theme.wireturn"
+            android:windowSoftInputMode="adjustResize" />
+
+
+        <activity
+            android:name=".ui.activities.XraySetupActivity"
+            android:exported="false"
+            android:theme="@style/Theme.wireturn"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ui.activities.XrayEditActivity"
+            android:theme="@style/Theme.wireturn"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ui.activities.ConnectionSettingsActivity"
+            android:theme="@style/Theme.wireturn"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ui.activities.XraySettingsActivity"
+            android:theme="@style/Theme.wireturn"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ui.activities.SettingsActivity"
+            android:theme="@style/Theme.wireturn"
+            android:windowSoftInputMode="adjustResize" />
+
+
+        <activity
+            android:name=".ui.activities.LogsActivity"
+            android:theme="@style/Theme.wireturn"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ui.activities.OnboardingActivity"
+            android:theme="@style/Theme.wireturn"
+            android:windowSoftInputMode="adjustResize" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <receiver
+            android:name=".CoreReceiver"
+            android:exported="true"
+            tools:ignore="ExportedReceiver">
+            <intent-filter>
+                <action android:name="${applicationId}.START_CORE" />
+                <action android:name="${applicationId}.STOP_CORE" />
+                <action android:name="${applicationId}.CHANGE_PROFILE" />
+            </intent-filter>
+        </receiver>
+
+        <service
+            android:name=".CoreTileService"
+            android:exported="true"
+            android:label="${appName}"
+            android:icon="@drawable/ic_launcher_small"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="true" />
+            <meta-data
+                android:name="android.service.quicksettings.SEM_DEFAULT_TILE_NAME"
+                android:value="TUNA VPN" />
+        </service>
+
+        <service
+            android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
+            android:enabled="false"
+            android:exported="false">
+            <meta-data
+                android:name="autoStoreLocales"
+                android:value="true" />
+        </service>
+
+<activity android:name=".ui.activities.kernel.VpnConfigActivity" android:exported="false" />
+        <activity android:name=".ui.activities.CloudflareIpActivity" android:exported="false" />
+        <activity android:name="com.wdtt.client.VkAuthActivity" android:exported="false" />
+        <receiver android:name="com.wdtt.client.VkAuthCancelReceiver" android:exported="false" />
+</application>
+</manifest>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="battery_hint_title">Background operation</string>
+    <string name="battery_hint_description">Android has not confirmed a battery optimization exemption. Your device may have a separate “No restrictions” setting. If you have already enabled it, you can hide this hint.</string>
+    <string name="battery_hint_dismiss">Do not show again</string>
+    <string name="notifications_hint_description">Allow notifications to see the connection status and controls outside the app.</string>
+</resources>

@@ -1,0 +1,28 @@
+<resources>
+    <string name="orbit_interface">App interface</string>
+    <string name="orbit_interface_note">New by default. Classic keeps the previous layout.</string>
+    <string name="orbit_new">New</string>
+    <string name="orbit_classic">Classic</string>
+    <string name="orbit_home">Home</string>
+    <string name="orbit_servers">Servers</string>
+    <string name="orbit_settings">Settings</string>
+    <string name="orbit_connect">Connect</string>
+    <string name="orbit_disconnect">Disconnect</string>
+    <string name="orbit_connected">Connected</string>
+    <string name="orbit_current">Current connection</string>
+    <string name="orbit_connection">Connection</string>
+    <string name="orbit_application">Application</string>
+    <string name="orbit_routing">Routing and DNS</string>
+    <string name="orbit_subscriptions">Subscriptions</string>
+    <string name="orbit_apps">Apps in VPN</string>
+    <string name="orbit_apps_note">App-wide exclusions</string>
+    <string name="orbit_appearance">Appearance and language</string>
+    <string name="orbit_advanced">Connection settings</string>
+    <string name="orbit_components">Cores and protocols</string>
+    <string name="orbit_more">All settings</string>
+    <string name="orbit_search">Find a server</string>
+    <string name="orbit_search_empty">No matching servers</string>
+    <string name="orbit_details">Connection details</string>
+    <string name="orbit_server_access">Server access</string>
+    <string name="orbit_subscription_rules">Subscription rules</string>
+</resources>

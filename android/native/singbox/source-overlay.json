@@ -1,0 +1,228 @@
+{
+  "route/network.go": [
+    {
+      "old": "\tinterfaceUpdateCancel    context.CancelFunc",
+      "new": "\tinterfaceUpdateCancel    context.CancelFunc\n\tinterfaceUpdateDone      chan struct{}"
+    },
+    {
+      "old": "\t\tr.started = true",
+      "new": "\t\treturn r.tunaStartInterfaceUpdates()"
+    },
+    {
+      "old": "\tupdateContext, updateCancel := context.WithCancel(r.ctx)\n\tr.interfaceUpdateAccess.Lock()\n\tpreviousCancel := r.interfaceUpdateCancel\n\tr.interfaceUpdateCancel = updateCancel\n\tr.interfaceUpdateAccess.Unlock()\n\tif previousCancel != nil {\n\t\tpreviousCancel()\n\t}\n\tgo func() {\n\t\tdefer updateCancel()\n\t\tr.updateInterface(updateContext, defaultInterface)\n\t}()",
+      "new": "\tupdateContext, updateDone, resetNetwork := r.tunaBeginInterfaceUpdate()\n\tgo func() {\n\t\tdefer updateDone()\n\t\tr.updateInterface(updateContext, defaultInterface, resetNetwork)\n\t}()"
+    },
+    {
+      "old": "func (r *NetworkManager) updateInterface(ctx context.Context, defaultInterface *control.Interface) {",
+      "new": "func (r *NetworkManager) updateInterface(ctx context.Context, defaultInterface *control.Interface, resetNetwork bool) {"
+    },
+    {
+      "old": "\tif !r.started {",
+      "new": "\tif !resetNetwork {"
+    }
+  ],
+  "route/tuna_network_startup.go": {
+    "source": "native/singbox/network_startup.go"
+  },
+  "route/tuna_network_startup_test.go": {
+    "source": "native/singbox/network_startup_test.go"
+  },
+  "option/tls.go": [
+    {
+      "old": "type OutboundRealityOptions struct {",
+      "new": "type OutboundRealityOptions struct {\n\tSpiderX string `json:\"spider_x,omitempty\"`"
+    }
+  ],
+  "common/tls/reality_client.go": [
+    {
+      "old": "\t\"net/http\"",
+      "new": "\t\"net/http\"\n\t\"net/url\""
+    },
+    {
+      "old": "\tsupportX25519MLKEM768 bool",
+      "new": "\tspiderX string\n\tsupportX25519MLKEM768 bool"
+    },
+    {
+      "old": "\tvar config Config = &RealityClientConfig{ctx, uClient.(*UTLSClientConfig), publicKey, shortID, options.Reality.SupportX25519MLKEM768}",
+      "new": "\tspiderX := options.Reality.SpiderX\n\tif spiderX == \"\" { spiderX = \"/\" }\n\tspiderURL, err := url.Parse(spiderX)\n\tif err != nil || !strings.HasPrefix(spiderX, \"/\") || spiderURL.IsAbs() || spiderURL.Host != \"\" || spiderURL.User != nil || spiderURL.RawQuery != \"\" || spiderURL.ForceQuery || spiderURL.Fragment != \"\" {\n\t\treturn nil, E.New(\"spider_x must be a local path without query or fragment\")\n\t}\n\tvar config Config = &RealityClientConfig{ctx, uClient.(*UTLSClientConfig), publicKey, shortID, spiderX, options.Reality.SupportX25519MLKEM768}"
+    },
+    {
+      "old": "go realityClientFallback(e.ctx, uConn, e.uClient.ServerName(), e.uClient.id)",
+      "new": "go realityClientFallback(e.ctx, uConn, e.uClient.ServerName(), e.uClient.id, e.spiderX)"
+    },
+    {
+      "old": "func realityClientFallback(ctx context.Context, uConn net.Conn, serverName string, fingerprint utls.ClientHelloID) {",
+      "new": "func realityClientFallback(ctx context.Context, uConn net.Conn, serverName string, fingerprint utls.ClientHelloID, spiderX string) {"
+    },
+    {
+      "old": "request, _ := http.NewRequest(\"GET\", \"https://\"+serverName, nil)",
+      "new": "request, err := http.NewRequestWithContext(ctx, \"GET\", \"https://\"+serverName+spiderX, nil)\n\tif err != nil { return }"
+    },
+    {
+      "old": "\t\te.shortID,\n\t\te.supportX25519MLKEM768,",
+      "new": "\t\te.shortID,\n\t\te.spiderX,\n\t\te.supportX25519MLKEM768,"
+    }
+  ],
+  "option/wireguard.go": [
+    {
+      "old": "type WireGuardAmnezia struct {",
+      "new": "type WireGuardAmnezia struct {\n\tRandomTrailers bool `json:\"random_trailers,omitempty\"`\n\tDisableCookies bool `json:\"disable_cookies,omitempty\"`"
+    }
+  ],
+  "transport/wireguard/endpoint_options.go": [
+    {
+      "old": "type AmneziaOptions struct {",
+      "new": "type AmneziaOptions struct {\n\tRandomTrailers bool\n\tDisableCookies bool"
+    }
+  ],
+  "protocol/wireguard/endpoint.go": [
+    {
+      "old": "amnezia = &wireguard.AmneziaOptions{",
+      "new": "amnezia = &wireguard.AmneziaOptions{\n\t\t\tRandomTrailers: options.Amnezia.RandomTrailers,\n\t\t\tDisableCookies: options.Amnezia.DisableCookies,"
+    }
+  ],
+  "transport/wireguard/endpoint.go": [
+    {
+      "old": "\t\tif e.options.Amnezia.HeaderProtectionKey != \"\" {",
+      "new": "\t\tipcConf.WriteString(\"\\nrandom_trailers=\" + strconv.FormatBool(e.options.Amnezia.RandomTrailers))\n\t\tipcConf.WriteString(\"\\ndisable_cookies=\" + strconv.FormatBool(e.options.Amnezia.DisableCookies))\n\t\tif e.options.Amnezia.HeaderProtectionKey != \"\" {"
+    },
+    {
+      "old": "return E.Cause(err, \"setup wireguard: \\n\", ipcConf.String())",
+      "new": "return E.Cause(err, \"setup wireguard\")"
+    },
+    {
+      "old": "bind = conn.NewDefaultBind(listenerControl)",
+      "new": "// Windows RIO clears bytes 1..3 on receive, corrupting AWG's header nonce.\n        // StdNetBind preserves the encrypted header and uses the same socket protection.\n        if e.options.Amnezia != nil { bind = conn.NewStdNetBind(listenerControl) } else { bind = conn.NewDefaultBind(listenerControl) }"
+    }
+  ],
+  "option/trusttunnel.go": [
+    {
+      "old": "type TrustTunnelOutboundOptions struct {",
+      "new": "type TrustTunnelOutboundOptions struct {\n\tClientRandomPrefix string `json:\"client_random_prefix,omitempty\"`\n\tUseCronetHTTPS bool `json:\"use_cronet_https,omitempty\"`\n\tUseCronetQUIC bool `json:\"use_cronet_quic,omitempty\"`\n\tForceQUIC bool `json:\"force_quic,omitempty\"`"
+    }
+  ],
+  "transport/trusttunnel/client.go": [
+    {
+      "old": "type ClientOptions struct {",
+      "new": "type ClientOptions struct {\n\tCtx context.Context\n\tClientRandomPrefix string\n\tUseCronetHTTPS bool\n\tUseCronetQUIC bool\n\tForceQUIC bool\n\tTLSServerName string\n\tTrustedRootCertificates string"
+    },
+    {
+      "old": "Logger            logger.Logger",
+      "new": "Logger            logger.ContextLogger"
+    },
+    {
+      "old": "type Client struct {",
+      "new": "type Client struct {\n\tdetour N.Dialer"
+    },
+    {
+      "old": "client := &Client{",
+      "new": "options.Ctx = ctx\n\tclient := &Client{\n\t\tdetour: options.Dialer,"
+    },
+    {
+      "old": "\tif options.QUIC {",
+      "new": "\tif options.ClientRandomPrefix != \"\" {\n\t\tif _, err := tunaRandomReader(options.ClientRandomPrefix); err != nil { cancel(); return nil, err }\n\t}\n\tif (!options.QUIC && options.UseCronetHTTPS) || (options.QUIC && options.UseCronetQUIC) {\n\t\tvar err error\n\t\tclient.roundTripper, err = client.newCronetRoundTripper(options, options.QUIC)\n\t\tif err != nil { cancel(); return nil, err }; return client,nil\n\t}\n\tif options.QUIC {"
+    },
+    {
+      "old": "\t\t\t\tconn, err := qtls.DialEarly(ctx, udpConn, options.TLSConfig, cfg)",
+      "new": "\t\t\t\tvar conn *quic.Conn\n\t\t\t\tif options.ClientRandomPrefix != \"\" { conn, err = tunaPrefixQUIC(ctx,udpConn,options.TLSConfig,cfg,options.ClientRandomPrefix) } else { conn, err = qtls.DialEarly(ctx,udpConn,options.TLSConfig,cfg) }\n\t\t\t\tif err != nil { _ = udpConn.Close() }"
+    },
+    {
+      "old": "\t\t\t\treturn tlsDialer.DialContext(ctx, network, client.server)",
+      "new": "\t\t\t\tif options.ClientRandomPrefix != \"\" {\n\t\t\t\t\traw, err := options.Dialer.DialContext(ctx,network,client.server); if err != nil { return nil,err }\n\t\t\t\t\tsecured, err := tunaPrefixHandshake(ctx,raw,options.TLSConfig,options.ClientRandomPrefix); if err != nil { _ = raw.Close() }; return secured,err\n\t\t\t\t}\n\t\t\t\treturn tlsDialer.DialContext(ctx, network, client.server)"
+    }
+  ],
+  "protocol/trusttunnel/outbound.go": [
+    {
+      "old": "clientOpts := trusttunnel.ClientOptions{",
+      "new": "clientOpts := trusttunnel.ClientOptions{\n\t\tClientRandomPrefix: options.ClientRandomPrefix,\n\t\tUseCronetHTTPS: options.UseCronetHTTPS,\n\t\tUseCronetQUIC: options.UseCronetQUIC,\n\t\tForceQUIC: options.ForceQUIC,\n\t\tTLSServerName: tlsConfig.ServerName(),\n\t\tTrustedRootCertificates: strings.Join(options.TLS.Certificate, \"\\n\"),"
+    },
+    {
+      "old": "\"context\"",
+      "new": "\"context\"\n\t\"strings\""
+    },
+    {
+      "old": "\toutboundDialer, err :=",
+      "new": "\tcronetEnabled := (!options.QUIC && options.UseCronetHTTPS) || (options.QUIC && options.UseCronetQUIC)\n if cronetEnabled && (options.TLS.Insecure || len(options.TLS.CertificatePublicKeySHA256)>0 || options.TLS.UTLS != nil || len(options.TLS.ALPN)>0 || options.ClientRandomPrefix!=\"\") { return nil,E.New(\"Chrome transport cannot apply insecure/uTLS/ALPN/SPKI pin/client random overrides\") }\n if options.ForceQUIC && !(options.QUIC && cronetEnabled) { return nil,E.New(\"force_quic requires QUIC and Chrome transport\") }\n\toutboundDialer, err :="
+    }
+  ],
+  "transport/trusttunnel/tuna_random.go": {
+    "source": "native/singbox/trusttunnel_random.go"
+  },
+  "transport/trusttunnel/tuna_trusttunnel_cronet.go": {
+    "source": "native/singbox/trusttunnel_cronet.go"
+  },
+  "transport/trusttunnel/tuna_trusttunnel_cronet_unix.go": {
+    "source": "native/singbox/trusttunnel_cronet_unix.go"
+  },
+  "transport/trusttunnel/tuna_trusttunnel_cronet_other.go": {
+    "source": "native/singbox/trusttunnel_cronet_other.go"
+  },
+  "transport/trusttunnel/tuna_trusttunnel_cronet_stub.go": {
+    "source": "native/singbox/trusttunnel_cronet_stub.go"
+  },
+  "option/snell.go": [
+    {
+      "old": "type SnellV6Options struct {",
+      "new": "type SnellV6Options struct {\n\tQUICProxyMode bool `json:\"quic_proxy_mode,omitempty\"`"
+    }
+  ],
+  "protocol/snell/outbound.go": [
+    {
+      "old": "\"net\"",
+      "new": "\"net\"\n \"sync\""
+    },
+    {
+      "old": "serverAddr M.Socksaddr",
+      "new": "serverAddr M.Socksaddr\n psk, userKey []byte\n quicProxyMode bool\n quicMu sync.Mutex\n quicDestCache map[quicDestCacheKey]tunaQUICDestination\n quicDestSeq uint64"
+    },
+    {
+      "old": "serverAddr: serverAddr,",
+      "new": "serverAddr: serverAddr,\n psk: []byte(options.PSK), userKey: []byte(options.UserKey),\n quicProxyMode: options.Version == 6 && options.V6Options.QUICProxyMode,"
+    },
+    {
+      "old": "case N.NetworkUDP:\n\t\th.logger",
+      "new": "case N.NetworkUDP:\n if h.quicProxyMode {\n pc:=newQUICProxyLazyPacketConn(ctx,h,metadata.Source,destination,metadata.Protocol==C.ProtocolQUIC || h.isRecentQUICDest(metadata.Source,destination))\n return bufio.NewBindPacketConn(pc,destination),nil\n }\n\t\th.logger"
+    },
+    {
+      "old": "\th.logger.InfoContext(ctx, \"outbound packet connection to \", destination)\n\tconn, err :=",
+      "new": "\tif h.quicProxyMode { return newQUICProxyLazyPacketConn(ctx,h,metadata.Source,destination,metadata.Protocol==C.ProtocolQUIC || h.isRecentQUICDest(metadata.Source,destination)),nil }\n\th.logger.InfoContext(ctx, \"outbound packet connection to \", destination)\n\tconn, err :="
+    },
+    {
+      "old": "h.client.Reset()",
+      "new": "h.client.Reset()\n h.quicMu.Lock(); clear(h.quicDestCache); h.quicMu.Unlock()"
+    }
+  ],
+  "protocol/snell/tuna_quic.go": {
+    "source": "native/singbox/snell_quic_client.go"
+  },
+  "transport/trusttunnel/tuna_random_test.go": {
+    "source": "native/singbox/trusttunnel_random_test.go"
+  },
+  "transport/trusttunnel/trusttunnel_cronet_test.go": {
+    "source": "native/singbox/trusttunnel_cronet_test.go"
+  },
+  "dns/transport/fallback/tuna_adaptive.go": {
+    "source": "native/singbox/tuna_adaptive.go"
+  },
+  "dns/transport/fallback/tuna_adaptive_test.go": {
+    "source": "native/singbox/tuna_adaptive_test.go"
+  },
+  "dns/transport/fallback/strategy.go": [
+    {
+      "old": "\tcase \"parallel\":",
+      "new": "\tcase \"auto\":\n\t\tif len(servers) == 0 || len(servers) > 8 { return nil, E.New(\"DNS pool must contain 1..8 servers\") }\n\t\treturn tunaAdaptiveStrategy(servers, timeout), nil\n\tcase \"parallel\":"
+    },
+    {
+      "old": "\t\tfor index, server := range servers {\n\t\t\texchangeCtx",
+      "new": "\t\tfor index, server := range servers {\n\t\t\tif ctx.Err() != nil { return nil, ctx.Err() }\n\t\t\texchangeCtx"
+    },
+    {
+      "old": "\t\t\texchangeCancel()\n\t\t\tif err != nil {",
+      "new": "\t\t\texchangeCancel()\n\t\t\tif ctx.Err() != nil { return nil, ctx.Err() }\n\t\t\tif err != nil {"
+    },
+    {
+      "old": "\tif response.Rcode != mDNS.RcodeSuccess",
+      "new": "\tif response == nil { return nil, E.New(\"empty DNS response\") }\n\tif response.Rcode != mDNS.RcodeSuccess"
+    }
+  ]
+}

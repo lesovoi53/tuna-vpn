@@ -1,0 +1,75 @@
+{
+  "github.com/sagernet/sing-snell": {
+    "version": "v0.0.0-20260829071736-20f2eaec77c3",
+    "files": {
+      "snellv6/reuse.go": {
+        "sha256": "fae4b66bc4fa22fa64815fa019ce3df8c7075fb4cbffc99c1305821aec13da66",
+        "edits": [
+          {
+            "old": "\tsession, found, closed := c.pool.Take()\n\tif closed {\n\t\treturn nil, net.ErrClosed\n\t}\n\tif c.dialer == nil {\n\t\treturn nil, E.New(\"snell: missing dialer\")\n\t}\n\tif found {\n\t\treturn session, nil\n\t}",
+            "new": "\tif c.dialer == nil {\n\t\treturn nil, E.New(\"snell: missing dialer\")\n\t}\n\tfor {\n\t\tif err := ctx.Err(); err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t\tsession, found, closed := c.pool.Take()\n\t\tif closed {\n\t\t\treturn nil, net.ErrClosed\n\t\t}\n\t\tif !found {\n\t\t\tbreak\n\t\t}\n\t\tif tunaIdleSocketUsable(session.Conn) {\n\t\t\treturn session, nil\n\t\t}\n\t\tsession.Close()\n\t}"
+          },
+          {
+            "old": "\tsession = c.newReuseSession(conn)",
+            "new": "\tsession := c.newReuseSession(conn)"
+          }
+        ]
+      },
+      "snellv4/reuse.go": {
+        "sha256": "b7ee601b660c25949ba4cfc2dc95be4aac6dd77b0be9ac5ee5454a1dd54d28bf",
+        "edits": [
+          {
+            "old": "\tsession, found, closed := c.pool.Take()\n\tif closed {\n\t\treturn nil, net.ErrClosed\n\t}\n\tif c.dialer == nil {\n\t\treturn nil, E.New(\"snell: missing dialer\")\n\t}\n\tif found {\n\t\treturn session, nil\n\t}",
+            "new": "\tif c.dialer == nil {\n\t\treturn nil, E.New(\"snell: missing dialer\")\n\t}\n\tfor {\n\t\tif err := ctx.Err(); err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t\tsession, found, closed := c.pool.Take()\n\t\tif closed {\n\t\t\treturn nil, net.ErrClosed\n\t\t}\n\t\tif !found {\n\t\t\tbreak\n\t\t}\n\t\tif tunaIdleSocketUsable(session.rawConn) {\n\t\t\treturn session, nil\n\t\t}\n\t\tsession.Close()\n\t}"
+          },
+          {
+            "old": "\tsession = c.newReuseSession(conn)",
+            "new": "\tsession := c.newReuseSession(conn)"
+          },
+          {
+            "old": "type reuseSession struct {\n\tnet.Conn",
+            "new": "type reuseSession struct {\n\tnet.Conn\n\trawConn net.Conn"
+          },
+          {
+            "old": "return &reuseSession{Conn: c.obfs.ClientConn(conn), client: c}",
+            "new": "return &reuseSession{Conn: c.obfs.ClientConn(conn), rawConn: conn, client: c}"
+          }
+        ]
+      }
+    },
+    "addFiles": {
+      "snellv4/tuna_conncheck_linux.go": "native/singbox/snell_conncheck_linux.go",
+      "snellv4/tuna_conncheck_other.go": "native/singbox/snell_conncheck_other.go",
+      "snellv6/tuna_conncheck_linux.go": "native/singbox/snell_v6_conncheck_linux.go",
+      "snellv6/tuna_conncheck_other.go": "native/singbox/snell_v6_conncheck_other.go",
+      "quic_proxy.go": "native/singbox/snell_quic_protocol.go"
+    }
+  },
+  "github.com/sagernet/wireguard-go": {
+    "version": "v0.0.6-extended-1.6.1",
+    "replace": {
+      "path": "github.com/shtorm-7/wireguard-go",
+      "version": "v0.0.6-extended-1.6.1"
+    },
+    "files": {
+      "device/send.go": {
+        "sha256": "4210ed2db990a25023a53b402c370de1ea6d10573c9134f497a3e4f3070ac038",
+        "edits": [
+          {
+            "old": "packet := buf[padding:]\n\t_ = msg.marshal(packet)",
+            "new": "packet := buf[padding:padding+MessageInitiationSize]\n\t_ = msg.marshal(packet)"
+          },
+          {
+            "old": "packet := buf[padding:]\n\t_ = response.marshal(packet)",
+            "new": "packet := buf[padding:padding+MessageResponseSize]\n\t_ = response.marshal(packet)"
+          },
+          {
+            "old": "packet := buf[padding:]\n\t_ = reply.marshal(packet)",
+            "new": "packet := buf[padding:padding+MessageCookieReplySize]\n\t_ = reply.marshal(packet)"
+          }
+        ]
+      }
+    },
+    "addFiles": {}
+  }
+}

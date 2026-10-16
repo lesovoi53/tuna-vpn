@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subscription_routing_heading">Маршрутизация</string>
+    <string name="subscription_use_routing">Использовать маршрутизацию подписки</string>
+    <string name="subscription_use_routing_desc">Только для серверов этой подписки. Остальные используют правила приложения.</string>
+    <string name="subscription_routing_preparing">Подготовка правил и баз…</string>
+    <string name="subscription_routing_saved">Сохранено</string>
+    <string name="subscription_routing_failed">Не удалось применить правила. Повторите позже.</string>
+    <string name="subscription_routing_absent">В подписке нет правил маршрутизации</string>
+</resources>

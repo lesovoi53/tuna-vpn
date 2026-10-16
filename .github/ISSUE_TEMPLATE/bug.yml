@@ -1,0 +1,31 @@
+name: Ошибка приложения
+description: Воспроизводимая ошибка без ключей и личных данных
+body:
+  - type: markdown
+    attributes:
+      value: Не публикуйте subscription URL, UUID, пароли, ключи, QR и необработанную диагностику. Уязвимости сообщайте согласно SECURITY.md.
+  - type: input
+    id: version
+    attributes:
+      label: Версия и устройство
+      placeholder: TUNA 1.5, Android 15, модель (без серийного номера)
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Шаги воспроизведения
+      description: Протокол, режим группы/DNS, действия; только синтетические данные
+    validations:
+      required: true
+  - type: textarea
+    id: expectation
+    attributes:
+      label: Ожидаемый и фактический результат
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Обезличенные данные и время ошибки
+      description: Проверьте журнал вручную перед отправкой

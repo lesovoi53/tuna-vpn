@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "sources": [
+    {
+      "name": "sing-box-extended",
+      "repository": "https://github.com/shtorm-7/sing-box-extended",
+      "commit": "55faa763f986f4ca8a492d9b2719bc6330d2bef5",
+      "url": "https://codeload.github.com/shtorm-7/sing-box-extended/tar.gz/55faa763f986f4ca8a492d9b2719bc6330d2bef5",
+      "archive": "sing-box-extended-55faa763f986f4ca8a492d9b2719bc6330d2bef5.tar.gz",
+      "sha256": "88bd9e63ab258f6ab07945f0b7619103ab46c2effc154cef15611adf22b67a95",
+      "submodule": "android/external/sing-box-extended"
+    },
+    {
+      "name": "mieru",
+      "repository": "https://github.com/enfein/mieru",
+      "commit": "162c240b5366139a83dbd338e89907e8575ce0d8",
+      "url": "https://codeload.github.com/enfein/mieru/tar.gz/162c240b5366139a83dbd338e89907e8575ce0d8",
+      "archive": "mieru-162c240b5366139a83dbd338e89907e8575ce0d8.tar.gz",
+      "sha256": "0440f0e7e07336f4fd2caea1178262319783599720a65e4022d299aa34f86f40",
+      "submodule": "android/external/mieru"
+    },
+    {
+      "name": "masterdnsvpn",
+      "repository": "https://github.com/masterking32/MasterDnsVPN",
+      "commit": "7de2476f1c33e69eec35360c52810dab43c5c986",
+      "url": "https://codeload.github.com/masterking32/MasterDnsVPN/tar.gz/7de2476f1c33e69eec35360c52810dab43c5c986",
+      "archive": "masterdnsvpn-7de2476f1c33e69eec35360c52810dab43c5c986.tar.gz",
+      "sha256": "432e2b8b496423da18c80654e3de36fc3646b068d1139b237d6fec540b5162d1",
+      "submodule": "android/external/masterdnsvpn"
+    },
+    {
+      "name": "webdav-tunnel",
+      "repository": "https://github.com/spkprsnts/webdav-tunnel",
+      "commit": "b1af4c05eb80fd29a6f676be894fa61cd12a3dec",
+      "url": "https://codeload.github.com/spkprsnts/webdav-tunnel/tar.gz/b1af4c05eb80fd29a6f676be894fa61cd12a3dec",
+      "archive": "webdav-tunnel-b1af4c05eb80fd29a6f676be894fa61cd12a3dec.tar.gz",
+      "sha256": "807cdfb643f0b6ef2793d6942988c0596653f1d074eaa5ac85b25eefa046e0a5",
+      "submodule": "android/external/webdav-tunnel"
+    },
+    {
+      "name": "qwdtt",
+      "repository": "https://github.com/SpaceNeuroX/proxy-turn-vk-android",
+      "commit": "a296c57eaba69bb9479a24f9157856490890e47d",
+      "url": "https://codeload.github.com/SpaceNeuroX/proxy-turn-vk-android/tar.gz/a296c57eaba69bb9479a24f9157856490890e47d",
+      "archive": "qwdtt-a296c57eaba69bb9479a24f9157856490890e47d.tar.gz",
+      "sha256": "3db2ecb5873bc080fc2805bcef1ed09bdfb9151fa6f9d9deed805fd4c622c715",
+      "submodule": "android/external/proxy-turn-vk-android"
+    },
+    {
+      "name": "hev",
+      "repository": "https://github.com/heiher/hev-socks5-tunnel",
+      "commit": "941c758101385d145c66210ac88991daaf27d4b6",
+      "url": "https://codeload.github.com/heiher/hev-socks5-tunnel/tar.gz/941c758101385d145c66210ac88991daaf27d4b6",
+      "archive": "hev-941c758101385d145c66210ac88991daaf27d4b6.tar.gz",
+      "sha256": "9b27ce5926fb691c5a4c66ab53859802ed0be55303dc5bc15a03a92906671185",
+      "submodule": "android/external/hev-socks5-tunnel"
+    },
+    {
+      "name": "cronet-build",
+      "repository": "https://github.com/SagerNet/cronet-go",
+      "commit": "049f2909701ca088c9569f6b303bba5376a2b2ff",
+      "url": "https://codeload.github.com/SagerNet/cronet-go/tar.gz/049f2909701ca088c9569f6b303bba5376a2b2ff",
+      "archive": "cronet-build-049f2909701ca088c9569f6b303bba5376a2b2ff.tar.gz",
+      "sha256": "dd01975f115ac118f2441a04e3f8c50277e08919b65c80121918c5d055eac220",
+      "submodule": null
+    },
+    {
+      "name": "cronet-bindings",
+      "repository": "https://github.com/SagerNet/cronet-go",
+      "commit": "0d28acc44093df24b2526dea3d6ffefd6b0a54f0",
+      "url": "https://codeload.github.com/SagerNet/cronet-go/tar.gz/0d28acc44093df24b2526dea3d6ffefd6b0a54f0",
+      "archive": "cronet-bindings-0d28acc44093df24b2526dea3d6ffefd6b0a54f0.tar.gz",
+      "sha256": "c46c4a0c1aa4fa919e5977c3b86f6f3f3477ca417bada7a98ecaeb6f3c885a2a",
+      "submodule": null
+    },
+    {
+      "name": "naiveproxy",
+      "repository": "https://github.com/SagerNet/naiveproxy",
+      "commit": "72a06c9fca0e2d228588c7f3074bf7efff3ff686",
+      "url": "https://codeload.github.com/SagerNet/naiveproxy/tar.gz/72a06c9fca0e2d228588c7f3074bf7efff3ff686",
+      "archive": "naiveproxy-72a06c9fca0e2d228588c7f3074bf7efff3ff686.tar.gz",
+      "sha256": "396d4ad6f5bf8ff812f915f0e21281748d7009773fa1bf182cd765f130fd9b19",
+      "submodule": null
+    }
+  ]
+}

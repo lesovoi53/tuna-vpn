@@ -1,0 +1,19 @@
+[submodule "android/external/sing-box-extended"]
+    path = android/external/sing-box-extended
+    url = https://github.com/shtorm-7/sing-box-extended.git
+[submodule "android/external/mieru"]
+    path = android/external/mieru
+    url = https://github.com/enfein/mieru.git
+[submodule "android/external/masterdnsvpn"]
+    path = android/external/masterdnsvpn
+    url = https://github.com/masterking32/MasterDnsVPN.git
+[submodule "android/external/webdav-tunnel"]
+    path = android/external/webdav-tunnel
+    url = https://github.com/spkprsnts/webdav-tunnel.git
+[submodule "android/external/proxy-turn-vk-android"]
+    path = android/external/proxy-turn-vk-android
+    url = https://github.com/SpaceNeuroX/proxy-turn-vk-android.git
+[submodule "android/external/hev-socks5-tunnel"]
+    path = android/external/hev-socks5-tunnel
+    url = https://github.com/heiher/hev-socks5-tunnel.git
+

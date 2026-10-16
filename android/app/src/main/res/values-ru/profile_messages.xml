@@ -1,0 +1,9 @@
+<resources>
+    <string name="profile_import_partial_summary">Добавлено профилей: %1$d. Пропущено неподдерживаемых или некорректных: %2$d</string>
+    <string name="profile_import_skipped_suffix">" · Пропущено: %1$d"</string>
+    <string name="profile_group_type">Группа · %1$s</string>
+    <string name="profile_group_member">Сервер: %1$s</string>
+    <string name="profile_group_pending">выбирается при подключении</string>
+    <string name="profile_proxy_chain">Цепочка прокси</string>
+    <string name="profile_routing_menu">Маршрутизация</string>
+</resources>

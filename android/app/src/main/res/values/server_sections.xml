@@ -1,0 +1,9 @@
+<resources>
+    <string name="server_sections_favorites">Favorites</string>
+    <string name="server_sections_dns">DNS tunnel</string>
+    <string name="server_sections_other">Other</string>
+    <string name="server_sections_selected">selected</string>
+    <string name="server_sections_empty_favorites">Tap the star beside a server to add it here.</string>
+    <string name="server_sections_manage">Manage subscriptions</string>
+    <plurals name="server_sections_count"><item quantity="one">%d server</item><item quantity="other">%d servers</item></plurals>
+</resources>

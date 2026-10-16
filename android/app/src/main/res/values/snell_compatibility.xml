@@ -1,0 +1,7 @@
+<resources>
+    <string name="snell_allow_experimental_tfo">Allow experimental TCP Fast Open</string>
+    <string name="snell_tfo_compatibility_note">Snell uses ordinary TCP by default: TCP Fast Open can cause connection stalls on some devices. This switch allows the TFO setting from the profile to take effect. Imported settings are preserved.</string>
+    <string name="snell_tfo_suppressed">TFO is requested in the profile, but is disabled for this connection by compatibility mode.</string>
+    <string name="snell_tfo_disabled_compatibility">Disabled · compatibility mode</string>
+    <string name="snell_tfo_log">[Snell] Compatibility mode: TCP Fast Open disabled for this run; the profile setting is preserved.</string>
+</resources>

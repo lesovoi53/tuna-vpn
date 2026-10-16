@@ -1,0 +1,12 @@
+// Offline suite deliberately excludes private/live fixture checks.
+allprojects {
+    tasks.withType(Test).configureEach {
+        filter {
+            excludeTestsMatching "*.privateLiveContainerChecksGroupReferences"
+            excludeTestsMatching "*.privateLiveSubscriptionRegistryCheck"
+            excludeTestsMatching "*.optionalPrivateSubscriptionSample"
+        }
+        environment.remove("TUNA_LIVE_SUBSCRIPTION_FILE")
+        environment.remove("TUNA_TEST_PROFILES_FILE")
+    }
+}

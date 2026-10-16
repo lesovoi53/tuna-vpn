@@ -1,0 +1,7 @@
+<resources>
+    <string name="snell_allow_experimental_tfo">Разрешить экспериментальный TCP Fast Open</string>
+    <string name="snell_tfo_compatibility_note">По умолчанию Snell использует обычный TCP: TCP Fast Open может вызывать зависание соединений на некоторых устройствах. Этот переключатель разрешает использовать TFO, если он включён в профиле. Импортированные настройки сохраняются.</string>
+    <string name="snell_tfo_suppressed">В профиле включён TFO, но для подключения он отключён режимом совместимости.</string>
+    <string name="snell_tfo_disabled_compatibility">Выключено · режим совместимости</string>
+    <string name="snell_tfo_log">[Snell] Режим совместимости: TCP Fast Open отключён для этого запуска; настройка профиля сохранена.</string>
+</resources>

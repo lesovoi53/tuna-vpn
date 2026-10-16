@@ -1,0 +1,9 @@
+<resources>
+    <string name="server_sections_favorites">Избранное</string>
+    <string name="server_sections_dns">DNS-туннель</string>
+    <string name="server_sections_other">Другие</string>
+    <string name="server_sections_selected">выбран</string>
+    <string name="server_sections_empty_favorites">Нажмите на звезду рядом с сервером, чтобы добавить его сюда.</string>
+    <string name="server_sections_manage">Управление подписками</string>
+    <plurals name="server_sections_count"><item quantity="one">%d сервер</item><item quantity="few">%d сервера</item><item quantity="many">%d серверов</item><item quantity="other">%d сервера</item></plurals>
+</resources>

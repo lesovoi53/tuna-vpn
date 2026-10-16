@@ -1,0 +1,237 @@
+{
+  "schemaVersion": 1,
+  "adapterVersion": "1.5",
+  "abi": "arm64-v8a",
+  "defaultEnginePolicy": {
+    "vless": "xray",
+    "hysteria2": "xray",
+    "trojan": "xray",
+    "shadowsocks": "sing-box",
+    "tuic": "sing-box",
+    "anytls": "sing-box",
+    "snell": "sing-box",
+    "naive": "sing-box",
+    "mieru": "mieru",
+    "awg": "sing-box",
+    "wireguard": "sing-box",
+    "trusttunnel": "sing-box",
+    "exceptions": "preserve native options; static capability validation; no network probing"
+  },
+  "webDAV": {
+    "commit": "b1af4c05eb80fd29a6f676be894fa61cd12a3dec",
+    "sha256": "379e725d2cbb818bbbcc19d594b7edf9bae44536a9fb06c396f36b5ce39cb9eb",
+    "socksAuth": true,
+    "udp": "DNS port 53 only; relayed over TCP"
+  },
+  "singBox": {
+    "name": "sing-box-extended",
+    "version": "1.14.1-extended-2.7.2",
+    "commit": "55faa763f986f4ca8a492d9b2719bc6330d2bef5",
+    "repository": "https://github.com/shtorm-7/sing-box-extended.git",
+    "buildTags": "with_quic,with_utls,with_gvisor,with_clash_api,with_naive_outbound,with_wireguard,with_trusttunnel,with_trusttunnel_cronet",
+    "abi": "arm64-v8a",
+    "androidApi": 26,
+    "sha256": "222B4B2D6B47C7B5E16515142E0B8E08EFCB85304137985DD3F52DA6FAD8595F",
+    "goVersion": "go version go1.26.4 windows/amd64",
+    "ndkVersion": "28.2.13676358",
+    "utls": {
+      "module": "github.com/metacubex/utls",
+      "version": "v0.0.0-20260924074610-04010625d68b",
+      "commit": "04010625d68bd10baab8a9148137aca20e3e4af1",
+      "modFile": "native/singbox/utls.mod",
+      "sumFile": "native/singbox/utls.sum"
+    },
+    "cronet": {
+      "version": "150.0.7871.63",
+      "libraryCommit": "c10c03c318db6d47bec8705c8290bad34bc32b64",
+      "libraryModule": "v0.0.0-20260912104006-c10c03c318db",
+      "windowsLibraryUrl": "https://raw.githubusercontent.com/SagerNet/cronet-go/c10c03c318db6d47bec8705c8290bad34bc32b64/lib/windows_amd64/libcronet.dll",
+      "windowsLibrarySha256": "3217c6260fbca5f16072e0b79735742f40109a63bb0ff88fd6b96dd6b54a2928"
+    },
+    "sourceOverlay": "native/singbox/source-overlay.json",
+    "dependencyOverlay": "native/singbox/dependency-overlay.json",
+    "dependencyFiles": {
+      "native/singbox/tuna_adaptive.go": "AA1AFF823D856355F03824CD8AA56850420FED55BCDE539254FC4F79D0BD6367",
+      "native/singbox/trusttunnel_cronet_stub.go": "2981CA88C827B810646BEB91F5755B44DFFF506B0486BF9211B37E76D8BE1DE7",
+      "native/singbox/build.ps1": "9F3C7D1E201236082590A891DB0D3D5991FCBF8E6C4BE60027CC29123C159EB5",
+      "native/singbox/snell_v6_conncheck_other.go": "88762DC434C6A652821E07FB76F0A7B15D17588C513B7D2D2DAE0B7F990F46E6",
+      "native/singbox/network_startup_test.go": "A0638B19616BBD5E54B1A7B9B3C76DB97A792EB3004389C1624501139277507E",
+      "native/singbox/network_startup.go": "D2429079478D556FA21404FFC7CB026FDA2D3BB59846336EA400417222AA8D62",
+      "native/singbox/snell_quic_protocol.go": "6F2ABF0A5E0DD5ADBD1AA91F25445156F75B75315A47F9B3BEF132668C0234B7",
+      "native/singbox/snell_v6_regression_test.go": "A6C2B1A27096CD5C68C630C610D2FF332B2CD59982A32EBF201B4312EBC9C89E",
+      "native/singbox/snell_quic_client.go": "26A3BA772D15D4BFAF20B57A2FEE825BBA71901F370E2CEADC88DDB5D7CF0C44",
+      "native/singbox/snell_roundtrip_test.go": "97907F98A55A7B9E4FEFD947FD65B594F50D665288A551C1CB7662F3B02134A2",
+      "native/singbox/dependency-overlay.json": "ADC326C7758E01E39CD74B067DD14D743DDE59F533EAA8E83E980D2AAEC1FF91",
+      "native/singbox/source-overlay.json": "4A1205632B8A6AA24A2F4E3E03D544068BF4A54E42CD3A909034A02085D821A8",
+      "native/singbox/dependency-overlay.ps1": "962AAED7A4A2747BD0C9E31855F2FA62887C78E16660E45FA39547C9420144BC",
+      "native/singbox/trusttunnel_random.go": "61A3091CC807374C615070EF909877C1035212C9FF46F8AD8B851E3598805C08",
+      "native/singbox/snell_v6_conncheck_linux.go": "DB1BFF931C9DBDBE067751F3DBD0F4ACAC606282C45C5E10AC082E941E5AB19E",
+      "native/singbox/trusttunnel_cronet_unix.go": "5798B5C8CB5FF97BFA531E61AA6321E452DCEFACD8D364C3EE96B2087E841C72",
+      "native/singbox/snell_conncheck_other.go": "3F1E8FD05722C934AA0DC4BE6A2E97A2E5698FF12627945515D4B499AA37BEC1",
+      "native/singbox/tuna_adaptive_test.go": "22AA0280498F88BBEC0FE4FAC6D5353D159AD0C8CD7588BD9F5E53DD2EFF7748",
+      "native/singbox/trusttunnel_cronet.go": "C6FE9EB6440C28D9185AA95C3F96A9CC8EE620DEB6395C57956D986C169912AC",
+      "native/singbox/trusttunnel_cronet_test.go": "2DDD3382D5A4A685E084D4267CC38AA10DB565791772FAF3E286B7ABF7906B0E",
+      "native/singbox/trusttunnel_cronet_other.go": "70885EFEA8803E94306C0D1A937A5EB7BDF84B2DB440BBF474BB5B281D8C29E2",
+      "native/singbox/utls.mod": "0BE48E7837EE8B020A976CFBDD30D4FF8D5B1C940D74F01DAB312DFDD448F10F",
+      "native/singbox/snell_conncheck_linux.go": "47A84652DB0466C3DC7171E0FFC6E39B79469E6F55078163EEB5DB1E1D9D21C3",
+      "native/singbox/utls.sum": "83384D4EFE56B09C09392196DDDBAD1DE397A0A5D1ECBC1EFB2A695398B623EC",
+      "native/singbox/trusttunnel_random_test.go": "2D8ECC968B59AB9058A97BBDD5E9F11C00212BA0175A799E22A6D2C81919E7A3"
+    }
+  },
+  "xray": {
+    "version": "26.9.9",
+    "dependency": "v1.260327.1-0.20260908222543-52a412d9e2f5",
+    "sourceOverlay": "xhttp-explicit-http1-alpn-v1",
+    "sha256": "bb5abe7a41b57d6440d5a6ec992ddc9dc6962d2e3d9088b75ede230eda3ba478"
+  },
+  "adapterSources": {
+    "external/vless-client/main.go": "b9337a8aceab9b8f42f56aa52e68cf0164b25c6bc0aaa82a7f2c050ccad0d588",
+    "external/vless-client/outbound_patch.go": "554fd7e71dbe643449e70f32966a3b74a4fe83a6beb8fb3f4e573f55aa653f1b",
+    "native/routing/policy.go": "c131ae97c152cdaf29eb94895ee58b7b0f3ab2fe200633253e086bd6a2bc32dd",
+    "native/routing/prepare.py": "e2852a2cb99e1c29a51c186a9653819af253c2e01ae1dbd8cd5f5293d501a2c8",
+    "native/routing/bootstrap.go": "6b25c1f5764bea203218fe8e9d4d8ad87e9b8a83a48df1e05deba2d150b2c544",
+    "native/routing/xhttp_alpn_test.go": "a0cc7b9a53c2c621ab9c98fba5325e0e023b1e12811842b1076be92c2882a62f",
+    "app/src/main/java/com/wireturn/app/domain/IsolatedProfileTest.kt": "a794e5c60e21060cefd418d3566a413b694b9e51d0d25049e0605ae7412447d8",
+    "app/src/main/java/com/wireturn/app/domain/IsolatedSnellResolver.kt": "d705ff100d21d272e4d05b506158bf400e2b78e6b0e851e90c0bf91d11222177",
+    "app/src/main/java/com/wireturn/app/kernel/SnellDestinationResolver.kt": "f30a4afacb44aad20989f58d2affe10541faf132512eb186f3b9b1b920062eea",
+    "app/src/main/java/com/wireturn/app/domain/CloudflareProfile.kt": "e243dc3d84a0a681a3142da6384ee5bc1c99dcfdcd04476dc1eff229ab365a6c",
+    "app/src/main/java/com/wireturn/app/domain/CloudflareScanner.kt": "11b654748670ac3fde42608586e5a44cdbedaa3bf9f6b64853130d68443445ea",
+    "app/src/main/java/com/wireturn/app/domain/CfScanPipeline.kt": "ef90c39b2ca46c0ac7aba74e96c26b5a98f466702a8447139307076cb7c5ae33",
+    "app/src/main/java/com/wireturn/app/domain/CfProfileUpdate.kt": "1d5ca82f89d57028e4f75ba999e7af71b09e49c5cb8b572b7e44df11b04cebe3",
+    "app/src/main/java/com/wireturn/app/domain/TrafficSampler.kt": "c056d68eadae652b1b1d967e3ee23606857bb4ea483eba712c63abe22f5e730d",
+    "app/src/main/java/com/wireturn/app/domain/HomeDiagnosticFlow.kt": "46211cdcfc0994a5fa6aef7600362925172c5822c5bf1ba8a5fa05cfe722ddc4",
+    "app/src/main/java/com/wireturn/app/domain/ProxyHttpText.kt": "6f9f8eea9c012dcfa52f66d39ba4756a0142456f43972c5927a7aa09c1143d99",
+    "app/src/main/java/com/wireturn/app/domain/ServerAccessProbe.kt": "710b1dfc4a89af4b9087ecb725eb605198fa53b9139cc4e818b83b07c8d67c9d",
+    "app/src/main/java/com/wireturn/app/domain/ExitObservation.kt": "38b8acc0697883ae0b79fb56542a0bf50c79000ac2c42d8ab95bca110a5c78a9",
+    "app/src/main/java/com/wireturn/app/viewmodel/MainViewModel.kt": "32bede49887682d9a0b7b41d59abbce91542d8d5bd7c35c20be64a6366eb8b3b",
+    "app/src/main/java/com/wireturn/app/ui/screens/HomeScreen.kt": "4734f01ede386937e0a831c094968a80b2b4e0d21354e19e15941e1fa36cc2f2",
+    "app/src/main/java/com/wireturn/app/domain/ProfileListOrder.kt": "ecee7fea80f6b385b607c238d75e3d569991aaffc7d008adb133939060add66b",
+    "app/src/main/java/com/wireturn/app/domain/GroupProbe.kt": "6da885814a4861a676694b8649c2381c3b85ade1118a5e535048cdf969ced3c3",
+    "app/src/main/java/com/wireturn/app/domain/CfTcpRelay.kt": "2c301050131b97c51d8922b0704be4585901001534de0597a7dc1cc440050846",
+    "app/src/main/java/com/wireturn/app/domain/IsolatedProfileReadiness.kt": "30a6d43c2ce8734fcce00376107ceadcb885daf060a689cb50865486ffd95e11",
+    "app/src/main/java/com/wireturn/app/domain/ManualGroupPolicy.kt": "296f28c686c2796dc8f7aa9c48001df3df8df79d318ef4f97d7d4aef821a920d",
+    "app/src/main/java/com/wireturn/app/domain/ProfileUrlTestBatch.kt": "4595cb3514ff3fc8ea73f9635caf8f47553a0a43609a618a000e6f8a902aaebd",
+    "app/src/main/java/com/wireturn/app/domain/WgProbeGuard.kt": "445cb5f8e16ecfa150fdbc0f12361ce7598f76752fe0bd4a330b353ccc83b695",
+    "app/src/main/java/com/wireturn/app/domain/ProfileEncoder.kt": "52abc7f5bb10818cd8d85e26687d00af353a5b9e566ad1f607876e903407bcf8",
+    "app/src/main/java/com/wireturn/app/domain/ProfileArchive.kt": "b50f412d162c3bc3c4ed89682660660312901ec9cb8fa1a0a4de537cfde38fea",
+    "app/src/main/java/com/wireturn/app/ui/activities/AddProfileActivity.kt": "1aefc0be2c97ab81ba97e479a02fc9fcda43d2a975f5deeda9ca9d3e96b4580f",
+    "app/src/main/java/com/wireturn/app/ui/screens/ProfilesUI.kt": "a9f59dc785c78f7c2f9ebf803164f95a80d382e6b67c03cff8e22a9abea4e09b",
+    "app/src/main/java/com/wireturn/app/domain/LegacyProfileImport.kt": "5bd68ab6f4d887e53d9384c983e2ba7f78f044d91452cc938a0011bb51c07289",
+    "app/src/main/java/com/wireturn/app/domain/SubscriptionProfileRefresh.kt": "8af66b45e82fd22fdb6c8f8b05c44e2f7f1f9c2febd99535dfe54fdc404c256c",
+    "app/src/main/java/com/wireturn/app/domain/SubscriptionHttpTransport.kt": "4a227ecfa1f867d2c54d1666a4f3669f9d87724567df1cf4788d4f46c38a01be",
+    "app/src/main/java/com/wireturn/app/domain/SubscriptionDownload.kt": "b680b222c75b1922094487dc8b465b7d4e774d4713c63520edfa9a09d7617876",
+    "app/src/main/java/com/wireturn/app/domain/SubscriptionAddressPolicy.kt": "bd499230739c71cfca54257975f9df0d9d811ecd51679ae19c38eefb3d8d92bb",
+    "app/src/main/java/com/wireturn/app/domain/ConnectionGroupRunner.kt": "7d972bade6e516783ff5301a2e356ed2ecc4f04eacef8b07b53da27c865ffd1c",
+    "app/src/main/java/com/wireturn/app/domain/GroupRuntime.kt": "98fcfeed9bcdd138dc62e11c3492f8cb7363de79e85517686286b7ca14a2432c",
+    "app/src/main/java/com/wireturn/app/data/kernel/CoreCapabilities.kt": "1032b2f46943cc7ffac2cc05dbdd6cd907d2b0ca39da2bbb3b672b68cdfa083c",
+    "app/src/main/java/com/wireturn/app/data/kernel/VpnEnginePolicy.kt": "d0a6aecaffa571ad6dc187852a1ca685b5a7d92a8b297d85854e143c3109df76",
+    "app/src/main/java/com/wireturn/app/domain/SubscriptionIdentity.kt": "9d2bd713722dc085c6bdedb2a47ddb68eb4eedfd403c04181d8c921ec34c32ae",
+    "app/src/main/java/com/wireturn/app/domain/SubscriptionGroupMerge.kt": "c6ed19b2fab496eaac99d98767294725773a47967fa6da376f45034f2d4edfa9",
+    "app/src/main/java/com/wireturn/app/kernel/ProcessTermination.kt": "ac3ee5bc4585beeef41265f0bb92a295370d0b1ab5c7cc8a2339b36ad03b9c31",
+    "app/src/main/java/com/wireturn/app/kernel/NativeTunnelRuntime.kt": "f7e61ad44506189b392c17c19e060a251a6c4e7175cbfd380b18cef205af46c0",
+    "app/src/main/java/com/wireturn/app/kernel/AndroidProcessSignal.kt": "3a98aded06f228a79d63c9a838ee26b113e03a047a6af8aeae0716b63c7a86cc",
+    "app/src/main/java/com/wireturn/app/kernel/RestartingProcessGroup.kt": "a6cc2779d44abea78764f3cbc7175e9dc7a11e7dd8dd61566fa536d41cc144e1",
+    "app/src/main/java/com/wireturn/app/data/kernel/VpnOptions.kt": "2c31f758fddd7914f5b6566865fa02a98edfa37e05a342402b36083324308252",
+    "app/src/main/java/com/wireturn/app/data/StoredProfiles.kt": "4af63f3bc97708f9e13c2cc31f44e1cfbc1a1697173b7a7ff6fe4b743dc94edb",
+    "app/src/main/java/com/wireturn/app/data/ImportedProfileActivation.kt": "aaa65b17b174b427cc3ed89226ade68fc60c76735ce92977c46782a9c557d459",
+    "app/src/main/java/com/wireturn/app/data/SelectedProfileActivation.kt": "e851bde4ee9610a302f5577f89462d93ab927bbfd3c263988b89ea6ef537896e",
+    "app/src/main/java/com/wireturn/app/data/ClientConfig.kt": "b1a5775e5f4bed6d30a413b16f352d62091b4480f352db13401b5dbffd361d04",
+    "app/src/main/java/com/wireturn/app/data/kernel/VpnConfig.kt": "1558ef6612038662ae3e33a8941520a7ab2cf806319865c9789900a0ea4ce906",
+    "app/src/main/java/com/wireturn/app/data/kernel/VlessId.kt": "db1df179638e4c3c6b7e5e7a91afcb0d0eac3aea2939ecb9f4aacabea36e3598",
+    "app/src/main/java/com/wireturn/app/data/kernel/AdditionalVpnProtocols.kt": "e807338aa96449048debf956b79c5db272d90bc8044ec70212ca8989dba296e8",
+    "app/src/main/java/com/wireturn/app/data/kernel/NaiveUri.kt": "24d0184b7f01c84b4ff30f8972f4583daaa0b6aac25953b54f3ea9b12b703d09",
+    "app/src/main/java/com/wireturn/app/data/kernel/AwgUri.kt": "306146585a9f846a61a019364e4b10f20ee1c6796083f45580aa2686014c71f8",
+    "app/src/main/java/com/wireturn/app/data/kernel/TrustTunnelUri.kt": "40d9e585b03bb7af0e2eb55b3fc6169c37e8ff0195da2da21d53f85f87031a44",
+    "app/src/main/java/com/wireturn/app/domain/AwgProfileDedup.kt": "8d610d862fe36db28ea8b4ad9d8800a5b1e74e027cc8ad2908d975154fc914b1",
+    "app/src/main/java/com/wireturn/app/domain/ProfileReveal.kt": "bc902fceb385d754a12463f1059143f73411850f46a183a48d1f199dbca93798",
+    "app/src/main/java/com/wireturn/app/kernel/SingBoxConfig.kt": "b3d87cc009d497a6c0560d39212ca9278839b940ed30182179df3b3f001ec705",
+    "app/src/main/java/com/wireturn/app/kernel/VpnCoreLog.kt": "3f96bf7c9078230538c01169bf5d0b882f4e2544ceffa0d69c2c6191e1efb031",
+    "app/src/main/java/com/wireturn/app/kernel/VpnNativeValidation.kt": "952d28b38a9b3230c8fc70e4aee2314eb4a57eed0c02a3efa9fa2ee53bafcd61",
+    "app/src/main/java/com/wireturn/app/kernel/ExtendedVless.kt": "030348fd30f23937aa0d1126df7c2dc2bb276508cd8c989fbd7f54bd75044789",
+    "app/src/main/java/com/wireturn/app/kernel/XrayVpnConfig.kt": "2722c661f3fd2efdd055c244e0989a5c8e0bf7c9a86e46660a9013ecb7f3506f",
+    "app/src/main/java/com/wireturn/app/kernel/RawXrayConfig.kt": "ab76dcf8d1e494718d929f568df9b073705e92f379b4a952daa249d2bd35e3e0",
+    "app/src/main/java/com/wireturn/app/data/BootstrapDns.kt": "7eb372de5b3232a1685050798f13ac0335be7f114314360124f435917709784d",
+    "app/src/main/java/com/wireturn/app/data/RoutingPolicy.kt": "3b34f7bd3ef8116ede345bc76f18b1dca48e52b30dc6f578048b3a3f2ffe6d3a",
+    "app/src/main/java/com/wireturn/app/domain/SplitDnsSettings.kt": "0f1a008c0a62e5f309c20b2c6549ad0c04e46be8dfecc56778b02d0d279c16b1",
+    "app/src/main/java/com/wireturn/app/domain/TcpOnlyDns.kt": "d143c937723a47a75f488000b8753d099a147a0ca9530da7d64d5aa4d670ac99",
+    "app/src/main/java/com/wireturn/app/kernel/SingBoxNetworkCompiler.kt": "92124e200a2980bafa3b7226253409107c7c9b8250452535b4602ff1f8bd7d58",
+    "app/src/main/java/com/wireturn/app/kernel/XrayNetworkCompiler.kt": "5b0e09c2ba5403588077e07a8d84a65fcf5cf248aed6b504afaa867f2ba394c3",
+    "app/src/main/java/com/wireturn/app/kernel/RoutingConfigCheck.kt": "820ef98042cc1b29037460668cab1bd3a0069f43de54dd1b6bc63fc7840007c2",
+    "app/src/main/java/com/wireturn/app/domain/RoutingRegex.kt": "44fb2d36abd6f255b198db1e7d27ff90dcf3d5c28a5217955f59d2329ba889bc",
+    "app/src/main/java/com/wireturn/app/domain/VlessFingerprintImport.kt": "a2fa47fcd5e0beee72a8a91561bf86e476d7819a5f6c7b28e853dc1166b4cb6b",
+    "app/src/main/java/com/wireturn/app/domain/VpnFailurePolicy.kt": "a6f891023929aae93d176b5a78fc6f2cd7bddf443fc5b197e13f3db0fd3077ae",
+    "app/src/main/java/com/wireturn/app/CoreService.kt": "a59f67357bc172799de77fd351b9a5ba4fd729df9dae9a4952c39993673afc63",
+    "app/src/main/java/com/wireturn/app/HevVpnService.kt": "657df507c1a33c189d99444303fbb736eaa8b538f9d0b6715c045fb37f0f29e4",
+    "app/src/main/java/com/wireturn/app/domain/GeoRuleSets.kt": "d473a2e33eb05948df83aebbd99a70bf950204159ba445196bca8ff66ad52b1c",
+    "app/src/main/java/com/wireturn/app/domain/ProfileManager.kt": "44870dfd0ed291b7b2347755fcb65ae1d7d4cf636a7e1ac91cf6b8f4a32ef9ab",
+    "app/src/main/java/com/wireturn/app/domain/CoreManager.kt": "b429d4a20f9fe09182788da7fcde9e91c086247399d53103915fed63b98035b7",
+    "app/src/main/java/com/wireturn/app/domain/SubscriptionTextFormat.kt": "be3c0df9d3b39d06cf16caca1922191c31bbf9add85ee125a0e46b6442d383d4",
+    "app/src/main/java/com/wireturn/app/domain/ProfileRouting.kt": "6d1ff3f649ecb029adfe804cd8cde2d7caa5338b153df201ced396ff421b325c",
+    "app/src/main/java/com/wireturn/app/domain/RoutingAssetStore.kt": "5e58741ac30f07bcbea1c6ecb03ce64bd2df146bd3a58c99f746f1b6fd1ea478",
+    "app/src/main/java/com/wireturn/app/domain/RoutingUpdates.kt": "81198cad67857c81fc4a8fde63f7d06639e8876c3bde32a70c5a5ebde5587c39",
+    "app/src/main/java/com/wireturn/app/domain/SubscriptionRoutingAssets.kt": "778ac3c10f734fc87ecec9011cf527504267fd0301020b10e140a034ac37e7af",
+    "app/src/main/java/com/wireturn/app/data/NetworkPreferences.kt": "34a982e6cf282850a86a5ee919ea6bf2f89618e2b9362ff2ba5422200615740e",
+    "app/src/main/java/com/wireturn/app/data/AppPreferences.kt": "f24413b556ffa366c0528c44bae027f343fedcabb1daf7d7eb47dc982442bb47",
+    "app/src/main/java/com/wireturn/app/data/AutoLaunchPreferences.kt": "e185cc7b267b44bdbdc795d88f282c4d849c7bbc807ba64a95a7be0673cd6933",
+    "app/src/main/java/com/wireturn/app/data/ProfileListEdit.kt": "7036a7a978024ba994282a0b0ac1a9973bce16b791b50ca5fef328f306187021",
+    "app/src/main/java/com/wireturn/app/data/SubscriptionEdit.kt": "51a91330a2ce292b731b4a612546c9389011fa8339b580277db3ac022968dee6",
+    "app/src/main/java/com/wireturn/app/data/SubscriptionImportCommit.kt": "47a552f61da58b17c94844235ea61075ee5f84af9f353449cf671709bd0c12ef",
+    "app/src/main/java/com/wireturn/app/data/SubscriptionDeletion.kt": "0961d97367d854520a3b192e6c536f2bde6272f3907ee01be9afc957f0fb7e0c",
+    "app/src/main/java/com/wireturn/app/data/kernel/WebdavConfig.kt": "6dc1b8676a4938f3dda4fbfd347a329801fe4283caf7d713f31469131d1b1e1e",
+    "app/src/main/java/com/wireturn/app/kernel/WebdavKernel.kt": "a3fa40c3320c03fba964cbb7a7060345574a8a4df6be4f033f2282c9e815e5bd",
+    "app/src/main/java/com/wireturn/app/kernel/WebdavRuntimeConfig.kt": "1119caf9ce9612416b44f0aaec5f91a30e9f9c515a50963ce9931e504aa6f3ea",
+    "app/src/main/java/com/wireturn/app/kernel/ChainCompatibility.kt": "f70577f8682071b5470d31c810ec86048dab9321e4f3ca84d1c880e1d42e6ed6",
+    "app/src/main/java/com/wireturn/app/kernel/PoolPortReservation.kt": "06a16d547932d5214b2bb2b41b9ebe639aeeb40260a52e496a8e00f260d33f5c",
+    "app/src/main/java/com/wireturn/app/domain/SubscriptionProfileMerge.kt": "1df90d01f8ef52dcc61978e4487bbd461e1beb377663867721ea62aad004866e",
+    "app/src/main/java/com/wireturn/app/data/ProfileActivation.kt": "11ff500177ff2b715f92158b21049dc326ea66dc241990e21018bd73ea644328"
+  },
+  "standaloneEditors": {
+    "vless": [
+      "sing-box",
+      "xray"
+    ],
+    "hysteria2": [
+      "sing-box",
+      "xray"
+    ],
+    "trojan": [
+      "sing-box",
+      "xray"
+    ],
+    "shadowsocks": [
+      "sing-box"
+    ],
+    "tuic": [
+      "sing-box"
+    ],
+    "anytls": [
+      "sing-box"
+    ],
+    "snell-v4": [
+      "sing-box"
+    ],
+    "snell-v6": [
+      "sing-box"
+    ],
+    "awg": [
+      "sing-box"
+    ],
+    "wireguard": [
+      "sing-box"
+    ],
+    "trusttunnel": [
+      "sing-box"
+    ],
+    "naive": [
+      "sing-box"
+    ],
+    "mieru": [
+      "mieru-3.37"
+    ]
+  },
+  "routingOwner": "xray",
+  "tunOwner": "hev",
+  "optionalRoutingOwner": "sing-box-extended (experimental, authenticated SOCKS profiles without chains)",
+  "configurationValidation": "packaged-native-check",
+  "newFeaturesDeviceValidation": "pending-user-installation"
+}

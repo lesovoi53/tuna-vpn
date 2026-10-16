@@ -1,0 +1,44 @@
+[
+  {
+    "name": "Xray",
+    "version": "26.9.9",
+    "tunaFork": true,
+    "sha256": "bb5abe7a41b57d6440d5a6ec992ddc9dc6962d2e3d9088b75ede230eda3ba478"
+  },
+  {
+    "name": "sing-box-extended",
+    "version": "1.14.1-extended-2.7.2",
+    "tunaFork": true,
+    "sha256": "222b4b2d6b47c7b5e16515142e0b8e08efcb85304137985dd3f52da6fad8595f"
+  },
+  {
+    "name": "Mieru",
+    "version": "3.37",
+    "tunaFork": true,
+    "sha256": "2808b758392a5ed555af91bb93975db0dcc5b0ef38c1a916c7059b5d1e08421c"
+  },
+  {
+    "name": "WebDAV",
+    "version": "b1af4c05eb80",
+    "tunaFork": true,
+    "sha256": "379e725d2cbb818bbbcc19d594b7edf9bae44536a9fb06c396f36b5ce39cb9eb"
+  },
+  {
+    "name": "MasterDNS / StormDNS",
+    "version": "2026.06.13 / 7de2476",
+    "tunaFork": true,
+    "sha256": "a1f54c6d93fb119e6b071a7007921fd1a330997f4c743be8bb4dd376a34a8de4"
+  },
+  {
+    "name": "qWDTT",
+    "version": "build acd118888912",
+    "tunaFork": false,
+    "sha256": "acd118888912cd5640d942632f8fe3347a909aa41f22e40ecc6f9124b3655fe2"
+  },
+  {
+    "name": "HEV",
+    "version": "build c2cb3b92964b",
+    "tunaFork": false,
+    "sha256": "c2cb3b92964b0222b7ffd5ace3734b511c8ebf8b2cd496b9fd9599a73660af01"
+  }
+]

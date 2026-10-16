@@ -1,0 +1,25 @@
+{
+  "goVersion": "go version go1.27.1 windows/amd64",
+  "sourceOverlay": "xhttp-explicit-http1-alpn-v1-adaptive-dns-v1",
+  "sources": {
+    "native/routing/bootstrap.go": "6b25c1f5764bea203218fe8e9d4d8ad87e9b8a83a48df1e05deba2d150b2c544",
+    "native/routing/policy.go": "c131ae97c152cdaf29eb94895ee58b7b0f3ab2fe200633253e086bd6a2bc32dd",
+    "native/routing/prepare.py": "e2852a2cb99e1c29a51c186a9653819af253c2e01ae1dbd8cd5f5293d501a2c8",
+    "native/routing/adaptive_dns.go": "d2853dd7622302474f3f4535938d2c5002e34b116305fdc38ea7a71e8fb145b6",
+    "native/routing/adaptive_dns_test.go": "8e4c5f9be2773257b60ced90e63ab1b70210708d058677c69ce6048c8c4ee391",
+    "native/routing/adaptive_policy_test.go": "3134cb154ce19059b1ce909ec777957b43fb0bf24e527151bb06984a9eb5c56a",
+    "native/routing/doh_bootstrap.go": "21137a42fec515f83dd868606b3a7ba3b5e58ed31ef16c407982c7bc08b10ae3",
+    "native/routing/doh_bootstrap_test.go": "759b59a21b4731bad76245670cb9ee969611285da2db31262f03fcab7ae7b167",
+    "native/routing/xhttp_alpn_test.go": "a0cc7b9a53c2c621ab9c98fba5325e0e023b1e12811842b1076be92c2882a62f",
+    "external/vless-client/main.go": "b9337a8aceab9b8f42f56aa52e68cf0164b25c6bc0aaa82a7f2c050ccad0d588",
+    "external/vless-client/raw_xray.go": "5932b3772f7121b6786c7c7c43eb5de80001afb85c5423cc2cc331ddc85818b7",
+    "external/vless-client/raw_xray_test.go": "7ef6658321e29b94ca0f281f51cef51354b6f89f025adc3ef1903016d62ed8c5",
+    "external/vless-client/outbound_patch.go": "554fd7e71dbe643449e70f32966a3b74a4fe83a6beb8fb3f4e573f55aa653f1b",
+    "external/vless-client/go.mod": "d8feaf3d69a955a34dfadd697c56c247b1b4c382e46a596fac724e2ccb6c26b3",
+    "external/vless-client/go.sum": "949042e569231113f629872475110827077c42c1299096bfdc430ea082e84c9a"
+  },
+  "binaries": {
+    "xray-network-check.exe": "57233bdf1dfe99efc38cfded2c239172157c4c6aad4dfa82479d016e89663124",
+    "libxray-network.so": "bb5abe7a41b57d6440d5a6ec992ddc9dc6962d2e3d9088b75ede230eda3ba478"
+  }
+}

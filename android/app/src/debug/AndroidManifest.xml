@@ -1,0 +1,13 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <service android:name="com.wireturn.app.ReleaseQaVpnService" android:exported="false"
+            android:permission="android.permission.BIND_VPN_SERVICE" android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="Local debug VPN resource fixture" />
+        </service>
+        <activity android:name="com.wireturn.app.ReleaseQaActivity"
+            android:exported="true" android:permission="android.permission.DUMP" />
+        <!-- QA only; ordinary applications cannot hold this signature permission. -->
+        <receiver android:name="com.wireturn.app.ReleaseQaReceiver"
+            android:exported="true" android:permission="android.permission.DUMP" />
+    </application>
+</manifest>

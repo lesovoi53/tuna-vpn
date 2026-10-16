@@ -1,0 +1,30 @@
+name: Source and routing checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  routing:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install routing editor dependencies
+        run: python -m pip install -r routing-builder/requirements.txt
+      - name: Public source and docs
+        run: python scripts/check_public_tree.py
+      - name: Routing unit tests
+        working-directory: routing-builder
+        run: python -m unittest test_core test_policy test_geo test_routing_sources test_dns_pools
+      - name: DNS GUI test
+        working-directory: routing-builder
+        run: python test_dns_gui.py
+      - name: Clipboard GUI test
+        working-directory: routing-builder
+        run: python test_paste_gui.py
+# This job does not claim Android/native build or real-device acceptance.

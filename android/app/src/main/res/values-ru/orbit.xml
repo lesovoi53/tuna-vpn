@@ -1,0 +1,28 @@
+<resources>
+    <string name="orbit_interface">Интерфейс приложения</string>
+    <string name="orbit_interface_note">Новый — по умолчанию. Классический сохраняет прежний вид.</string>
+    <string name="orbit_new">Новый</string>
+    <string name="orbit_classic">Классический</string>
+    <string name="orbit_home">Главная</string>
+    <string name="orbit_servers">Серверы</string>
+    <string name="orbit_settings">Настройки</string>
+    <string name="orbit_connect">Подключить</string>
+    <string name="orbit_disconnect">Отключить</string>
+    <string name="orbit_connected">Подключено</string>
+    <string name="orbit_current">Текущее подключение</string>
+    <string name="orbit_connection">Подключение</string>
+    <string name="orbit_application">Приложение</string>
+    <string name="orbit_routing">Маршрутизация и DNS</string>
+    <string name="orbit_subscriptions">Подписки</string>
+    <string name="orbit_apps">Приложения в VPN</string>
+    <string name="orbit_apps_note">Общие исключения для приложения</string>
+    <string name="orbit_appearance">Оформление и язык</string>
+    <string name="orbit_advanced">Настройки подключения</string>
+    <string name="orbit_components">Ядра и протоколы</string>
+    <string name="orbit_more">Все настройки</string>
+    <string name="orbit_search">Найти сервер</string>
+    <string name="orbit_search_empty">Серверы не найдены</string>
+    <string name="orbit_details">Сведения о подключении</string>
+    <string name="orbit_server_access">Доступ к серверам</string>
+    <string name="orbit_subscription_rules">Правила подписки</string>
+</resources>

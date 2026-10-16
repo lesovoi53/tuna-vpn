@@ -1,0 +1,10 @@
+{
+  "source": {
+    "url": "https://github.com/spkprsnts/WireTurn/releases/download/v8.3/WireTurn_v8.3_arm64-v8a.apk",
+    "sha256": "1C88600DB676C205A34EAB0B601DBFEAB78A5D908CACD1C6F85CD8B250DEDE33"
+  },
+  "binaries": {
+    "libhevsocks5.so": "c2cb3b92964b0222b7ffd5ace3734b511c8ebf8b2cd496b9fd9599a73660af01",
+    "libqwdtt.so": "acd118888912cd5640d942632f8fe3347a909aa41f22e40ecc6f9124b3655fe2"
+  }
+}

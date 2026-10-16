@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="profiles_bypass_tab">Обход БС</string>
+    <string name="profiles_local_tab">Мои серверы</string>
+    <string name="profiles_subscriptions_tab">Подписки</string>
+    <string name="profiles_create_group">＋ Создать группу</string>
+    <string name="profile_probe_label">URL-тест</string>
+    <string name="profile_probe_all">URL-тест всех серверов</string>
+    <string name="profile_probe_stop">Стоп · %1$d/%2$d</string>
+    <string name="profile_probe_waiting">Ожидание</string>
+    <string name="profile_probe_running">Проверка…</string>
+    <string name="profile_probe_cancelled">Отменено</string>
+    <string name="profile_probe_timeout">Таймаут</string>
+    <string name="profile_probe_failed">Ошибка URL-теста</string>
+    <string name="profile_probe_active_wg">Аккаунт WG занят другим подключением</string>
+    <string name="profile_probe_latency">%1$d мс</string>
+</resources>

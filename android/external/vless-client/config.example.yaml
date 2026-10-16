@@ -1,0 +1,71 @@
+# Example config for vless-client.
+#
+# Copy this file to config.yaml (loaded automatically) or point to it explicitly
+# with -config path/to/file.yaml. Any flag passed on the command line overrides
+# the corresponding value here.
+#
+# Only fill in the section for the mode you actually use; leave the rest blank
+# or delete it. Mode priority (same as flags): WireGuard flags > wg file >
+# VLESS link > standalone local_socks5.
+
+# --- Common (used in every mode) ---
+listen: "127.0.0.1:1080"       # SOCKS5 listen address, required
+http: ""                        # optional HTTP proxy listen address
+# Comma-separated DNS servers. Beyond plain IPs, each entry also accepts a scheme:
+# "tcp://host[:port]" (DNS over TCP), "https://host/path" (DoH), "quic+local://host[:port]"
+# (DoH3/DoQ), or "https+local://..."/"tcp+local://..." ("+local" resolves directly instead of
+# through routing/the tunnel). "localhost" uses the OS resolver.
+dns: "8.8.8.8,1.1.1.1"
+fakedns: false                  # hand out synthetic IPs instead of resolving for real; the real
+                                 # domain is recovered via sniffing for routing. Useful for
+                                 # apps/protocols that resolve via IP before connecting.
+debug: false                    # verbose xray-core logging
+stats_socket: ""                # abstract unix socket name for stats (Linux/Android)
+proxy_user: ""                  # SOCKS5/HTTP inbound auth (optional)
+proxy_pass: ""
+
+# --- Mode: proxy link (vless / trojan / hysteria2) ---
+# link: "vless://uuid@host:443?security=tls&type=tcp&sni=example.com&encryption=none#My-Server"
+# link: "trojan://password@host:443?security=tls&sni=example.com#My-Server"
+link: "hysteria2://auth@host:443?sni=example.com#My-Server"   # hy2:// also accepted
+local_address: ""               # override link destination host:port (local/CDN route)
+direct_address: ""              # direct server host:port; enables load balancing with local_address
+hc_interval: 30                 # load balancer health check interval, seconds
+hc_destination: ""              # URL probed by the load balancer's health check (default: http://connectivitycheck.gstatic.com/generate_204)
+mux: 0                          # mux concurrency; 0 disables. Not applicable to hysteria2
+
+# TLS cert pinning (all three protocols): use pinnedPeerCertSha256=<hex> in the link's
+# query string for self-signed certs. "allowInsecure"/"insecure" are no longer supported.
+
+# --- Mode: WireGuard (inline keys; takes priority over "wg" file below) ---
+wg_private_key: ""
+wg_public_key: ""
+wg_preshared_key: ""
+wg_endpoint: ""                 # host:port
+wg_address: ""                  # comma-separated, e.g. 10.0.0.2/32
+wg_mtu: 0
+wg_keepalive: 0
+
+# --- Mode: WireGuard (.conf file instead of inline keys above) ---
+wg: ""                          # path to a WireGuard .conf file
+
+# --- Mode: standalone upstream SOCKS5 (no VLESS/WireGuard) ---
+local_socks5: ""                # [user:pass@]host:port
+
+# With both "link" and "local_socks5" set, socks5_chain switches local_socks5 from an
+# alternate route (the load-balancer dual-route mode above) to a transport hop: the proxy
+# link's own connection is dialed through local_socks5 instead (VLESS/Trojan-over-SOCKS5,
+# e.g. chaining through Tor or another VPN's local proxy). Not supported for hysteria2.
+# Add direct_address too for a dual-route version: same server, reached both directly
+# (preferred) and chained through local_socks5 (fallback) — local_address can't be used
+# together with socks5_chain + direct_address, since there's only the one address then.
+socks5_chain: false
+
+# --- Routing (applies to every mode) ---
+# Entries are comma-separated; each is "geosite:name", "geoip:name", a plain domain, or a CIDR.
+# geosite:/geoip: entries require geoip.dat/geosite.dat in assets_path (or XRAY_LOCATION_ASSET) —
+# e.g. from https://github.com/Loyalsoldier/v2ray-rules-dat/releases (or the official v2fly builds).
+# Block rules win over direct rules when both match the same entry.
+assets_path: ""                 # directory containing geoip.dat/geosite.dat
+route_direct: ""                # e.g. "geosite:cn,geoip:cn,geoip:private" — bypass the tunnel
+route_block: ""                 # e.g. "geosite:category-ads-all" — dropped entirely

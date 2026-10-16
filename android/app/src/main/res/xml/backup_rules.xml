@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Используется на API < 31. На API 31+ применяется data_extraction_rules.xml -->
+<full-backup-content>
+    <!-- files/ содержит DataStore и рабочие конфиги ядер с ключами — не бэкапим -->
+    <exclude domain="file" path="."/>
+        <exclude domain="root" path="app_webview/"/>
+</full-backup-content>

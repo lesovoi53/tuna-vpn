@@ -1,0 +1,92 @@
+package com.wireturn.app.ui.activities
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.wireturn.app.data.XrayConfig
+import com.wireturn.app.ui.screens.XraySetupScreen
+import com.wireturn.app.ui.theme.WireturnTheme
+import com.wireturn.app.viewmodel.MainViewModel
+
+class XrayEditActivity : ComponentActivity() {
+    private val viewModel: MainViewModel by viewModels()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        val splashScreen = installSplashScreen()
+        enableEdgeToEdge()
+        super.onCreate(savedInstanceState)
+
+        splashScreen.setKeepOnScreenCondition { !viewModel.isInitialized.value }
+
+        val profileId = intent.getStringExtra("EXTRA_PROFILE_ID")
+
+        setContent {
+            val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+            val dynamicTheme by viewModel.dynamicTheme.collectAsStateWithLifecycle()
+            val privacyMode by viewModel.privacyMode.collectAsStateWithLifecycle()
+            val savedWgConfig by viewModel.wgConfig.collectAsStateWithLifecycle()
+            val savedVlessConfig by viewModel.vlessConfig.collectAsStateWithLifecycle()
+            val savedXrayConfig by viewModel.xrayConfig.collectAsStateWithLifecycle()
+            val clientConfig by viewModel.clientConfig.collectAsStateWithLifecycle()
+            val vlessLinkHistory by viewModel.vlessLinkHistory.collectAsStateWithLifecycle()
+            val profiles by viewModel.profiles.collectAsStateWithLifecycle()
+
+            val targetProfile = remember(profiles) {
+                if (profileId != null) profiles.find { it.id == profileId } else null
+            }
+            val initialWgConfig = targetProfile?.wgConfig ?: savedWgConfig
+            val initialVlessConfig = targetProfile?.vlessConfig ?: savedVlessConfig
+            val initialXrayConfig = if (targetProfile != null) {
+                XrayConfig(enabled = targetProfile.xrayEnabled, protocol = targetProfile.xrayProtocol)
+            } else savedXrayConfig
+
+            WireturnTheme(themeMode = themeMode, dynamicColor = dynamicTheme) {
+                com.wireturn.app.ui.theme.CompactSettingsTheme {
+                XraySetupScreen(
+                    isEditMode = true,
+                    initialWgConfig = initialWgConfig,
+                    initialVlessConfig = initialVlessConfig,
+                    initialXrayConfig = initialXrayConfig,
+                    privacyMode = privacyMode,
+                    kernelVariant = targetProfile?.kernelVariant ?: clientConfig.kernelVariant,
+                    kernelConfig = targetProfile?.kernelConfig ?: clientConfig.kernelConfig,
+                    profileName = targetProfile?.name,
+                    vlessLinkHistory = vlessLinkHistory,
+                    onRemoveHistoryItem = { viewModel.removeVlessLinkFromHistory(it) },
+                    onChainEnabled = { enabled ->
+                        if (profileId != null && profileId != viewModel.currentProfileId.value) {
+                            viewModel.updateProfileById(profileId) { it.copy(xrayEnabled = enabled) }
+                        } else {
+                            viewModel.updateXrayConfig(savedXrayConfig.copy(enabled = enabled))
+                        }
+                    },
+                    onBack = { finish() },
+                    onSave = { type, wg, vless ->
+                        if (profileId != null) {
+                            viewModel.updateProfileById(profileId) { p ->
+                                p.copy(xrayProtocol = type, wgConfig = wg, vlessConfig = vless)
+                            }
+                            if (profileId == viewModel.currentProfileId.value) {
+                                viewModel.updateXrayConfig(savedXrayConfig.copy(protocol = type))
+                                viewModel.updateWgConfig(wg)
+                                viewModel.updateVlessConfig(vless)
+                            }
+                        } else {
+                            viewModel.updateXrayConfig(savedXrayConfig.copy(protocol = type))
+                            viewModel.updateWgConfig(wg)
+                            viewModel.updateVlessConfig(vless)
+                        }
+                        finish()
+                    }
+                )
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="protocol_guide_title">Поддерживаемые протоколы</string>
+    <string name="protocol_guide_components">Ядра и компоненты</string>
+    <string name="protocol_guide_summary">Краткий справочник подключений и их возможностей</string>
+    <string name="protocol_guide_intro">Здесь перечислены подключения, доступные в TUNA. Описание принципов работы сверено с материалами на август 2026 года; возможности приложения указаны для этой версии. Доступность зависит от сервера и сети.</string>
+    <string name="protocol_guide_vpn">VPN</string>
+    <string name="protocol_guide_bypass">Обход БС</string>
+    <string name="protocol_guide_chain">Дополнительная цепочка</string>
+    <string name="protocol_guide_source">Документация проекта</string>
+    <string name="protocol_guide_vless">Прокси-протокол с разными транспортами, включая XHTTP. Защита соединения определяется настройками TLS, REALITY или шифрования в профиле; сам выбор VLESS не гарантирует её.</string>
+    <string name="protocol_guide_hysteria2">Прокси поверх QUIC для передачи TCP и UDP. Рассчитан в том числе на сети с потерями; требует доступного UDP между клиентом и сервером.</string>
+    <string name="protocol_guide_snell">Шифрованный прокси Surge с общим секретным ключом. Доступны совместимые v4/v5 и Snell v6: default, unshaped и unsafe-raw. QUIC Proxy — отдельный режим совместимости с v5; требуется поддержка сервера.</string>
+    <string name="protocol_guide_mieru">Шифрованный прокси поверх TCP или UDP с дополнением пакетов для изменения рисунка трафика. Не требует TLS-сертификата; нужны совместимые параметры и учётные данные сервера.</string>
+    <string name="protocol_guide_trojan">Передаёт прокси-трафик внутри TLS-соединения. Нужны пароль и корректная проверка сертификата сервера; внешне соединение использует тот же защищённый транспорт, что и HTTPS.</string>
+    <string name="protocol_guide_shadowsocks">Шифрованный прокси для TCP и UDP. Метод шифрования и пароль должны совпадать с сервером; доступные варианты зависят от совместимости профиля.</string>
+    <string name="protocol_guide_tuic">Прокси поверх QUIC с несколькими потоками и передачей TCP и UDP. Нужен доступный UDP до сервера и совпадающая версия протокола; TUNA использует профили TUIC v5.</string>
+    <string name="protocol_guide_anytls">Прокси поверх TLS с дополнением данных и повторным использованием соединений. Эти механизмы меняют рисунок трафика; требуется совместимый сервер AnyTLS.</string>
+    <string name="protocol_guide_naive">Использует сетевой стек Chromium для передачи через HTTPS-прокси с дополнением данных. В TUNA поддерживается naive+https с TCP и опциональным UDP через TCP (UoT). Для UDP сервер должен поддерживать UoT sing-box; обычный сервер NaiveProxy на Caddy не поддерживает это расширение.</string>
+    <string name="protocol_guide_qwdtt">Туннель через TURN-инфраструктуру звонков VK к собственному серверу выхода. Использует несколько транспортных потоков; работа зависит от доступности VK и действительных данных звонка.</string>
+    <string name="protocol_guide_masterdns">Передаёт TCP-трафик через DNS-запросы и ответы. Нужны домен туннеля, ключ и доступные резолверы. TUNA также импортирует профили StormDNS; скорость зависит от DNS-пути.</string>
+    <string name="protocol_guide_webdav">Передаёт TCP через обмен файлами в WebDAV-хранилище. Клиент и сервер выхода используют одно хранилище; поддерживаются дополнительные бэкенды. Опрос файлов может увеличивать задержку.</string>
+    <string name="protocol_guide_wireguard">Шифрованный IP-туннель поверх UDP с обменом ключами. Доступен отдельным профилем и в дополнительной цепочке Xray. Для обфускации используйте профиль AmneziaWG.</string>
+</resources>

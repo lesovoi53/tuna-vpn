@@ -1,0 +1,13 @@
+<resources>
+    <string name="profile_sort_title">Сортировка серверов</string>
+    <string name="profile_sort_original">Исходный порядок</string>
+    <string name="profile_sort_name_asc">По имени: А–Я</string>
+    <string name="profile_sort_name_desc">По имени: Я–А</string>
+    <string name="profile_sort_protocol">По протоколу</string>
+    <string name="profile_favorite_add">Добавить в избранное</string>
+    <string name="profile_favorite_remove">Убрать из избранного</string>
+    <string name="profile_favorite">Избранный сервер</string>
+    <string name="profile_favorites_only">Только избранные</string>
+    <string name="profile_favorites_note">В новом интерфейсе избранные находятся в отдельной категории сверху. Обновление подписки сохраняет отметки.</string>
+    <string name="profile_sorted_note">Для ручного перемещения выберите «Исходный порядок».</string>
+</resources>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subscription_routing_heading">Routing</string>
+    <string name="subscription_use_routing">Use subscription routing</string>
+    <string name="subscription_use_routing_desc">Only for servers in this subscription. Other servers use the app rules.</string>
+    <string name="subscription_routing_preparing">Preparing rules and databases…</string>
+    <string name="subscription_routing_saved">Saved</string>
+    <string name="subscription_routing_failed">Could not apply the rules. Try again later.</string>
+    <string name="subscription_routing_absent">This subscription has no routing rules</string>
+</resources>

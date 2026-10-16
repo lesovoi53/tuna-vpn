@@ -1,0 +1,4 @@
+# Preserve existing source bytes used by native provenance SHA-256 manifests.
+* -text
+*.sh text eol=lf
+.gitmodules text eol=lf

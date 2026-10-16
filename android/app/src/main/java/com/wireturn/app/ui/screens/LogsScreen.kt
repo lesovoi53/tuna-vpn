@@ -1,0 +1,422 @@
+@file:OptIn(
+    androidx.compose.material3.ExperimentalMaterial3Api::class,
+    androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class
+)
+
+package com.wireturn.app.ui.screens
+
+import android.content.ClipData
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.toClipEntry
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.wireturn.app.R
+import com.wireturn.app.ui.AppTopAppBar
+import com.wireturn.app.ui.HapticUtil
+import com.wireturn.app.ui.components.CoreToggleButton
+import com.wireturn.app.ui.theme.ContentAlpha
+import com.wireturn.app.ui.theme.extendedColorScheme
+import com.wireturn.app.viewmodel.MainViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import kotlin.time.Duration.Companion.milliseconds
+
+@Composable
+fun LogsScreen(
+    viewModel: MainViewModel,
+    onBack: () -> Unit,
+    onToggleCore: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
+    val allLogs by viewModel.logs.collectAsStateWithLifecycle()
+    val filter by com.wireturn.app.AppLogsState.filter.collectAsStateWithLifecycle()
+    val size by com.wireturn.app.AppLogsState.size.collectAsStateWithLifecycle()
+    val detailed by com.wireturn.app.AppLogsState.detailed.collectAsStateWithLifecycle()
+    val logs = remember(allLogs, filter) { allLogs.filter { filter.accepts(it.message) } }
+    var settings by remember { mutableStateOf(false) }
+    val recording by com.wireturn.app.PersistentDiagnosticLog.enabled.collectAsStateWithLifecycle()
+    val recordingStatus by com.wireturn.app.PersistentDiagnosticLog.status.collectAsStateWithLifecycle()
+    var exportingArchive by remember { mutableStateOf(false) }
+    var archiveMessage by remember { mutableStateOf("") }
+    val archiveLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
+        if (uri != null) scope.launch {
+            exportingArchive = true
+            try {
+                withContext(Dispatchers.IO) {
+                    val output = context.contentResolver.openOutputStream(uri)
+                        ?: error("Cannot open selected document")
+                    output.use { com.wireturn.app.PersistentDiagnosticLog.exportTo(it) }
+                }
+                archiveMessage = "Архив сохранён"
+            } catch (failure: Exception) {
+                if (failure is kotlinx.coroutines.CancellationException) throw failure
+                archiveMessage = "Не удалось сохранить архив: ${failure.javaClass.simpleName}"
+            } finally { exportingArchive = false }
+        }
+    }
+    if (settings) androidx.compose.material3.AlertDialog(
+        onDismissRequest = { settings = false },
+        title = { Text("Настройки журнала") },
+        text = { androidx.compose.foundation.layout.Column(Modifier.verticalScroll(rememberScrollState())) {
+            com.wireturn.app.ui.SwitchRow(label = "Длительная диагностика в файл", checked = recording,
+                onCheckedChange = { com.wireturn.app.PersistentDiagnosticLog.setEnabled(context, it) })
+            Text(recordingStatus, style = MaterialTheme.typography.bodySmall)
+            Text("Без ограничения по часам. До 10 ГБ (10 млрд байт): старые файлы заменяются новыми. Место заранее не резервируется. При нехватке свободной памяти запись сообщит об ошибке. Запись локальная, не переключает VPN и сеть. Продолжается при закрытом экране, пока работает процесс TUNA; принудительная остановка или выключение телефона прерывает её. Интервалы контрольных записей могут увеличиваться во сне.", style = MaterialTheme.typography.bodySmall)
+            androidx.compose.material3.TextButton(enabled = recording, onClick = {
+                com.wireturn.app.PersistentDiagnosticLog.append("[USER MARKER] User observed connectivity failure")
+                archiveMessage = "Момент сбоя отмечен в журнале"
+            }) { Text("Отметить сбой сейчас") }
+            androidx.compose.material3.TextButton(enabled = !exportingArchive, onClick = {
+                val stamp = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US).format(Date())
+                archiveLauncher.launch("tuna_diagnostics_$stamp.zip")
+            }) { Text(if (exportingArchive) "Сохранение…" else "Сохранить архив диагностики") }
+            if (archiveMessage.isNotBlank()) Text(archiveMessage, style = MaterialTheme.typography.bodySmall)
+            Text("Архив содержит события ядер и сети, не зависит от фильтра ниже. Для большого ZIP потребуется дополнительное место; можно выбрать внешний накопитель. Секреты маскируются, но адреса серверов и домены в сообщениях ядер могут присутствовать. Перед передачей проверьте архив.", style = MaterialTheme.typography.bodySmall)
+            com.wireturn.app.ui.screens.kernel.VkChoice("Хранить записей", size.toString(),
+                com.wireturn.app.LogRetention.capacities.map { it.toString() to it.toString() }) {
+                com.wireturn.app.AppLogsState.save(context, size = it.toInt())
+            }
+            com.wireturn.app.ui.screens.kernel.VkChoice("Показывать и экспортировать", filter.name,
+                com.wireturn.app.LogLevel.entries.map { it.name to it.label }) {
+                com.wireturn.app.AppLogsState.save(context, level = com.wireturn.app.LogLevel.valueOf(it))
+            }
+            com.wireturn.app.ui.SwitchRow(label = "Подробно: qWDTT", checked = detailed,
+                onCheckedChange = { com.wireturn.app.AppLogsState.save(context, detail = it) })
+            Text("Записи хранятся в памяти. Повторы объединяются; секреты скрыты. Фильтр не удаляет сохранённые события.", style = MaterialTheme.typography.bodySmall)
+        } },
+        confirmButton = { androidx.compose.material3.TextButton(onClick = { settings = false }) { Text("Готово") } }
+    )
+    val listState = rememberLazyListState()
+
+    var lastLogsSize by remember { mutableIntStateOf(logs.size) }
+    var lastLogId by remember { mutableStateOf(logs.lastOrNull()?.id) }
+    var showScrollButton by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        if (logs.isNotEmpty()) {
+            listState.scrollToItem(logs.lastIndex)
+        }
+    }
+
+    val isAtBottom by remember {
+        derivedStateOf {
+            !listState.canScrollForward
+        }
+    }
+
+    LaunchedEffect(logs) {
+        val currentLastId = logs.lastOrNull()?.id
+        if (currentLastId != null && currentLastId != lastLogId) {
+            val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
+            val wasAtBottom = lastVisibleItem == null || lastVisibleItem.index >= lastLogsSize - 2
+
+            if (wasAtBottom) {
+                listState.scrollToItem(logs.lastIndex)
+            } else {
+                showScrollButton = true
+            }
+            lastLogId = currentLastId
+        }
+        lastLogsSize = logs.size
+    }
+
+    LaunchedEffect(isAtBottom) {
+        if (isAtBottom) showScrollButton = false
+    }
+
+    val topAppBarState = rememberTopAppBarState()
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(topAppBarState)
+
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            AppTopAppBar(
+                title = stringResource(R.string.logs_title),
+                onBack = onBack,
+                scrollBehavior = scrollBehavior,
+                actions = {
+                    IconButton(onClick = { settings = true }) {
+                        Icon(painterResource(R.drawable.settings_24px), contentDescription = "Настройки журнала")
+                    }
+                    var isCopied by remember { mutableStateOf(false) }
+                    
+                    val saveLauncher = rememberLauncherForActivityResult(
+                        contract = ActivityResultContracts.CreateDocument("text/plain")
+                    ) { uri ->
+                        if (uri != null) {
+                            scope.launch(Dispatchers.IO) {
+                                try {
+                                    context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+                                        outputStream.write(logs.joinToString("\n") { it.display }.toByteArray())
+                                    }
+                                    withContext(Dispatchers.Main) {
+                                        HapticUtil.perform(context, HapticUtil.Pattern.SUCCESS)
+                                    }
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
+                            }
+                        }
+                    }
+
+                    LaunchedEffect(isCopied) {
+                        if (isCopied) {
+                            kotlinx.coroutines.delay(1_500.milliseconds)
+                            isCopied = false
+                        }
+                    }
+                    IconButton(
+                        onClick = {
+                            HapticUtil.perform(context, HapticUtil.Pattern.CLICK)
+                            viewModel.clearLogs()
+                        },
+                        enabled = logs.isNotEmpty()
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.delete_24px),
+                            contentDescription = stringResource(R.string.clear)
+                        )
+                    }
+                    IconButton(
+                        onClick = {
+                            isCopied = true
+                            scope.launch {
+                                clipboard.setClipEntry(ClipData.newPlainText("TUNA VPN logs", logs.joinToString("\n") { it.display }).toClipEntry())
+                                HapticUtil.perform(context, HapticUtil.Pattern.SUCCESS)
+                            }
+                        },
+                        enabled = logs.isNotEmpty()
+                    ) {
+                        Icon(
+                            painterResource(if (isCopied) R.drawable.check_circle_24px else R.drawable.content_copy_24px),
+                            contentDescription = stringResource(R.string.copy),
+                            tint = when {
+                                isCopied -> MaterialTheme.colorScheme.primary
+                                !logs.isNotEmpty() -> MaterialTheme.colorScheme.onSurface.copy(alpha = ContentAlpha.disabled)
+                                else -> MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        )
+                    }
+                    IconButton(
+                        onClick = {
+                            HapticUtil.perform(context, HapticUtil.Pattern.CLICK)
+                            val timestamp = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault()).format(Date())
+                            saveLauncher.launch("tuna_vpn_logs_$timestamp.txt")
+                        },
+                        enabled = logs.isNotEmpty()
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.save_24px),
+                            contentDescription = stringResource(R.string.save),
+                            tint = if (logs.isNotEmpty()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface.copy(alpha = ContentAlpha.disabled)
+                        )
+                    }
+                }
+            )
+        },
+        floatingActionButton = {
+            val profiles by viewModel.profiles.collectAsStateWithLifecycle()
+            if (profiles.isNotEmpty()) {
+                CoreToggleButton(
+                    viewModel = viewModel,
+                    modifier = Modifier.navigationBarsPadding(),
+                    size = 86.dp,
+                    onClick = onToggleCore,
+                    isFloat = true,
+                    isVisible = true
+                )
+            }
+        },
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
+    ) { padding ->
+        if (logs.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    if (allLogs.isNotEmpty()) "Нет событий для выбранного фильтра" else stringResource(R.string.no_logs),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                )
+            }
+        } else {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            ) {
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .fillMaxWidth()
+                        .wrapContentWidth(Alignment.CenterHorizontally)
+                        .widthIn(max = 840.dp)
+                        .navigationBarsPadding(),
+                    contentPadding = PaddingValues(bottom = 148.dp)
+                ) {
+                    items(logs, key = { it.id }) { entry ->
+                        LogLine(line = entry.display)
+                    }
+                }
+
+                AnimatedVisibility(
+                    visible = showScrollButton,
+                    enter = fadeIn() + scaleIn(),
+                    exit = fadeOut() + scaleOut(),
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 100.dp)
+                ) {
+                    ElevatedButton(
+                        onClick = {
+                            scope.launch {
+                                if (logs.isNotEmpty()) {
+                                    listState.animateScrollToItem(logs.lastIndex)
+                                }
+                            }
+                        },
+                        colors = ButtonDefaults.elevatedButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        ),
+                        elevation = ButtonDefaults.elevatedButtonElevation(defaultElevation = 4.dp)
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.arrow_downward_24px),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.new_logs))
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun LogLine(line: String) {
+    val lower = line.lowercase()
+    val isHeader = line.startsWith("*")
+    val isInternalLog = lower.startsWith("* [")
+    val isError = lower.contains("ошибка") || lower.contains("error") ||
+                  lower.contains("критическая") || lower.contains("failed") ||
+                  lower.contains("fatal") || lower.contains("panic") ||
+                  lower.contains("did not complete") || lower.contains("could not")
+    val isWarning = lower.contains("watchdog") || lower.contains("перезапуск") ||
+                    lower.contains("quota") || lower.contains("warn") ||
+                    lower.contains(">>>") || lower.contains("stopped") ||
+                    lower.contains("connection lost") || lower.contains("reconnecting") ||
+                    lower.contains("restart") || lower.contains("timeout") ||
+                    lower.contains("captcha") || lower.contains("refused") ||
+                    lower.contains("offline")
+    val isSuccess = lower.contains("запущен") || lower.contains("подключен") ||
+                    lower.contains("success") || lower.contains("started") ||
+                    lower.contains("established") || lower.contains("connected") ||
+                    lower.contains("received handshake") || lower.contains("peer online") ||
+                    lower.contains("turn allocation up")
+
+    val textColor = when {
+        isError   -> MaterialTheme.colorScheme.error
+        isWarning -> MaterialTheme.extendedColorScheme.warning
+        isSuccess -> MaterialTheme.extendedColorScheme.success
+        isHeader  -> MaterialTheme.colorScheme.primary
+        else      -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 3.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        if (isHeader || isError || isWarning || isSuccess) {
+            Box(
+                modifier = Modifier
+                    .padding(top = 5.dp, end = 6.dp)
+                    .size(5.dp)
+                    .background(textColor, CircleShape)
+            )
+        } else {
+            Spacer(Modifier.width(11.dp))
+        }
+        SelectionContainer {
+            Text(
+                text = line,
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = when {
+                        isHeader || isInternalLog -> FontWeight.SemiBold
+                        else -> FontWeight.Normal
+                    }
+                ),
+                color = textColor
+            )
+        }
+    }
+}

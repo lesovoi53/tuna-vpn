@@ -1,0 +1,8 @@
+<resources>
+    <style name="TunaWindowAnimation">
+        <item name="android:activityOpenEnterAnimation">@anim/tuna_enter</item>
+        <item name="android:activityOpenExitAnimation">@anim/tuna_exit</item>
+        <item name="android:activityCloseEnterAnimation">@anim/tuna_return</item>
+        <item name="android:activityCloseExitAnimation">@anim/tuna_close</item>
+    </style>
+</resources>

@@ -1,0 +1,261 @@
+{
+  "schema": "tuna.subscription",
+  "schemaVersion": 1,
+  "subscriptionId": "35bdf0d3-ecca-5034-8eb0-92e2ca16203c",
+  "revision": 1,
+  "name": "DEMO groups — import only",
+  "complete": true,
+  "requiredCapabilities": [
+    "connection-groups-v1"
+  ],
+  "profiles": [
+    {
+      "id": "vless",
+      "name": "DEMO vless",
+      "uri": "vless://039c1645-7d05-5ed3-aeb0-4aef90b4ad93@192.0.2.11:443?type=tcp&security=tls&sni=example.invalid&fp=firefox"
+    },
+    {
+      "id": "hysteria2",
+      "name": "DEMO hysteria2",
+      "uri": "hysteria2://demo-pass@192.0.2.12:443?sni=example.invalid"
+    },
+    {
+      "id": "snell",
+      "name": "DEMO snell",
+      "uri": "snell://demo-pass@192.0.2.13:443?version=5"
+    },
+    {
+      "id": "mieru",
+      "name": "DEMO mieru",
+      "uri": "mierus://demo:demo-pass@192.0.2.14/?profile=demo&port=443&protocol=TCP"
+    },
+    {
+      "id": "trojan",
+      "name": "DEMO trojan",
+      "uri": "trojan://demo-pass@192.0.2.15:443?security=tls&sni=example.invalid&type=tcp"
+    },
+    {
+      "id": "shadowsocks",
+      "name": "DEMO shadowsocks",
+      "uri": "ss://aes-256-gcm:demo-pass@192.0.2.16:443"
+    },
+    {
+      "id": "tuic",
+      "name": "DEMO tuic",
+      "uri": "tuic://039c1645-7d05-5ed3-aeb0-4aef90b4ad93:demo-pass@192.0.2.17:443?sni=example.invalid&congestion_control=bbr"
+    },
+    {
+      "id": "anytls",
+      "name": "DEMO anytls",
+      "uri": "anytls://demo-pass@192.0.2.18:443?sni=example.invalid"
+    },
+    {
+      "id": "qwdtt-2",
+      "name": "DEMO qwdtt-2",
+      "uri": "qwdtt://config?peer=192.0.2.21%3A56000&pass=demo-pass&hashes=DEMO_HASH_NOT_REAL_00000001&workers=9"
+    },
+    {
+      "id": "qwdtt",
+      "name": "DEMO qwdtt",
+      "uri": "qwdtt://config?peer=192.0.2.22%3A56000&pass=demo-pass&hashes=DEMO_HASH_NOT_REAL_00000002&workers=18"
+    },
+    {
+      "id": "webdav-1",
+      "name": "DEMO webdav-1",
+      "uri": "webdav://demo:demo-pass@192.0.2.31:8443/dav/?poll-min=50ms&poll-max=200ms&backend=webdavs%3A%2F%2Fextra%3Ademo-pass%40storage-1.example.invalid%2Fdav%2F"
+    },
+    {
+      "id": "webdav-2",
+      "name": "DEMO webdav-2",
+      "uri": "webdav://demo:demo-pass@192.0.2.32:8443/dav/?poll-min=50ms&poll-max=200ms&backend=webdavs%3A%2F%2Fextra%3Ademo-pass%40storage-2.example.invalid%2Fdav%2F"
+    }
+  ],
+  "groups": [
+    {
+      "id": "VPN-URL_TEST",
+      "name": "DEMO VPN URL_TEST",
+      "category": "VPN",
+      "family": "VPN",
+      "type": "URL_TEST",
+      "memberIds": [
+        "vless",
+        "hysteria2",
+        "snell",
+        "mieru",
+        "trojan",
+        "shadowsocks",
+        "tuic",
+        "anytls"
+      ],
+      "routingProfileId": "vless",
+      "selectionMode": "BEST",
+      "automatic": false,
+      "testOnConnect": false,
+      "testUrl": "https://example.invalid/import-test-only",
+      "expectedStatus": 200,
+      "probeMethod": "HEAD",
+      "intervalSeconds": 300,
+      "timeoutSeconds": 8,
+      "holdSeconds": 120,
+      "confirmations": 2,
+      "improvementMs": 50,
+      "improvementPercent": 20,
+      "samples": 3,
+      "durationSeconds": 5,
+      "maxBytesPerCandidate": 10485760,
+      "allowMobile": false,
+      "freshnessSeconds": 600
+    },
+    {
+      "id": "VPN-SPEEDTEST",
+      "name": "DEMO VPN SPEEDTEST",
+      "category": "VPN",
+      "family": "VPN",
+      "type": "SPEEDTEST",
+      "memberIds": [
+        "vless",
+        "hysteria2",
+        "snell",
+        "mieru",
+        "trojan",
+        "shadowsocks",
+        "tuic",
+        "anytls"
+      ],
+      "routingProfileId": "vless",
+      "selectionMode": "BEST",
+      "automatic": false,
+      "testOnConnect": false,
+      "testUrl": "https://example.invalid/import-test-only",
+      "expectedStatus": 200,
+      "probeMethod": "GET",
+      "intervalSeconds": 300,
+      "timeoutSeconds": 8,
+      "holdSeconds": 120,
+      "confirmations": 2,
+      "improvementMs": 50,
+      "improvementPercent": 20,
+      "samples": 3,
+      "durationSeconds": 5,
+      "maxBytesPerCandidate": 10485760,
+      "allowMobile": false,
+      "freshnessSeconds": 600
+    },
+    {
+      "id": "QWDTT-URL_TEST",
+      "name": "DEMO QWDTT URL_TEST",
+      "category": "BYPASS",
+      "family": "QWDTT",
+      "type": "URL_TEST",
+      "memberIds": [
+        "qwdtt-2",
+        "qwdtt"
+      ],
+      "routingProfileId": "qwdtt-2",
+      "selectionMode": "BEST",
+      "automatic": false,
+      "testOnConnect": false,
+      "testUrl": "https://example.invalid/import-test-only",
+      "expectedStatus": 200,
+      "probeMethod": "HEAD",
+      "intervalSeconds": 300,
+      "timeoutSeconds": 8,
+      "holdSeconds": 120,
+      "confirmations": 2,
+      "improvementMs": 50,
+      "improvementPercent": 20,
+      "samples": 3,
+      "durationSeconds": 5,
+      "maxBytesPerCandidate": 10485760,
+      "allowMobile": false,
+      "freshnessSeconds": 600
+    },
+    {
+      "id": "QWDTT-SPEEDTEST",
+      "name": "DEMO QWDTT SPEEDTEST",
+      "category": "BYPASS",
+      "family": "QWDTT",
+      "type": "SPEEDTEST",
+      "memberIds": [
+        "qwdtt-2",
+        "qwdtt"
+      ],
+      "routingProfileId": "qwdtt-2",
+      "selectionMode": "BEST",
+      "automatic": false,
+      "testOnConnect": false,
+      "testUrl": "https://example.invalid/import-test-only",
+      "expectedStatus": 200,
+      "probeMethod": "GET",
+      "intervalSeconds": 300,
+      "timeoutSeconds": 8,
+      "holdSeconds": 120,
+      "confirmations": 2,
+      "improvementMs": 50,
+      "improvementPercent": 20,
+      "samples": 3,
+      "durationSeconds": 5,
+      "maxBytesPerCandidate": 10485760,
+      "allowMobile": false,
+      "freshnessSeconds": 600
+    },
+    {
+      "id": "WEBDAV-URL_TEST",
+      "name": "DEMO WEBDAV URL_TEST",
+      "category": "BYPASS",
+      "family": "WEBDAV",
+      "type": "URL_TEST",
+      "memberIds": [
+        "webdav-1",
+        "webdav-2"
+      ],
+      "routingProfileId": "webdav-1",
+      "selectionMode": "BEST",
+      "automatic": false,
+      "testOnConnect": false,
+      "testUrl": "https://example.invalid/import-test-only",
+      "expectedStatus": 200,
+      "probeMethod": "HEAD",
+      "intervalSeconds": 300,
+      "timeoutSeconds": 8,
+      "holdSeconds": 120,
+      "confirmations": 2,
+      "improvementMs": 50,
+      "improvementPercent": 20,
+      "samples": 3,
+      "durationSeconds": 5,
+      "maxBytesPerCandidate": 10485760,
+      "allowMobile": false,
+      "freshnessSeconds": 600
+    },
+    {
+      "id": "WEBDAV-SPEEDTEST",
+      "name": "DEMO WEBDAV SPEEDTEST",
+      "category": "BYPASS",
+      "family": "WEBDAV",
+      "type": "SPEEDTEST",
+      "memberIds": [
+        "webdav-1",
+        "webdav-2"
+      ],
+      "routingProfileId": "webdav-1",
+      "selectionMode": "BEST",
+      "automatic": false,
+      "testOnConnect": false,
+      "testUrl": "https://example.invalid/import-test-only",
+      "expectedStatus": 200,
+      "probeMethod": "GET",
+      "intervalSeconds": 300,
+      "timeoutSeconds": 8,
+      "holdSeconds": 120,
+      "confirmations": 2,
+      "improvementMs": 50,
+      "improvementPercent": 20,
+      "samples": 3,
+      "durationSeconds": 5,
+      "maxBytesPerCandidate": 10485760,
+      "allowMobile": false,
+      "freshnessSeconds": 600
+    }
+  ]
+}

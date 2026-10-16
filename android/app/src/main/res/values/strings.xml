@@ -1,0 +1,680 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Main Screen (Home) -->
+    <string name="app_settings_title">Settings</string>
+    <string name="turn_proxy_title" translatable="false">TUNA VPN</string>
+    <string name="info_desc">Info</string>
+    <string name="core_active">Tunnel active</string>
+    <string name="core_press_to_start">Tap to start</string>
+    <string name="core_stop">Stop</string>
+    <string name="core_active_stop">Tunnel active — tap to stop</string>
+    <string name="core_error_restart">Error — tap to restart</string>
+    <string name="core_captcha_required">Captcha required</string>
+    <string name="captcha_title">VK Check</string>
+    <string name="captcha_desc">Complete the check to continue</string>
+    <string name="start_core">Start tunnel</string>
+    <string name="xray_config_invalid">Invalid config</string>
+    <string name="repo_links">Repository links</string>
+
+    <string name="idle">Stopped</string>
+    <string name="starting">Starting…</string>
+    <string name="stopping">Stopping…</string>
+    <string name="core_restarting">Restarting…</string>
+    <string name="core_failed">Failed to start</string>
+    <string name="running">Running</string>
+    <string name="connecting">Connecting…</string>
+    <string name="status_waiting_for_network">Waiting for network…</string>
+
+    <!-- Permissions -->
+    <string name="permissions_title">Permissions</string>
+    <string name="permissions_desc">For stable operation</string>
+    <string name="permission_notifications">Notifications</string>
+    <string name="permission_battery">Battery</string>
+    <!-- Component and Core Names -->
+    <string name="android_client">Android client</string>
+    <string name="android_client_original">Android client (original)</string>
+    <string name="turnable_core">Tunnel core (Turnable)</string>
+    <string name="olcrtc_core">Tunnel core (olcRTC)</string>
+    <string name="webdav_core">Tunnel core (WebDAV)</string>
+    <string name="freeturn_core">Tunnel core (FreeTurn)</string>
+    <string name="qwdtt_core">Tunnel core (qWDTT)</string>
+    <string name="xray_core_name" translatable="false">vless-client</string>
+    <string name="xray_core_original" translatable="false">Xray-core</string>
+    <string name="hev_socks5_tunnel" translatable="false">hev-socks5-tunnel</string>
+    <!-- Buttons and Common Actions -->
+    <string name="btn_open">Open</string>
+    <string name="btn_close">Close</string>
+    <string name="btn_save">Save</string>
+    <string name="btn_next">Next</string>
+    <string name="btn_proceed">Proceed</string>
+    <string name="reset_settings">Reset settings</string>
+    <string name="reset">Reset</string>
+    <string name="reset_all_settings_title">Reset all settings?</string>
+    <string name="reset_all_settings_desc">All profiles, history, and settings will be completely deleted. The app will restart.</string>
+    <string name="cancel">Cancel</string>
+    <!-- VPN Mode (VpnService) -->
+    <string name="vpn_mode">VPN Mode</string>
+    <string name="vpn_apps_exceptions">Without VPN</string>
+    <string name="vpn_apps_hint">App routing</string>
+    <string name="vpn_apps_inclusions">Via VPN</string>
+    <string name="search_apps">Search apps</string>
+    <string name="no_apps_found">No apps found</string>
+    <string name="hide_system_apps">Hide system apps</string>
+    <string name="bypass_mode">Routing mode</string>
+    <string name="vpn_mode_bypass_desc">Selected apps will work WITHOUT VPN</string>
+    <string name="vpn_mode_include_desc">ONLY selected apps will use VPN</string>
+    <string name="filtering_enabled">Use routing</string>
+    <string name="group_apps_by_letter">Group by letter</string>
+    <string name="clear_list">Deselect all apps</string>
+    <string name="copy_list">Copy list</string>
+    <string name="list_copied">List copied</string>
+    <string name="import_from_clipboard">Import from clipboard</string>
+    <string name="apps_imported_count">Added apps: %1$d</string>
+    <string name="no_apps_imported">No packages found to exclude</string>
+    <string name="vpn_start">On VPN</string>
+    <string name="vpn_stop">Off VPN</string>
+    <string name="vpn_status_xray_needed">Enable Xray</string>
+
+    <string name="import_file">From file</string>
+    <string name="import_clipboard">From clipboard</string>
+    <string name="import_success">Configuration imported</string>
+    <string name="import_profiles_success">Profiles imported</string>
+    <string name="import_subscription_success">Subscription added</string>
+    <string name="import_error">Import error</string>
+    <string name="import_error_no_link">No valid link found in clipboard</string>
+    <string name="import_error_invalid_profile">Invalid profile format</string>
+    <string name="import_error_connection">Connection failed. Check your internet.</string>
+    <string name="import_error_server">Server returned an error: %1$d</string>
+    <string name="import_error_empty">Server returned empty response</string>
+    <string name="profile_import_partial_failure">Imported, but %1$d of %2$d files failed</string>
+
+    <!-- wireturn:// / wt:// deep link import confirmation -->
+    <plurals name="deep_link_import_profiles_count">
+        <item quantity="one">%d profile</item>
+        <item quantity="other">%d profiles</item>
+    </plurals>
+    <string name="deep_link_import_profiles_title_with_site">Add %1$s from %2$s?</string>
+    <string name="deep_link_import_profiles_title_no_site">Add %1$s?</string>
+    <string name="deep_link_import_profiles_desc">The following will be added:\n%1$s</string>
+    <string name="deep_link_import_subscription_title">Add subscription \"%1$s\"?</string>
+    <string name="deep_link_import_subscription_desc">It will be added and kept up to date automatically.</string>
+    <string name="deep_link_import_invalid_title">Invalid link</string>
+    <string name="deep_link_import_invalid">This link doesn\'t contain a valid TUNA VPN profile or subscription</string>
+    <string name="btn_add">Add</string>
+
+    <string name="subscription_update_no_changes">No changes in subscription</string>
+    <string name="subscription_update_summary">Updated: +%1$d, −%2$d (%3$d total)</string>
+
+    <!-- WireGuard Setup -->
+    <string name="xray_import_config">Xray configuration import</string>
+    <string name="wg_interface" translatable="false">Interface</string>
+    <string name="wg_private_key" translatable="false">Private Key</string>
+    <string name="wg_private_key_placeholder" translatable="false">WG_PRIVATE_KEY</string>
+    <string name="wg_address" translatable="false">Address</string>
+    <string name="wg_address_placeholder" translatable="false">10.0.0.1/32</string>
+    <string name="wg_mtu" translatable="false">MTU</string>
+    <string name="wg_mtu_placeholder" translatable="false">1280</string>
+    <string name="wg_peer" translatable="false">Peer</string>
+    <string name="wg_public_key" translatable="false">Public Key</string>
+    <string name="wg_public_key_placeholder" translatable="false">WG_PUBLIC_KEY</string>
+    <string name="wg_endpoint">Endpoint (local)</string>
+    <string name="wg_persistent_keepalive" translatable="false">Persistent Keepalive</string>
+    <string name="wg_persistent_keepalive_placeholder" translatable="false">25</string>
+    <string name="wg_not_used_with_olcrtc">WireGuard is not used with olcRTC</string>
+    <string name="wg_not_used_with_webdav">WireGuard is not used with WebDAV</string>
+    <string name="wg_not_used_with_qwdtt">WireGuard is not used with qWDTT</string>
+
+    <!-- Xray Setup (SOCKS/HTTP) -->
+    <string name="xray_title" translatable="false">Маршрутизация · Xray</string>
+    <string name="xray_http" translatable="false">HTTP</string>
+    <string name="socks5" translatable="false">SOCKS5</string>
+    <string name="xray_proxy_auth">Proxy authentication</string>
+    <string name="xray_proxy_auth_desc">Protect proxy with login and password</string>
+    <string name="xray_proxy_user">Username</string>
+    <string name="proxy_user_placeholder" translatable="false">Auto-generated</string>
+    <string name="xray_proxy_pass">Password</string>
+    <string name="proxy_pass_placeholder" translatable="false">Auto-generated</string>
+
+
+    <!-- Client Setup (Backend/Proxy) -->
+    <string name="route_title">Route</string>
+    <string name="route_add">Add Route</string>
+    <string name="route_delete">Delete Route</string>
+    <string name="route_edit">Edit Route</string>
+    <string name="route_id_label">Route ID</string>
+    <string name="route_name_label">Route Name</string>
+    <string name="route_socket_label">Socket</string>
+    <string name="route_transport_label">Transport</string>
+    <string name="user_uuid_label">User UUID</string>
+    <string name="user_uuid_desc">User authorization on the Turnable server</string>
+    <string name="call_id_label">Call ID</string>
+    <string name="call_id_desc">VK: «https://vk.com/call/join/[ID]»</string>
+    <string name="connection_type_label">Connection type</string>
+    <string name="connection_type_desc">Direct mode is highly discouraged</string>
+    <string name="encryption_label">Encryption mode</string>
+    <string name="encryption_desc">Encryption scope</string>
+    <string name="pub_key_label">Public key</string>
+    <string name="pub_key_desc">Key for a secure connection with the server</string>
+    <string name="peers_label">Parallel connections</string>
+    <string name="peers_desc">Higher value can improve speed</string>
+    <string name="gateway_label">Server address</string>
+    <string name="gateway_desc">IP and port of the server</string>
+    <string name="proto_label">Transport protocol</string>
+    <string name="proto_desc">Required for Relay type. SRTP is highly recommended</string>
+    <string name="history_label">History</string>
+    <string name="kernel_turnable" translatable="false">Turnable</string>
+    <string name="kernel_olcrtc" translatable="false">olcRTC</string>
+    <string name="kernel_webdav" translatable="false">WebDAV</string>
+    <string name="kernel_freeturn" translatable="false">FreeTurn</string>
+    <string name="kernel_qwdtt" translatable="false">qWDTT</string>
+    <string name="webdav_url_label">WebDAV URL</string>
+    <string name="webdav_url_desc">URL of the WebDAV storage</string>
+    <string name="webdav_login_label">Login</string>
+    <string name="webdav_password_label">Password</string>
+    <string name="webdav_advanced_settings">Advanced Settings</string>
+    <string name="freeturn_advanced_settings">Advanced Settings</string>
+    <string name="webdav_poll_min">Poll min</string>
+    <string name="webdav_poll_max">Poll max</string>
+    <string name="webdav_chunk_size">Chunk size</string>
+    <string name="webdav_puts">Puts</string>
+    <string name="webdav_read_min">Read min</string>
+    <string name="webdav_read_max">Read max</string>
+    <string name="webdav_coalesce">Coalesce</string>
+    <string name="webdav_timeout">Timeout</string>
+    <string name="webdav_encrypt">Encryption (AES-256-GCM)</string>
+    <string name="webdav_encrypt_desc">Шифрование должно совпадать на клиенте и сервере выхода совместимой версии. Ключ выводится из пароля хранилища.</string>
+    <string name="webdav_dns_label">Bootstrap DNS хранилища</string>
+    <string name="webdav_dns_desc">IP:порт, udp://IP:порт или tcp://IP:порт. Пусто — общий Bootstrap DNS, затем системный DNS. Не меняет DNS трафика внутри VPN.</string>
+    <string name="webdav_backends_title">Additional backends</string>
+    <string name="webdav_backends_desc">Хранилища переключаются при новом сеансе туннеля. Открытые TCP-соединения не переносятся; скорости каналов не суммируются.</string>
+    <string name="webdav_backend_add">Add backend</string>
+    <string name="webdav_backend_edit">Edit backend</string>
+    <string name="webdav_backend_delete">Delete backend</string>
+    <string name="webdav_backend_label_label">Label (optional)</string>
+    <string name="webdav_backend_url_label">WebDAV URL</string>
+    <string name="olcrtc_id_label">Room ID</string>
+    <string name="olcrtc_key_label">Auth Key</string>
+    <string name="olcrtc_dns_label">DNS Server</string>
+    <string name="olcrtc_dns_desc">Used to resolve the signaling provider before the tunnel is up - must stay reachable under allow-list-only restrictions. Leave blank to use the global DNS server (Connection Settings).</string>
+    <string name="olcrtc_dns_placeholder" translatable="false">77.88.8.8:53</string>
+    <string name="olcrtc_carrier_label">Carrier</string>
+    <string name="turnable_carrier_label">Carrier</string>
+    <string name="olcrtc_transport_label">Transport</string>
+    <string name="olcrtc_restart_on_connection_errors_label">Restart on errors</string>
+    <string name="olcrtc_restart_on_connection_errors_desc">Restart the connection after repeated \"remote not ready\" errors</string>
+    <string name="olcrtc_vp8_settings_title">VP8Channel Parameters</string>
+    <string name="olcrtc_sei_settings_title">SEIChannel Parameters</string>
+    <string name="olcrtc_video_settings_title">VideoChannel Parameters</string>
+    <string name="olcrtc_vp8_fps">VP8 FPS</string>
+    <string name="olcrtc_vp8_batch">VP8 Batch</string>
+    <string name="olcrtc_sei_fps">SEI FPS</string>
+    <string name="olcrtc_sei_batch">SEI Batch</string>
+    <string name="olcrtc_sei_frag">SEI Frag</string>
+    <string name="olcrtc_sei_ack_ms">SEI Ack (ms)</string>
+    <string name="olcrtc_video_codec">Video Codec</string>
+    <string name="olcrtc_video_width">Video Width</string>
+    <string name="olcrtc_video_height">Video Height</string>
+    <string name="olcrtc_video_fps">Video FPS</string>
+    <string name="olcrtc_video_qr_recovery">QR Recovery</string>
+    <string name="olcrtc_video_qr_size">QR Size</string>
+    <string name="olcrtc_video_tile_module">Tile Module</string>
+    <string name="olcrtc_video_tile_rs">Tile RS</string>
+    <string name="freeturn_links_label">Call IDs</string>
+    <string name="freeturn_links_desc">VK: «https://vk.com/call/join/[ID]». Multiple IDs can be separated by commas.</string>
+    <string name="freeturn_sub_label">Subscription URL</string>
+    <string name="freeturn_sub_desc">URL to fetch servers automatically</string>
+    <string name="freeturn_peer_label">Server address</string>
+    <string name="freeturn_peer_desc">IP and port of the server</string>
+    <string name="freeturn_n_label">Parallel connections</string>
+    <string name="freeturn_n_desc">Higher value can improve speed</string>
+    <string name="freeturn_spc_label">Connections per VK persona</string>
+    <string name="freeturn_spc_desc">How many parallel connections share one VK auth before a new one is requested. Fewer auths means lower captcha/ban risk, but they all go down together</string>
+    <string name="freeturn_obf_profile_label">Obf Profile</string>
+    <string name="freeturn_obf_key_label">Obf Key (hex)</string>
+    <string name="freeturn_obf_key_desc">32 bytes hex key (64 characters)</string>
+    <string name="freeturn_dns_mode_label">DNS Mode</string>
+    <string name="freeturn_dns_mode_desc">Resolver for the client\'s own VK auth requests before the tunnel is up - not routing for your tunneled traffic. Auto tries UDP first, falls back to DoH</string>
+    <string name="freeturn_dns_servers_label">DNS Servers</string>
+    <string name="freeturn_dns_servers_desc">Custom UDP resolvers for that bootstrap lookup, comma separated - needed if your carrier blocks third-party DNS/DoH</string>
+    <string name="freeturn_dns_servers_placeholder" translatable="false">8.8.8.8,77.88.8.8:53</string>
+    <string name="freeturn_client_id_label">Client ID</string>
+    <string name="freeturn_client_id_desc">Unique identifier for server allowlist</string>
+    <string name="freeturn_obf_timing_label">Obf Timing</string>
+    <string name="freeturn_obf_timing_desc">Packet delay for RTP mimicry (e.g. 20ms); 0=off</string>
+    <string name="freeturn_platform_label">Platform</string>
+    <string name="freeturn_platform_desc">Device class the VK auth persona pretends to be (UA, TLS fingerprint, client hints). Only affects sign-in, not the tunnel itself</string>
+    <string name="freeturn_transport_label">Transport to TURN relay</string>
+    <string name="freeturn_transport_desc">TCP/TLS is more compatible; UDP can be faster but is more often blocked by DPI</string>
+    <string name="freeturn_manual_captcha_label">Manual Captcha</string>
+    <string name="freeturn_manual_captcha_desc">Solve VK captcha in app browser</string>
+    <string name="freeturn_mode_label">Tunnel mode</string>
+    <string name="freeturn_kcp_settings_title">KCP (TCP mode)</string>
+    <string name="freeturn_kcp_nodelay_label">Fast mode (nodelay)</string>
+    <string name="freeturn_kcp_nodelay_desc">Lower latency, more overhead</string>
+    <string name="freeturn_kcp_interval_label">Interval (ms)</string>
+    <string name="freeturn_kcp_interval_desc">Lower = more responsive, more overhead</string>
+    <string name="freeturn_kcp_resend_label">Fast resend threshold</string>
+    <string name="freeturn_kcp_resend_desc">Duplicate ACKs before resend; 0 = off</string>
+    <string name="freeturn_kcp_nc_label">Disable congestion control</string>
+    <string name="freeturn_kcp_nc_desc">Can help on lossy mobile links</string>
+    <string name="freeturn_kcp_sndwnd_label">Send window (packets)</string>
+    <string name="freeturn_kcp_sndwnd_desc">Higher = more throughput, more memory</string>
+    <string name="freeturn_kcp_rcvwnd_label">Receive window (packets)</string>
+    <string name="freeturn_kcp_rcvwnd_desc">Higher = more throughput, more memory</string>
+    <string name="freeturn_kcp_mtu_label">Segment MTU (bytes)</string>
+    <string name="freeturn_kcp_mtu_desc">Must match the server</string>
+    <string name="freeturn_kcp_acknodelay_label">Send ACKs immediately</string>
+    <string name="freeturn_kcp_acknodelay_desc">Lower latency, more overhead</string>
+    <string name="qwdtt_peer_label">Server address</string>
+    <string name="qwdtt_peer_desc">IP and port of the server</string>
+    <string name="qwdtt_hashes_label">Call IDs</string>
+    <string name="qwdtt_hashes_desc">VK: «https://vk.com/call/join/[ID]». Multiple IDs can be separated by commas.</string>
+    <string name="qwdtt_password_label">Connection password</string>
+    <string name="qwdtt_workers_label">Parallel connections</string>
+    <string name="qwdtt_workers_desc">Higher value can improve speed</string>
+    <string name="qwdtt_advanced_settings">Advanced Settings</string>
+    <string name="qwdtt_obfs_label">Obfuscation</string>
+    <string name="qwdtt_turn_tcp_label">Transport to TURN relay</string>
+    <string name="qwdtt_turn_tcp_desc">TCP is more compatible with restrictive networks; UDP can be faster</string>
+    <string name="qwdtt_notls_label">Direct mode (no DTLS)</string>
+    <string name="qwdtt_notls_desc">Only enable if the server was started with -listen-direct - otherwise the connection will fail</string>
+    <string name="qwdtt_manual_captcha_label">Manual Captcha</string>
+    <string name="qwdtt_manual_captcha_desc">Always solve VK captcha in app browser instead of letting the core try to solve it automatically first</string>
+    <string name="qwdtt_go_dns_label">DNS resolver</string>
+    <string name="qwdtt_go_dns_desc">Resolver for VK requests before the tunnel is up: yandex, cloudflare, google, doh-yandex, doh-cloudflare, doh-google, custom:IP or doh:URL</string>
+    <string name="local_listen_address">Local listen address</string>
+    <string name="local_port_help_text">Local address of the additional qWDTT listener. This is not a remote server address or a DNS resolver.</string>
+    <string name="local_port_help_secondary">Usually no change is needed. Configure the local SOCKS5 address and authentication separately below.</string>
+    <string name="keep_cpu_awake_title">Keep device awake</string>
+    <string name="keep_cpu_awake_desc">Off by default. Keeps the CPU awake while VPN is running, without turning on the screen. Increases battery usage. Applies immediately; brief startup and recovery wake locks remain automatic.</string>
+    <string name="client_socks_help_text">WebDAV and qWDTT don\'t use a VPN protocol - they run a local SOCKS5 proxy directly at this address.</string>
+    <string name="client_socks_help_secondary">Xray uses this address as the upstream for Dual-route. Xray isn\'t required for full-device VPN routing - VPN mode can connect to this SOCKS5 proxy directly. You can also point any other app that supports SOCKS5 proxies at the same address.</string>
+
+    <!-- General Actions -->
+    <string name="copy">Copy</string>
+    <string name="share">Share</string>
+    <string name="save">Save</string>
+    <string name="clear">Clear</string>
+    <string name="more_options">More options</string>
+
+    <!-- Logs Screen (Logs) -->
+    <string name="logs_title">Logs</string>
+    <string name="no_logs">No logs</string>
+    <string name="new_logs">New logs</string>
+
+    <!-- Onboarding Screen (Onboarding) -->
+    <string name="onboarding_title" translatable="false">TUNA VPN</string>
+    <string name="start">Start</string>
+
+    <!-- OTA Update -->
+    <string name="update_title">Update</string>
+    <string name="update_tap_to_check">Tap to check</string>
+    <string name="update_checking">Checking…</string>
+    <string name="update_available">Version %1$s available</string>
+    <string name="update_download">Download</string>
+    <string name="update_downloading_short">Downloading…</string>
+    <string name="update_ready_desc_short">Ready to install</string>
+    <string name="update_install">Install</string>
+    <string name="update_no_update">Latest version installed</string>
+    <string name="update_error">Error: %1$s</string>
+
+    <!-- UI and Privacy -->
+    <string name="dynamic_theme_title">System colors</string>
+    <string name="dynamic_theme_desc">Material You</string>
+    <string name="app_appearance">App Appearance</string>
+    <string name="theme_title">Theme</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_system">System</string>
+    <string name="localization_title">Localization</string>
+    <string name="lang_title">Interface Language</string>
+    <string name="lang_system">System</string>
+    <string name="lang_en">English</string>
+    <string name="lang_ru">Russian</string>
+    <string name="privacy_mode_title">Privacy mode</string>
+    <string name="privacy_mode_desc">Hides IP and ports</string>
+    <string name="profiles_gesture_title">Swipe up for profiles</string>
+    <string name="profiles_gesture_desc">Swiping up from the bottom of the home screen opens the profiles list</string>
+    <string name="unstable_updates_title">Beta versions</string>
+    <string name="unstable_updates_desc">Check for unstable updates</string>
+    <string name="wait_for_network_title">Wait for network</string>
+    <string name="wait_for_network_desc">When connection is lost, the tunnel will wait for Wi-Fi or mobile network availability</string>
+    <string name="restart_on_network_change_title">Restart on network change</string>
+    <string name="restart_on_network_change_desc">Automatically restart tunnel when switching between Wi-Fi and mobile network</string>
+
+    <string name="client_dns_label">DNS server</string>
+    <string name="client_socks_auth">SOCKS5 authentication</string>
+    <string name="client_socks_auth_desc">Protect the kernel\'s own SOCKS5 with login and password</string>
+    <string name="client_socks_auth_not_supported_by_kernel">Not applicable - %1$s\'s SOCKS5 doesn\'t support authentication</string>
+    <string name="client_socks_user">Username</string>
+    <string name="client_socks_pass">Password</string>
+
+    <string name="go_internal_dns_title">Go internal resolver</string>
+    <string name="go_internal_dns_desc">Force Go core to use its internal resolver. Can help with IPv6 issues.</string>
+
+    <string name="custom_certs_title">Built-in certificate set</string>
+    <string name="custom_certs_desc">Ensures SSL works on older devices. Disable if you want to use only certificates installed in the Android system.</string>
+
+    <string name="network_settings_title">Network</string>
+
+    <!-- Captcha Setup -->
+    <string name="captcha_settings_title">Captcha appearance</string>
+    <string name="captcha_style_mod_title">WebView styling</string>
+    <string name="captcha_style_mod_desc">Hides unnecessary VK elements and adapts the UI to the app theme</string>
+    <string name="captcha_force_tint_title">Color scheme</string>
+    <string name="captcha_force_tint_desc">Choose how to tint captcha elements</string>
+    <string name="captcha_color_original">Original</string>
+    <string name="captcha_color_primary">Primary</string>
+
+    <!-- Ping check -->
+    <string name="ping_error">Error</string>
+    <string name="ping_ms">%1$d ms</string>
+
+    <!-- Errors and system messages -->
+    <string name="error_core_crashed">Tunnel crashed %1$d times — check settings</string>
+    <string name="error_settings_empty">Client settings not filled</string>
+    <string name="error_socks_public_requires_auth">SOCKS5 auth is required when the listen address is not localhost</string>
+    <string name="error_socks_public_no_auth_support">This kernel\'s SOCKS5 doesn\'t support authentication - use a localhost address</string>
+    <string name="error_core_not_started">Tunnel failed to start</string>
+    <string name="log_xray_invalid_config">* [Xray] Invalid or missing config, startup canceled</string>
+    <string name="error_update_url_not_found">Update URL not found</string>
+    <string name="error_update_file_not_found">Update file not found</string>
+    <string name="error_no_connection">No server connection</string>
+    <string name="error_apk_not_found">APK not found in release</string>
+    <string name="error_download_failed">Download error: %1$s</string>
+    <string name="log_core_command">* [Core] Command: %1$s</string>
+    <string name="log_core_start">* [Core] TUNNEL STARTING: %1$s</string>
+    <string name="log_core_suppressed">* [Core] TUNNEL SUPPRESSED (DIRECT ROUTE)</string>
+    <string name="log_core_stopped">* [Core] PROCESS STOPPED (Code: %1$d)</string>
+    <string name="log_core_startup_failed">* [Core] Startup error, watchdog not activated</string>
+    <string name="log_core_quick_exit">* [Core] Quick exit (%1$dms) — check connection details and settings</string>
+    <string name="log_core_watchdog_limit">* [Core] WATCHDOG: attempt limit exceeded (%1$d), stopping</string>
+    <string name="log_core_watchdog_restart">* [Core] WATCHDOG: restarting in %1$dms (attempt %2$d/%3$d)</string>
+    <string name="log_core_network_change">* [Core] NETWORK CHANGE — RESTARTING</string>
+    <string name="log_core_connection_timeout">* [Core] CONNECTION TIMEOUT (2m) — RESTARTING</string>
+    <string name="log_core_no_network_waiting">* [Core] NO NETWORK — WAITING</string>
+    <string name="log_core_stop_ui">* [Core] STOPPED</string>
+    <string name="log_core_too_many_remote_not_ready">* [Core] TOO MANY \"REMOTE NOT READY\" / \"OPENSTREAM FAILED\" — restarting</string>
+    <string name="log_core_reconnect_restart">* [Core] Client reconnection detected — restarting</string>
+    <string name="log_core_webdav_too_many_refused">* [Core] TOO MANY \"CONNECTION REFUSED\" — restarting</string>
+    <string name="log_core_webdav_backends_unreachable">* [Core] ALL WEBDAV BACKENDS UNREACHABLE — restarting</string>
+    <string name="log_core_profile_summary">* [Core] Profile summary: Kernel: %1$s, Xray: %2$s</string>
+    <string name="log_core_foreground_failed">* [Core] Failed to start foreground: %1$s</string>
+    <string name="log_core_dual_route_config_changed">* [Core] Dual-route config changed, suppressing until route is determined</string>
+    <string name="log_core_config_changed">* [Core] Config changed, restarting binary</string>
+
+    <string name="log_xray_starting">* [Xray] Starting: %1$s</string>
+    <string name="log_xray_exited">* [Xray] Process exited with code %1$d</string>
+    <string name="log_xray_error">* [Xray] Error: %1$s</string>
+    <string name="log_xray_stopped_by_user">* [Xray] Stopped</string>
+    <string name="log_xray_watchdog_limit">* [Xray] Watchdog limit reached (%1$d)</string>
+    <string name="log_xray_watchdog_restart">* [Xray] Restarting in %1$dms (attempt %2$d/%3$d)</string>
+    <string name="log_xray_config_change_restart">* [Xray] Restarting due to config change</string>
+    <string name="log_xray_foreground_failed">* [Xray] Failed to start foreground: %1$s</string>
+
+    <string name="log_vpn_service_active">* [VPN] Service already running or starting (status=%1$s, job=%2$b)</string>
+    <string name="log_vpn_foreground_failed">* [VPN] Failed to start foreground: %1$s</string>
+    <string name="log_vpn_establishing">* [VPN] Establishing TUN (hev-socks5-tunnel)</string>
+    <string name="log_vpn_filtering_disabled">* [VPN] App filtering disabled: all traffic through VPN</string>
+    <string name="log_vpn_exclude_failed">* [VPN] Could not exclude %1$s: %2$s</string>
+    <string name="log_vpn_include_failed">* [VPN] Could not include %1$s: %2$s</string>
+    <string name="log_vpn_include_empty">* [VPN] Include mode with empty list: no apps will use VPN</string>
+    <string name="log_vpn_tun_failed">* [VPN] Failed to establish TUN interface (hev-socks5-tunnel)</string>
+    <string name="log_vpn_starting">* [VPN] Starting (hev-socks5-tunnel, fd=%1$d, proxy=%2$s)</string>
+    <string name="log_vpn_start">* [VPN] Started (hev-socks5-tunnel)</string>
+    <string name="log_vpn_error">* [VPN] Error: %1$s (hev-socks5-tunnel)</string>
+    <string name="log_vpn_stopped">* [VPN] TUN stopped (hev-socks5-tunnel)</string>
+    <string name="log_vpn_stop_error">* [VPN] Stop error: %1$s (hev-socks5-tunnel)</string>
+    <string name="log_vpn_restarting_config">* [VPN] Restarting due to settings change or recovery</string>
+    <string name="log_vpn_retarget">* [VPN] Switching relay target without dropping TUN, proxy=%1$s</string>
+    <string name="log_vpn_retarget_no_tun">* [VPN] Target update requested but TUN isn\'t up - ignored</string>
+
+    <string name="log_dual_route_direct_established">* [DualRoute] Direct connection established, suppressing tunnel</string>
+    <string name="log_dual_route_direct_lost">* [DualRoute] Direct connection lost, unsuppressing tunnel</string>
+    <string name="log_dual_route_unreachable_start_tunnel">* [DualRoute] Routes unreachable, starting tunnel</string>
+    <string name="log_dual_route_check_failed">* [DualRoute] Failed to trigger check: %1$s</string>
+
+    <string name="error_invalid_auth_key">Invalid authorization key</string>
+    <string name="log_core_slow_network_watchdog">* [Core] SLOW NETWORK DETECTED — increasing watchdog delay</string>
+    <string name="error_turnable_failed">Turnable error: %1$s</string>
+    <string name="error_room_not_found">Room not found</string>
+    <string name="error_turnable_vk_captcha_failed">VK captcha failed</string>
+
+    <string name="error_release_info_failed">Could not get release information</string>
+    <string name="error_process_no_output">Process finished with no output (code: %1$d)</string>
+    <string name="error_critical_format">* CRITICAL ERROR: %1$s</string>
+    <string name="error_connecting">Connection error</string>
+    <string name="error_platform_unavailable">Platform unavailable</string>
+    <string name="error_kernel_or_settings">Problem with core or settings</string>
+    <string name="error_webdav_backend_unreachable">WebDAV backend is unreachable</string>
+    <string name="error_webdav_server_unavailable">WebDAV tunnel server is unavailable</string>
+
+    <!-- Notifications -->
+    <string name="notification_title" translatable="false">TUNA VPN</string>
+    <string name="notification_channel_description">Status and management notification</string>
+    <string name="captcha_channel_name">Captcha notifications</string>
+    <string name="captcha_channel_description">Notifications for captcha requirements</string>
+    <string name="xray_protocol_label">Protocol</string>
+    <string name="wg_short" translatable="false">WG</string>
+    <string name="vpn_short" translatable="false">VPN</string>
+    <string name="captcha_notification_title">Captcha required</string>
+    <string name="captcha_notification_text">Tap to complete check</string>
+    <string name="error_notification_title">Startup failed</string>
+    <string name="tile_active">Active</string>
+    <string name="tile_captcha">Captcha!</string>
+    <string name="notification_restart">Restarting (%1$d/%2$d)…</string>
+    <string name="notification_network_change">Network change, reconnecting…</string>
+    <string name="vless" translatable="false">VLESS</string>
+    <string name="trojan" translatable="false">Trojan</string>
+    <string name="hysteria2" translatable="false">Hysteria2</string>
+    <string name="uri" translatable="false">URI</string>
+    <!-- UI elements and formatting -->
+    <string name="dash" translatable="false">—</string>
+    <string name="ping_unknown" translatable="false">\?</string>
+    <string name="version_format" translatable="false">v%1$s</string>
+    <string name="clipboard_label_socks5">Xray SOCKS5</string>
+    <string name="clipboard_label_http">Xray HTTP</string>
+
+    <string name="core_auto_launch_active">Auto-launch active</string>
+    <string name="settings_auto_launch_title">Auto-launch</string>
+    <string name="settings_auto_launch_desc">Start tunnel only when internet is restricted</string>
+    <string name="settings_auto_launch_url">Check URL</string>
+    <string name="settings_auto_launch_interval">Check interval (min)</string>
+    <string name="diagnostics_settings_title">Diagnostics</string>
+    <string name="settings_ping_url">Ping address</string>
+    <string name="settings_country_detection_title">Exit country detection</string>
+    <string name="country_detection_auto">Auto (try all)</string>
+    <string name="country_detection_cloudflare">Cloudflare</string>
+    <string name="country_detection_ipinfo" translatable="false">ipinfo.io</string>
+    <string name="country_detection_ipwhois" translatable="false">ipwho.is</string>
+    <string name="country_detection_ipsb" translatable="false">ip.sb</string>
+    <string name="country_detection_ipapico" translatable="false">ipapi.co</string>
+    <string name="auto_launch_override_title">Manual control disabled</string>
+    <string name="auto_launch_override_desc">Tunnel is currently managed by auto-launch. To perform manual control, you need to disable auto-launch.</string>
+    <string name="auto_launch_disable_and_continue">Disable and continue</string>
+
+    <!-- Xray link setup (VLESS / Trojan / Hysteria2) -->
+    <string name="xray_uri_config_label">Configuration URI</string>
+    <string name="xray_uri_config_supported_protocols">Supported: VLESS, Trojan, Hysteria2</string>
+    <string name="xray_uri_link_placeholder">vless://…</string>
+    <string name="xray_uri_dual_route">Dual-route mode</string>
+    <string name="xray_uri_dual_route_settings_title">Dual Route settings</string>
+    <string name="xray_uri_dual_route_short">Dual-route</string>
+    <string name="xray_uri_dual_route_desc">Prefer a direct connection to the server, falling back to local tunnel if direct route is restricted</string>
+    <string name="xray_uri_direct_address">Direct server address</string>
+    <string name="xray_uri_direct_address_placeholder" translatable="false">292.313.32.45:443</string>
+    <string name="xray_uri_hc_interval">Health check interval (sec)</string>
+    <string name="xray_uri_hc_destination">Health check URL</string>
+    <string name="xray_uri_hc_destination_desc">URL probed by the load balancer to pick the healthy route</string>
+    <string name="xray_uri_socks5_chain" translatable="false">SOCKS5 chain</string>
+    <string name="xray_uri_socks5_chain_short" translatable="false">Chain</string>
+    <string name="xray_uri_socks5_chain_desc">Route this link\'s connection through the kernel\'s local SOCKS5 instead of using it directly</string>
+    <string name="xray_uri_socks5_chain_hysteria2_unsupported">Not supported for Hysteria2 links</string>
+
+    <!-- Profile summary tags (kernel-specific non-default options) - deliberately untranslated,
+         same as other short jargon-y kernel tags (e.g. xray_uri_socks5_chain_short above). -->
+    <string name="kernel_tag_call_count" translatable="false">×%1$d</string>
+    <string name="kernel_tag_legacy_codec" translatable="false">Legacy Codec</string>
+    <string name="kernel_tag_full_encryption" translatable="false">Full Enc</string>
+    <string name="kernel_tag_no_auto_restart" translatable="false">No Auto-Restart</string>
+    <string name="kernel_tag_encrypted" translatable="false">Encrypted</string>
+    <string name="kernel_tag_no_tls" translatable="false">No TLS</string>
+    <string name="kernel_tag_turn_tcp" translatable="false">TURN-TCP</string>
+    <string name="kernel_tag_video_obfs" translatable="false">Video Obfs</string>
+    <string name="kernel_tag_qr" translatable="false">QR</string>
+    <string name="kernel_tag_tile" translatable="false">Tile</string>
+
+    <string name="xray_uri_mux">Mux concurrency</string>
+    <string name="xray_uri_mux_desc">Enable Mux multiplexing. 0 disables, >0 sets concurrency. Incompatible with XTLS Vision.</string>
+    <string name="xray_uri_parse_from_link">Parse from link</string>
+    <string name="direct_route_active">Direct route</string>
+
+    <!-- Warnings -->
+    <string name="warn_unsupported_arch_title">Architecture not supported</string>
+    <string name="warn_unsupported_arch_desc">Your device uses an architecture (%1$s) not supported by the built-in binaries. The app may not work correctly or fail to start.\n\nSupported architectures: arm64-v8a, x86_64, armeabi-v7a, x86.</string>
+
+    <string name="mismatch_title">Protocol mismatch</string>
+    <string name="xray_uri_mismatch_tcp">%1$s\'s route only carries TCP (VLESS, Trojan)</string>
+    <string name="xray_uri_mismatch_udp">%1$s\'s route only carries UDP (WireGuard, Hysteria2)</string>
+    <string name="warn_vpn_requires_xray">VPN mode requires Xray to be enabled!</string>
+
+    <string name="unsaved_changes_title">Unsaved changes</string>
+    <string name="unsaved_changes_desc">You have unsaved changes. Do you want to save them before leaving?</string>
+    <string name="btn_discard">Discard</string>
+
+    <!-- QR Import and Advanced Parameters -->
+    <string name="qr_import">QR Code</string>
+    <string name="qr_scan_desc">Point the camera at the configuration QR code to import</string>
+    <string name="qr_frame_progress">Frame %1$d of %2$d — keep the camera pointed at the screen</string>
+    <string name="qr_scan_progress">Collected %1$d of %2$d parts — keep scanning</string>
+    <string name="qr_force_static_label">Single QR code</string>
+    <string name="qr_force_static_hint">For scanning with other apps that don\'t support multi-frame codes; may not scan reliably</string>
+    <string name="settings_group_kernel_params">Kernel settings</string>
+    <string name="settings_group_kernel_socks5">Kernel SOCKS5 settings</string>
+    <string name="xray_settings_group_connection">Connection</string>
+    <string name="xray_protocol_desc">Choose protocol for Xray-core</string>
+    <string name="protocol_wireguard" translatable="false">WireGuard</string>
+    <string name="connection_settings_title">Advanced Settings</string>
+    <string name="connection_settings_desc">Tunnel addresses, DNS, and Xray settings</string>
+    <string name="xray_settings_title">Routing and DNS</string>
+    <string name="xray_settings_desc">DNS, routing and other advanced Xray options</string>
+    <string name="xray_settings_group_dns">DNS</string>
+    <string name="xray_settings_dns_label">DNS servers</string>
+    <string name="xray_settings_dns_desc">Comma-separated, used by Xray to resolve domains through the tunnel</string>
+    <string name="xray_settings_fakedns_label">FakeDNS</string>
+    <string name="xray_settings_fakedns_desc">Xray serves synthetic IPs in local proxy mode. In VPN mode HEV owns this mapping; a second FakeDNS is not started.</string>
+    <string name="xray_settings_group_routing">Routing</string>
+    <string name="xray_settings_route_direct_label">Bypass (direct)</string>
+    <string name="xray_settings_route_direct_desc">Comma-separated: domain:example.com, a CIDR range, or geosite:/geoip: categories (need downloaded geo resources) — routed directly, bypassing the tunnel</string>
+    <string name="xray_settings_route_direct_placeholder" translatable="false">geosite:category-ru</string>
+    <string name="xray_settings_route_block_label">Block</string>
+    <string name="xray_settings_route_block_desc">Comma-separated: domain:example.com, a CIDR range, or geosite:/geoip: categories (need downloaded geo resources) — blocked entirely</string>
+    <string name="xray_settings_route_block_placeholder" translatable="false">geosite:category-ads-all</string>
+    <string name="xray_settings_group_geo">Geo resources</string>
+    <string name="geo_resources_dialog_desc">Needed for geosite:/geoip: entries in the routing rules above</string>
+    <string name="geo_variant_runetfreedom" translatable="false">RunetFreedom</string>
+    <string name="geo_variant_runetfreedom_desc">Domains/IPs blocked in Russia (Roskomnadzor), updated every 6h</string>
+    <string name="geo_variant_v2fly">v2fly (official)</string>
+    <string name="geo_variant_v2fly_desc">Official geoip.dat and domain-list-community data</string>
+    <string name="geo_variant_loyalsoldier">Loyalsoldier (community)</string>
+    <string name="geo_variant_loyalsoldier_desc">Community rule set with finer-grained categories</string>
+    <string name="geo_resources_download">Download</string>
+    <string name="geo_resources_downloading">Downloading…</string>
+    <string name="geo_resources_download_failed">Download failed: %1$s</string>
+    <string name="geo_resources_delete">Delete</string>
+    <string name="geo_resources_delete_confirm_title">Delete geo resources?</string>
+    <string name="geo_resources_delete_confirm_desc">Removes the downloaded geoip.dat/geosite.dat. geosite:/geoip: routing entries will stop working until you download them again.</string>
+    <string name="geo_resources_updated_at">Updated %1$s</string>
+    <string name="geo_resources_not_downloaded">Not downloaded</string>
+    <string name="connection_details">Connection details</string>
+    <string name="server_settings_title">Server settings</string>
+    <string name="math_minus" translatable="false">−</string>
+    <string name="math_plus" translatable="false">+</string>
+
+    <!-- Profile Management -->
+    <string name="profiles_title">Profiles</string>
+    <string name="profile_actions">Profile actions</string>
+    <string name="notification_btn_change_profile">Profile</string>
+    <string name="share_profile">Share</string>
+    <string name="show_qr_code">Show QR Code</string>
+    <string name="profile_create">Create profile</string>
+    <string name="profile_create_hint">Setup connection parameters manually</string>
+    <string name="profile_create_title">Create</string>
+    <string name="profile_add">Add profile</string>
+    <string name="profile_new">New profile</string>
+    <string name="profile_clone">Clone</string>
+    <string name="profile_edit">Edit</string>
+    <string name="profile_edit_config">Configuration</string>
+    <string name="profile_rename">Rename</string>
+    <string name="profile_delete">Delete</string>
+    <string name="profile_export">Export</string>
+    <string name="profile_export_all">Export all</string>
+    <string name="profile_export_save">Save to file</string>
+    <string name="profile_export_share">Share</string>
+    <string name="profile_share_large_archive">This set is too large for a link. Sharing it as a ZIP archive.</string>
+    <string name="profile_export_json">JSON</string>
+    <string name="profile_export_zip">ZIP (Archive)</string>
+    <string name="profile_import_title">Import profile/subscription</string>
+    <string name="profile_import_json_zip">Import file</string>
+    <string name="profile_import_file_hint">JSON, ZIP, links in TXT or WireGuard/AmneziaWG configuration (.conf)</string>
+    <string name="profile_name_label">Profile name</string>
+    <string name="profile_delete_confirm">Delete profile %1$s?</string>
+    <string name="profile_delete_desc">All settings for this profile will be deleted.</string>
+    <string name="profile_default_name">Profile</string>
+    <string name="profile_select">Select</string>
+    <string name="profile_selected_count">Selected: %1$d</string>
+    <string name="profile_delete_selected_confirm">Delete %1$d selected profiles?</string>
+    <string name="subscription_delete_confirm">Delete subscription %1$s?</string>
+    <string name="subscription_delete_desc">All profiles associated with this subscription will be removed.</string>
+    <string name="profile_none_selected">No profiles</string>
+    <string name="profiles_empty">No profiles yet</string>
+
+    <string name="subscription_settings">Subscription settings</string>
+    <string name="subscription_info">Subscription info</string>
+    <string name="auto_update">Auto-update</string>
+    <string name="auto_update_only_if_selected">Only if selected</string>
+    <string name="auto_update_only_if_selected_desc">Update only if a profile from this subscription is currently active</string>
+    <string name="update_interval_min">Update interval (min)</string>
+    <string name="update_interval_min_error">Minimum interval is 20 minutes</string>
+    <string name="update_require_tunnel">Update only via tunnel</string>
+    <string name="update_require_tunnel_desc">Auto-update will not work if the tunnel is disconnected</string>
+    <string name="update_manual_no_tunnel_title">Tunnel disconnected</string>
+    <string name="update_manual_no_tunnel_desc">The \"Update only via tunnel\" setting is enabled for this subscription, but the tunnel is currently inactive. The update will proceed via direct connection. Continue?</string>
+    <string name="exit_without_saving_title">Exit without saving?</string>
+    <string name="exit_without_saving_desc">All unsaved changes will be lost.</string>
+    <string name="btn_exit">Exit</string>
+
+    <string name="profile_import_group">Kernel configuration import</string>
+    <string name="profile_manual_setup">Manual setup</string>
+    <string name="profile_import_qr">Scan QR Code</string>
+    <string name="profile_import_qr_hint">Scan profile, subscription or kernel code</string>
+    <string name="profile_import_link">Paste Link</string>
+    <string name="profile_import_link_hint">Supports links, JSON or kernel config text</string>
+    <string name="profile_import_name_title">Profile name</string>
+    <string name="guide_turnable">Server setup guide: Turnable</string>
+    <string name="guide_olcrtc">Server setup guide: olcRTC</string>
+    <string name="tunaturn_channel">Channel %1$d</string>
+    <string name="tunaturn_add">Add channel</string>
+    <string name="tunaturn_remove">Remove channel</string>
+<string name="tunaturn_private_updates">Development releases are in the private TunaTURN repository. Download the APK through GitHub in your browser.</string>
+<string name="kernel_vpn" translatable="false">VPN</string>
+    <string name="local_proxy_noauth_title">Disable proxy authentication?</string>
+    <string name="local_proxy_noauth_warning">Other apps on this device could use this proxy and your VPN connection without a password. Loopback restricts access from the network, but does not isolate apps. Disable authentication only if you need it.</string>
+    <string name="local_proxy_noauth_confirm">Disable authentication</string>
+    <string name="local_proxy_keep_auth">Keep authentication</string>
+    <string name="vk_hashes_required">Add VK hashes or select automatic acquisition in the profile settings.</string>
+    <string name="kernel_masterdns" translatable="false">MasterDnsVPN</string>
+    <string name="geo_variant_roscomvpn" translatable="false">RoscomVPN</string>
+    <string name="geo_variant_roscomvpn_desc" translatable="false">Базы hydraponique: российские сервисы, белые списки и категории сайтов.</string>
+    <string name="internet_access_checking">Checking connection…</string>
+    <string name="internet_access_available">Server reachable</string>
+    <string name="internet_access_unconfirmed">Access not confirmed</string>
+    <string name="internet_access_retry">Check again</string>
+    <string name="subscription_expanded">Expanded</string>
+    <string name="subscription_collapsed">Collapsed</string>
+    <string name="subscription_server_count">Servers: %1$d</string>
+    <string name="profile_export_error">Could not save or share profiles. Try another destination.</string>
+    <string name="protocol_guide_awg">A WireGuard-based tunnel with packet obfuscation. AWG parameters must match the server.</string>
+    <string name="protocol_guide_trusttunnel">Carries traffic over HTTPS (HTTP/2) or QUIC (HTTP/3), with TLS verification and server authentication.</string>
+</resources>

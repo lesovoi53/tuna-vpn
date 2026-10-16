@@ -1,0 +1,618 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Главный экран (Home) -->
+    <string name="app_settings_title">Настройки</string>
+    <string name="info_desc">Информация</string>
+    <string name="core_active">Туннель активен</string>
+    <string name="core_press_to_start">Нажмите для запуска</string>
+    <string name="core_stop">Остановить</string>
+    <string name="core_active_stop">Туннель активен — нажмите для остановки</string>
+    <string name="core_error_restart">Ошибка — нажмите для повторного запуска</string>
+    <string name="core_captcha_required">Требуется капча</string>
+    <string name="captcha_title">Проверка VK</string>
+    <string name="captcha_desc">Пройдите проверку для продолжения</string>
+    <string name="start_core">Запустить туннель</string>
+    <string name="xray_config_invalid">Некорректный конфиг</string>
+    <string name="repo_links">Ссылки на репозитории</string>
+
+    <string name="idle">Остановлен</string>
+    <string name="starting">Запускается…</string>
+    <string name="stopping">Остановка…</string>
+    <string name="core_restarting">Перезапуск…</string>
+    <string name="core_failed">Запуск не удался</string>
+    <string name="running">Запущен</string>
+    <string name="connecting">Подключение…</string>
+    <string name="status_waiting_for_network">Ожидание сети…</string>
+
+    <!-- Разрешения -->
+    <string name="permissions_title">Разрешения</string>
+    <string name="permissions_desc">Для стабильной работы</string>
+    <string name="permission_notifications">Уведомления</string>
+    <string name="permission_battery">Батарея</string>
+    <!-- Названия компонентов и ядер -->
+    <string name="android_client">Android-клиент</string>
+    <string name="android_client_original">Android-клиент (оригинал)</string>
+    <string name="turnable_core">Ядро туннеля (Turnable)</string>
+    <string name="olcrtc_core">Ядро туннеля (olcRTC)</string>
+    <string name="webdav_core">Ядро туннеля (WebDAV)</string>
+    <string name="freeturn_core">Ядро туннеля (FreeTurn)</string>
+    <string name="qwdtt_core">Ядро туннеля (qWDTT)</string>
+    <!-- Кнопки и общие действия -->
+    <string name="btn_open">Открыть</string>
+    <string name="btn_close">Закрыть</string>
+    <string name="btn_save">Сохранить</string>
+    <string name="btn_next">Далее</string>
+    <string name="btn_proceed">Продолжить</string>
+    <string name="reset_settings">Сбросить настройки</string>
+    <string name="reset">Сбросить</string>
+    <string name="reset_all_settings_title">Сбросить все настройки?</string>
+    <string name="reset_all_settings_desc">Все профили, история и настройки будут полностью удалены. Приложение перезапустится.</string>
+    <string name="cancel">Отмена</string>
+    <!-- Режим VPN (VpnService) -->
+    <string name="vpn_mode">Режим VPN</string>
+    <string name="vpn_apps_exceptions">Без VPN</string>
+    <string name="vpn_apps_hint">Маршрутизация приложений</string>
+    <string name="vpn_apps_inclusions">Через VPN</string>
+    <string name="search_apps">Поиск приложений</string>
+    <string name="no_apps_found">Приложения не найдены</string>
+    <string name="hide_system_apps">Скрывать системные</string>
+    <string name="bypass_mode">Режим маршрутизации</string>
+    <string name="vpn_mode_bypass_desc">Выбранные приложения будут работать БЕЗ VPN</string>
+    <string name="vpn_mode_include_desc">ТОЛЬКО выбранные приложения будут использовать VPN</string>
+    <string name="filtering_enabled">Использовать маршрутизацию</string>
+    <string name="group_apps_by_letter">Группировать по буквам</string>
+    <string name="clear_list">Снять выделение со всех</string>
+    <string name="copy_list">Копировать список</string>
+    <string name="list_copied">Список скопирован</string>
+    <string name="import_from_clipboard">Вставить из буфера</string>
+    <string name="apps_imported_count">Добавлено приложений: %1$d</string>
+    <string name="no_apps_imported">Не найдены пакеты для исключения</string>
+    <string name="vpn_start">Вкл. VPN</string>
+    <string name="vpn_stop">Выкл. VPN</string>
+    <string name="vpn_status_xray_needed">Включите Xray</string>
+
+    <string name="import_file">Из файла</string>
+    <string name="import_clipboard">Из буфера</string>
+    <string name="import_success">Конфигурация импортирована</string>
+    <string name="import_profiles_success">Профили импортированы</string>
+    <string name="import_subscription_success">Подписка добавлена</string>
+    <string name="import_error">Ошибка импорта</string>
+    <string name="import_error_no_link">В буфере обмена не найдена подходящая ссылка</string>
+    <string name="import_error_invalid_profile">Некорректный формат профиля</string>
+    <string name="import_error_connection">Ошибка подключения. Проверьте интернет.</string>
+    <string name="import_error_server">Ошибка сервера: %1$d</string>
+    <string name="import_error_empty">Сервер вернул пустой ответ</string>
+    <string name="profile_import_partial_failure">Импортировано, но %1$d из %2$d файлов не удалось обработать</string>
+
+    <!-- Подтверждение импорта по диплинку wireturn:// / wt:// -->
+    <plurals name="deep_link_import_profiles_count">
+        <item quantity="one">%d профиль</item>
+        <item quantity="few">%d профиля</item>
+        <item quantity="many">%d профилей</item>
+        <item quantity="other">%d профиля</item>
+    </plurals>
+    <string name="deep_link_import_profiles_title_with_site">Добавить %1$s с сайта %2$s?</string>
+    <string name="deep_link_import_profiles_title_no_site">Добавить %1$s?</string>
+    <string name="deep_link_import_profiles_desc">Будет добавлено:\n%1$s</string>
+    <string name="deep_link_import_subscription_title">Добавить подписку «%1$s»?</string>
+    <string name="deep_link_import_subscription_desc">Она будет добавлена и станет обновляться автоматически.</string>
+    <string name="deep_link_import_invalid_title">Некорректная ссылка</string>
+    <string name="deep_link_import_invalid">Эта ссылка не содержит корректный профиль или подписку TUNA VPN</string>
+    <string name="btn_add">Добавить</string>
+
+    <string name="subscription_update_no_changes">В подписке нет изменений</string>
+    <string name="subscription_update_summary">Обновлено: +%1$d, −%2$d (всего %3$d)</string>
+
+    <!-- Настройка WireGuard -->
+    <string name="xray_import_config">Импорт конфигурации Xray</string>
+    <string name="wg_endpoint">Эндпоинт (локальный)</string>
+    <string name="wg_not_used_with_olcrtc">WireGuard не используется с olcRTC</string>
+    <string name="wg_not_used_with_webdav">WireGuard не используется с WebDAV</string>
+    <string name="wg_not_used_with_qwdtt">WireGuard не используется с qWDTT</string>
+
+    <!-- Настройка клиента (Backend/Proxy) -->
+    <string name="route_title">Маршрут</string>
+    <string name="route_add">Добавить маршрут</string>
+    <string name="route_delete">Удалить маршрут</string>
+    <string name="route_edit">Изменить маршрут</string>
+    <string name="route_id_label">ID маршрута</string>
+    <string name="route_name_label">Название маршрута</string>
+    <string name="route_socket_label">Сокет</string>
+    <string name="route_transport_label">Транспорт</string>
+    <string name="user_uuid_label">UUID пользователя</string>
+    <string name="user_uuid_desc">Авторизация пользователя на сервере Turnable</string>
+    <string name="call_id_label">ID звонка</string>
+    <string name="call_id_desc">VK: Звонки «https://vk.com/call/join/[ID]»</string>
+    <string name="connection_type_label">Тип подключения</string>
+    <string name="connection_type_desc">Direct крайне не рекомендуется</string>
+    <string name="encryption_label">Режим шифрования</string>
+    <string name="encryption_desc">Область применения шифрования</string>
+    <string name="pub_key_label">Публичный ключ</string>
+    <string name="pub_key_desc">Ключ для защищенного соединения с сервером</string>
+    <string name="peers_label">Параллельные соединения</string>
+    <string name="peers_desc">Чем больше значение, тем выше потенциальная скорость</string>
+    <string name="gateway_label">Адрес сервера</string>
+    <string name="gateway_desc">IP и порт сервера</string>
+    <string name="proto_label">Транспортный протокол</string>
+    <string name="proto_desc">Необходим для типа Relay. Рекомендуется SRTP</string>
+    <string name="history_label">История</string>
+    <string name="kernel_freeturn">FreeTurn</string>
+    <string name="kernel_qwdtt">qWDTT</string>
+    <string name="olcrtc_id_label">ID комнаты</string>
+    <string name="olcrtc_key_label">Ключ авторизации</string>
+    <string name="olcrtc_dns_label">DNS-сервер</string>
+    <string name="olcrtc_dns_desc">Используется для резолвинга сигнального провайдера до поднятия туннеля — сервер должен быть доступен при ограничениях по белым спискам. Оставьте пустым, чтобы использовать общий DNS-сервер (Параметры подключения).</string>
+    <string name="olcrtc_dns_placeholder" translatable="false">77.88.8.8:53</string>
+    <string name="olcrtc_carrier_label">Платформа</string>
+    <string name="turnable_carrier_label">Платформа</string>
+    <string name="olcrtc_transport_label">Транспорт</string>
+    <string name="olcrtc_restart_on_connection_errors_label">Перезапуск при ошибках</string>
+    <string name="olcrtc_restart_on_connection_errors_desc">Перезапускать соединение после повторяющихся ошибок \"remote not ready\"</string>
+    <string name="olcrtc_vp8_settings_title">Параметры VP8Channel</string>
+    <string name="olcrtc_sei_settings_title">Параметры SEIChannel</string>
+    <string name="olcrtc_video_settings_title">Параметры VideoChannel</string>
+    <string name="olcrtc_vp8_fps">VP8 FPS</string>
+    <string name="webdav_url_label">WebDAV URL</string>
+    <string name="webdav_url_desc">URL WebDAV-хранилища</string>
+    <string name="webdav_login_label">Логин</string>
+    <string name="webdav_password_label">Пароль</string>
+    <string name="webdav_advanced_settings">Расширенные настройки</string>
+    <string name="freeturn_advanced_settings">Расширенные настройки</string>
+    <string name="webdav_poll_min">Poll min</string>
+    <string name="webdav_poll_max">Poll max</string>
+    <string name="webdav_chunk_size">Chunk size</string>
+    <string name="webdav_puts">Puts</string>
+    <string name="webdav_read_min">Read min</string>
+    <string name="webdav_read_max">Read max</string>
+    <string name="webdav_coalesce">Coalesce</string>
+    <string name="webdav_timeout">Timeout</string>
+    <string name="webdav_encrypt">Шифрование (AES-256-GCM)</string>
+    <string name="webdav_encrypt_desc">Шифрование должно совпадать на клиенте и сервере выхода совместимой версии. Ключ выводится из пароля хранилища.</string>
+    <string name="webdav_dns_label">Bootstrap DNS хранилища</string>
+    <string name="webdav_dns_desc">IP:порт, udp://IP:порт или tcp://IP:порт. Пусто — общий Bootstrap DNS, затем системный DNS. Не меняет DNS трафика внутри VPN.</string>
+    <string name="webdav_backends_title">Дополнительные бэкенды</string>
+    <string name="webdav_backends_desc">Хранилища переключаются при новом сеансе туннеля. Открытые TCP-соединения не переносятся; скорости каналов не суммируются.</string>
+    <string name="webdav_backend_add">Добавить бэкенд</string>
+    <string name="webdav_backend_edit">Изменить бэкенд</string>
+    <string name="webdav_backend_delete">Удалить бэкенд</string>
+    <string name="webdav_backend_label_label">Метка (необязательно)</string>
+    <string name="webdav_backend_url_label">URL WebDAV</string>
+    <string name="olcrtc_vp8_batch">VP8 Batch</string>
+    <string name="olcrtc_sei_fps">SEI FPS</string>
+    <string name="olcrtc_sei_batch">SEI Batch</string>
+    <string name="olcrtc_sei_frag">SEI Frag</string>
+    <string name="olcrtc_sei_ack_ms">SEI Ack (мс)</string>
+    <string name="olcrtc_video_codec">Кодек видео</string>
+    <string name="olcrtc_video_width">Ширина видео</string>
+    <string name="olcrtc_video_height">Высота видео</string>
+    <string name="olcrtc_video_fps">FPS видео</string>
+    <string name="olcrtc_video_qr_recovery">QR Recovery</string>
+    <string name="olcrtc_video_qr_size">Размер QR</string>
+    <string name="olcrtc_video_tile_module">Tile Module</string>
+    <string name="olcrtc_video_tile_rs">Tile RS</string>
+    <string name="freeturn_links_label">ID звонков</string>
+    <string name="freeturn_links_desc">VK: Звонки «https://vk.com/call/join/[ID]». Можно указать несколько через запятую.</string>
+    <string name="freeturn_sub_label">URL подписки</string>
+    <string name="freeturn_sub_desc">Ссылка для авто-обновления серверов</string>
+    <string name="freeturn_peer_label">Адрес сервера</string>
+    <string name="freeturn_peer_desc">IP и порт сервера</string>
+    <string name="freeturn_n_label">Параллельные соединения</string>
+    <string name="freeturn_n_desc">Чем больше значение, тем выше потенциальная скорость</string>
+    <string name="freeturn_spc_label">Соединений на VK-персону</string>
+    <string name="freeturn_spc_desc">Сколько параллельных соединений используют одну VK-авторизацию, прежде чем запросится новая. Меньше авторизаций — ниже риск капчи/бана, но все соединения на ней просядут разом</string>
+    <string name="freeturn_obf_profile_label">Профиль обфускации</string>
+    <string name="freeturn_obf_key_label">Ключ обфускации (hex)</string>
+    <string name="freeturn_obf_key_desc">32 байта hex (64 символа)</string>
+    <string name="freeturn_dns_mode_label">Режим DNS</string>
+    <string name="freeturn_dns_mode_desc">Резолвер для собственных запросов авторизации VK клиента до поднятия туннеля — не маршрутизация вашего трафика. Auto сначала пробует UDP, при отказе переключается на DoH</string>
+    <string name="freeturn_dns_servers_label">DNS-серверы</string>
+    <string name="freeturn_dns_servers_desc">Свои UDP-резолверы для этого запроса, через запятую — нужны, если оператор блокирует сторонний DNS/DoH</string>
+    <string name="freeturn_client_id_label">ID клиента</string>
+    <string name="freeturn_client_id_desc">Уникальный ID для allowlist сервера</string>
+    <string name="freeturn_obf_timing_label">Задержка обфускации</string>
+    <string name="freeturn_obf_timing_desc">Межпакетная задержка для RTP-мимикрии (напр. 20ms); 0=выкл</string>
+    <string name="freeturn_platform_label">Платформа</string>
+    <string name="freeturn_platform_desc">Класс устройства, под который маскируется VK-персона при авторизации (UA, TLS-отпечаток, client hints). На сам туннель не влияет</string>
+    <string name="freeturn_transport_label">Транспорт до TURN-relay</string>
+    <string name="freeturn_transport_desc">TCP/TLS совместимее; UDP может быть быстрее, но чаще режется DPI</string>
+    <string name="freeturn_manual_captcha_label">Ручная капча</string>
+    <string name="freeturn_manual_captcha_desc">Решать капчу ВК во встроенном браузере</string>
+    <string name="freeturn_mode_label">Режим туннеля</string>
+    <string name="freeturn_kcp_settings_title">KCP (режим TCP)</string>
+    <string name="freeturn_kcp_nodelay_label">Быстрый режим (nodelay)</string>
+    <string name="freeturn_kcp_nodelay_desc">Ниже задержка, больше служебного трафика</string>
+    <string name="freeturn_kcp_interval_label">Интервал (мс)</string>
+    <string name="freeturn_kcp_interval_desc">Меньше = отзывчивее, больше служебного трафика</string>
+    <string name="freeturn_kcp_resend_label">Порог быстрой повторной отправки</string>
+    <string name="freeturn_kcp_resend_desc">Дублирующих ACK до повтора; 0 — выкл</string>
+    <string name="freeturn_kcp_nc_label">Отключить контроль перегрузки</string>
+    <string name="freeturn_kcp_nc_desc">Может помочь на нестабильной мобильной сети</string>
+    <string name="freeturn_kcp_sndwnd_label">Окно отправки (пакетов)</string>
+    <string name="freeturn_kcp_sndwnd_desc">Больше = выше пропускная способность, больше памяти</string>
+    <string name="freeturn_kcp_rcvwnd_label">Окно приёма (пакетов)</string>
+    <string name="freeturn_kcp_rcvwnd_desc">Больше = выше пропускная способность, больше памяти</string>
+    <string name="freeturn_kcp_mtu_label">MTU сегмента (байт)</string>
+    <string name="freeturn_kcp_mtu_desc">Должно совпадать с сервером</string>
+    <string name="freeturn_kcp_acknodelay_label">Отправлять ACK немедленно</string>
+    <string name="freeturn_kcp_acknodelay_desc">Ниже задержка, больше служебного трафика</string>
+    <string name="qwdtt_peer_label">Адрес сервера</string>
+    <string name="qwdtt_peer_desc">IP и порт сервера</string>
+    <string name="qwdtt_hashes_label">ID звонков</string>
+    <string name="qwdtt_hashes_desc">VK: Звонки «https://vk.com/call/join/[ID]». Можно указать несколько через запятую.</string>
+    <string name="qwdtt_password_label">Пароль подключения</string>
+    <string name="qwdtt_workers_label">Параллельные соединения</string>
+    <string name="qwdtt_workers_desc">Чем больше значение, тем выше потенциальная скорость</string>
+    <string name="qwdtt_advanced_settings">Расширенные настройки</string>
+    <string name="qwdtt_obfs_label">Обфускация</string>
+    <string name="qwdtt_turn_tcp_label">Транспорт до TURN-relay</string>
+    <string name="qwdtt_turn_tcp_desc">TCP совместимее с ограничительными сетями; UDP может быть быстрее</string>
+    <string name="qwdtt_notls_label">Прямой режим (без DTLS)</string>
+    <string name="qwdtt_notls_desc">Включайте, только если сервер поднят с -listen-direct — иначе соединение не установится</string>
+    <string name="qwdtt_manual_captcha_label">Ручная капча</string>
+    <string name="qwdtt_manual_captcha_desc">Всегда решать капчу ВК во встроенном браузере, а не давать ядру сначала попробовать решить её самому</string>
+    <string name="qwdtt_go_dns_label">DNS-резолвер</string>
+    <string name="qwdtt_go_dns_desc">Резолвер для запросов к VK до поднятия туннеля: yandex, cloudflare, google, doh-yandex, doh-cloudflare, doh-google, custom:IP или doh:URL</string>
+    <string name="local_listen_address">Локальный адрес прослушивания</string>
+    <string name="local_port_help_text">Локальный адрес дополнительного слушателя ядра qWDTT. Это не адрес удалённого сервера и не DNS.</string>
+    <string name="local_port_help_secondary">Обычно менять его не требуется. Адрес и авторизация локального SOCKS5 настраиваются отдельно ниже.</string>
+    <string name="keep_cpu_awake_title">Не давать устройству засыпать</string>
+    <string name="keep_cpu_awake_desc">По умолчанию выключено. Удерживает процессор активным при работающем VPN, но не включает экран. Повышает расход батареи. Применяется сразу; короткие блокировки запуска и восстановления работают независимо.</string>
+    <string name="client_socks_help_text">WebDAV и qWDTT не используют VPN-протокол — они сразу поднимают по этому адресу локальный SOCKS5-прокси.</string>
+    <string name="client_socks_help_secondary">Xray использует этот адрес как вышестоящий прокси в режиме Dual-route. Для маршрутизации всего трафика устройства через VPN Xray не обязателен — VPN может подключаться к этому SOCKS5 напрямую. К тому же адресу можно подключить и любое другое приложение с поддержкой SOCKS5.</string>
+
+    <!-- Общие действия (General Actions) -->
+    <string name="copy">Копировать</string>
+    <string name="share">Поделиться</string>
+    <string name="save">Сохранить</string>
+    <string name="clear">Очистить</string>
+    <string name="more_options">Ещё</string>
+
+    <!-- Экран логов (Logs) -->
+    <string name="logs_title">Логи</string>
+    <string name="no_logs">Нет логов</string>
+    <string name="new_logs">Новые логи</string>
+
+    <!-- Экран приветствия (Onboarding) -->
+    <string name="start">Начать</string>
+
+    <!-- Обновление приложения (OTA) -->
+    <string name="update_title">Обновление</string>
+    <string name="update_tap_to_check">Нажмите для проверки</string>
+    <string name="update_checking">Проверка…</string>
+    <string name="update_available">Доступна версия %1$s</string>
+    <string name="update_download">Скачать</string>
+    <string name="update_downloading_short">Загрузка…</string>
+    <string name="update_ready_desc_short">Готово к установке</string>
+    <string name="update_install">Установить</string>
+    <string name="update_no_update">Установлена последняя версия</string>
+    <string name="update_error">Ошибка: %1$s</string>
+
+    <!-- Оформление и Приватность -->
+    <string name="dynamic_theme_title">Системные цвета</string>
+    <string name="dynamic_theme_desc">Material You</string>
+    <string name="app_appearance">Оформление приложения</string>
+    <string name="theme_title">Тема</string>
+    <string name="theme_light">Светлая</string>
+    <string name="theme_dark">Тёмная</string>
+    <string name="theme_system">Системная</string>
+    <string name="localization_title">Локализация</string>
+    <string name="lang_title">Язык интерфейса</string>
+    <string name="lang_system">Системный</string>
+    <string name="lang_en">English</string>
+    <string name="lang_ru">Русский</string>
+    <string name="privacy_mode_title">Приватный режим</string>
+    <string name="privacy_mode_desc">Скрывает IP и порты</string>
+    <string name="profiles_gesture_title">Профили свайпом вверх</string>
+    <string name="profiles_gesture_desc">Свайп вверх снизу главного экрана открывает список профилей</string>
+    <string name="unstable_updates_title">Бета-версии</string>
+    <string name="unstable_updates_desc">Проверять нестабильные обновления</string>
+    <string name="wait_for_network_title">Ожидание сети</string>
+    <string name="wait_for_network_desc">При потере связи туннель будет ждать подключения к Wi-Fi или мобильной сети</string>
+    <string name="restart_on_network_change_title">Перезапуск при смене сети</string>
+    <string name="restart_on_network_change_desc">Автоматически перезапускать туннель при переключении между Wi-Fi и мобильной сетью</string>
+
+    <string name="client_dns_label">DNS-сервер</string>
+    <string name="client_socks_auth">Авторизация SOCKS5</string>
+    <string name="client_socks_auth_desc">Защитить собственный SOCKS5 ядра логином и паролем</string>
+    <string name="client_socks_auth_not_supported_by_kernel">Не применимо — %1$s не поддерживает авторизацию SOCKS5</string>
+    <string name="client_socks_user">Логин</string>
+    <string name="client_socks_pass">Пароль</string>
+
+    <string name="go_internal_dns_title">Внутренний резолвер Go</string>
+    <string name="go_internal_dns_desc">Принудительно использовать встроенный резолвер Go. Может помочь при проблемах с IPv6.</string>
+
+    <string name="custom_certs_title">Встроенный набор сертификатов</string>
+    <string name="custom_certs_desc">Обеспечивает работу SSL на старых устройствах. Отключите, если хотите использовать сертификаты, установленные в систему Android.</string>
+
+    <string name="network_settings_title">Сеть</string>
+
+    <!-- Настройка Капчи -->
+    <string name="captcha_settings_title">Оформление капчи</string>
+    <string name="captcha_style_mod_title">Стилизация WebView</string>
+    <string name="captcha_style_mod_desc">Скрывает лишние элементы VK и адаптирует интерфейс под тему приложения</string>
+    <string name="captcha_force_tint_title">Цветовая схема</string>
+    <string name="captcha_force_tint_desc">Выберите способ окрашивания элементов капчи</string>
+    <string name="captcha_color_original">Оригинал</string>
+    <string name="captcha_color_primary">Акцентный</string>
+
+    <!-- Проверка задержки (Ping) -->
+    <string name="ping_error">Ошибка</string>
+    <string name="ping_ms">%1$d мс</string>
+
+    <!-- Ошибки и системные сообщения -->
+    <string name="error_core_crashed">Туннель упал %1$d раз — проверьте настройки</string>
+    <string name="error_settings_empty">Не заполнены настройки клиента</string>
+    <string name="error_socks_public_requires_auth">Если адрес SOCKS5 не localhost, необходима аутентификация</string>
+    <string name="error_socks_public_no_auth_support">Это ядро не поддерживает аутентификацию SOCKS5 — используйте адрес localhost</string>
+    <string name="error_core_not_started">Туннель не запустился</string>
+    <string name="log_xray_invalid_config">* [Xray] Некорректный или отсутствующий конфиг, запуск отменен</string>
+    <string name="error_update_url_not_found">URL обновления не найден</string>
+    <string name="error_update_file_not_found">Файл обновления не найден</string>
+    <string name="error_no_connection">Нет соединения с сервером</string>
+    <string name="error_apk_not_found">APK не найден в релизе</string>
+    <string name="error_download_failed">Ошибка загрузки: %1$s</string>
+    <string name="log_core_command">* [Core] Команда: %1$s</string>
+    <string name="log_core_start">* [Core] ЗАПУСК ТУННЕЛЯ: %1$s</string>
+    <string name="log_core_suppressed">* [Core] ТУННЕЛЬ ПОДАВЛЕН (ПРЯМОЙ МАРШРУТ)</string>
+    <string name="log_core_stopped">* [Core] ПРОЦЕСС ОСТАНОВЛЕН (Код: %1$d)</string>
+    <string name="log_core_startup_failed">* [Core] Ошибка при запуске, watchdog не активирован</string>
+    <string name="log_core_quick_exit">* [Core] Быстрый выход (%1$dмс) — проверьте параметры подключения и настройки</string>
+    <string name="log_core_watchdog_limit">* [Core] WATCHDOG: превышен лимит попыток (%1$d), остановка</string>
+    <string name="log_core_watchdog_restart">* [Core] WATCHDOG: перезапуск через %1$dмс (попытка %2$d/%3$d)</string>
+    <string name="log_core_network_change">* [Core] СМЕНА СЕТИ — ПЕРЕЗАПУСК</string>
+    <string name="log_core_connection_timeout">* [Core] ТАЙМАУТ ПОДКЛЮЧЕНИЯ (2м) — ПЕРЕЗАПУСК</string>
+    <string name="log_core_no_network_waiting">* [Core] НЕТ СЕТИ — ОЖИДАНИЕ</string>
+    <string name="log_core_stop_ui">* [Core] ОСТАНОВКА</string>
+    <string name="log_core_too_many_remote_not_ready">* [Core] СЛИШКОМ МНОГО \"REMOTE NOT READY\" / \"OPENSTREAM FAILED\" — перезапуск</string>
+    <string name="log_core_reconnect_restart">* [Core] Обнаружено переподключение клиента — перезапуск</string>
+    <string name="log_core_webdav_too_many_refused">* [Core] СЛИШКОМ МНОГО \"CONNECTION REFUSED\" — перезапуск</string>
+    <string name="log_core_webdav_backends_unreachable">* [Core] ВСЕ WEBDAV-БЭКЕНДЫ НЕДОСТУПНЫ — перезапуск</string>
+    <string name="log_core_profile_summary">* [Core] Сводка профиля: Ядро: %1$s, Xray: %2$s</string>
+    <string name="log_core_foreground_failed">* [Core] Ошибка запуска foreground: %1$s</string>
+    <string name="log_core_dual_route_config_changed">* [Core] Конфиг Dual-route изменен, подавление до определения маршрута</string>
+    <string name="log_core_config_changed">* [Core] Конфиг изменен, перезапуск бинарного файла</string>
+
+    <string name="log_xray_starting">* [Xray] Запуск: %1$s</string>
+    <string name="log_xray_exited">* [Xray] Процесс завершился с кодом %1$d</string>
+    <string name="log_xray_error">* [Xray] Ошибка: %1$s</string>
+    <string name="log_xray_stopped_by_user">* [Xray] Остановлено</string>
+    <string name="log_xray_watchdog_limit">* [Xray] Лимит попыток watchdog достигнут (%1$d)</string>
+    <string name="log_xray_watchdog_restart">* [Xray] Перезапуск через %1$dмс (попытка %2$d/%3$d)</string>
+    <string name="log_xray_config_change_restart">* [Xray] Перезапуск из-за изменения настроек</string>
+    <string name="log_xray_foreground_failed">* [Xray] Ошибка запуска foreground: %1$s</string>
+
+    <string name="log_vpn_service_active">* [VPN] Сервис уже запущен или запускается (статус=%1$s, job=%2$b)</string>
+    <string name="log_vpn_foreground_failed">* [VPN] Ошибка запуска foreground: %1$s</string>
+    <string name="log_vpn_establishing">* [VPN] Установка TUN (hev-socks5-tunnel)</string>
+    <string name="log_vpn_filtering_disabled">* [VPN] Фильтрация приложений отключена: весь трафик через VPN</string>
+    <string name="log_vpn_exclude_failed">* [VPN] Не удалось исключить %1$s: %2$s</string>
+    <string name="log_vpn_include_failed">* [VPN] Не удалось включить %1$s: %2$s</string>
+    <string name="log_vpn_include_empty">* [VPN] Режим включения с пустым списком: ни одно приложение не будет использовать VPN</string>
+    <string name="log_vpn_tun_failed">* [VPN] Не удалось установить TUN-интерфейс (hev-socks5-tunnel)</string>
+    <string name="log_vpn_starting">* [VPN] Запуск (hev-socks5-tunnel, fd=%1$d, proxy=%2$s)</string>
+    <string name="log_vpn_start">* [VPN] Запущен (hev-socks5-tunnel)</string>
+    <string name="log_vpn_error">* [VPN] Ошибка: %1$s (hev-socks5-tunnel)</string>
+    <string name="log_vpn_stopped">* [VPN] TUN остановлен (hev-socks5-tunnel)</string>
+    <string name="log_vpn_stop_error">* [VPN] Ошибка при остановке: %1$s (hev-socks5-tunnel)</string>
+    <string name="log_vpn_restarting_config">* [VPN] Перезапуск из-за изменения настроек или восстановления</string>
+    <string name="log_vpn_retarget">* [VPN] Смена цели релея без пересоздания TUN, прокси=%1$s</string>
+    <string name="log_vpn_retarget_no_tun">* [VPN] Запрошена смена цели, но TUN не поднят — проигнорировано</string>
+
+    <string name="log_dual_route_direct_established">* [DualRoute] Прямое соединение установлено, подавление туннеля</string>
+    <string name="log_dual_route_direct_lost">* [DualRoute] Прямое соединение потеряно, разблокировка туннеля</string>
+    <string name="log_dual_route_unreachable_start_tunnel">* [DualRoute] Маршруты недоступны, запуск туннеля</string>
+    <string name="log_dual_route_check_failed">* [DualRoute] Не удалось инициировать проверку: %1$s</string>
+
+    <string name="error_invalid_auth_key">Неверный ключ авторизации</string>
+    <string name="log_core_slow_network_watchdog">* [Core] МЕДЛЕННАЯ СЕТЬ — увеличение задержки перезапуска</string>
+    <string name="error_turnable_failed">Ошибка Turnable: %1$s</string>
+    <string name="error_room_not_found">Комната не найдена</string>
+    <string name="error_turnable_vk_captcha_failed">Не удалось пройти капчу</string>
+
+    <string name="error_release_info_failed">Не удалось получить информацию о релизе</string>
+    <string name="error_process_no_output">Процесс завершился без вывода (код: %1$d)</string>
+    <string name="error_critical_format">* КРИТИЧЕСКАЯ ОШИБКА: %1$s</string>
+    <string name="error_connecting">Ошибка подключения</string>
+    <string name="error_platform_unavailable">Платформа недоступна</string>
+    <string name="error_kernel_or_settings">Проблема с ядром или настройками</string>
+    <string name="error_webdav_backend_unreachable">Бэкенд WebDAV недоступен</string>
+    <string name="error_webdav_server_unavailable">Сервер туннеля WebDAV недоступен</string>
+
+    <!-- Уведомления -->
+    <string name="notification_channel_description">Уведомление о состоянии и для управления</string>
+    <string name="captcha_channel_name">Уведомления о капче</string>
+    <string name="captcha_channel_description">Уведомления о необходимости прохождения капчи</string>
+    <string name="xray_protocol_label">Протокол</string>
+    <string name="captcha_notification_title">Требуется капча</string>
+    <string name="captcha_notification_text">Нажмите, чтобы пройти проверку</string>
+    <string name="error_notification_title">Ошибка запуска</string>
+    <string name="tile_active">Активен</string>
+    <string name="tile_captcha">Капча!</string>
+    <string name="notification_restart">Перезапуск (%1$d/%2$d)…</string>
+    <string name="notification_network_change">Смена сети, переподключение…</string>
+
+    <!-- Элементы интерфейса и форматирование -->
+    <string name="clipboard_label_socks5">Xray SOCKS5</string>
+    <string name="clipboard_label_http">Xray HTTP</string>
+
+    <string name="core_auto_launch_active">Автозапуск активен</string>
+    <string name="settings_auto_launch_title">Автозапуск</string>
+    <string name="settings_auto_launch_desc">Запуск туннеля только при ограничении интернета</string>
+    <string name="settings_auto_launch_url">URL для проверки</string>
+    <string name="settings_auto_launch_interval">Интервал проверки (мин)</string>
+    <string name="diagnostics_settings_title">Диагностика</string>
+    <string name="settings_ping_url">Адрес для пинга</string>
+    <string name="settings_country_detection_title">Определение страны выхода</string>
+    <string name="country_detection_auto">Автоматически (перебор)</string>
+    <string name="country_detection_cloudflare">Cloudflare</string>
+    <string name="country_detection_ipinfo" translatable="false">ipinfo.io</string>
+    <string name="country_detection_ipwhois" translatable="false">ipwho.is</string>
+    <string name="country_detection_ipsb" translatable="false">ip.sb</string>
+    <string name="country_detection_ipapico" translatable="false">ipapi.co</string>
+    <string name="auto_launch_override_title">Ручное управление заблокировано</string>
+    <string name="auto_launch_override_desc">Сейчас туннель управляется автозапуском. Чтобы управлять вручную, необходимо отключить режим автозапуска.</string>
+    <string name="auto_launch_disable_and_continue">Отключить и продолжить</string>
+
+    <!-- Настройка ссылки Xray (VLESS / Trojan / Hysteria2) -->
+    <string name="xray_uri_config_label">URI конфигурации</string>
+    <string name="xray_uri_config_supported_protocols">Поддерживаются: VLESS, Trojan, Hysteria2</string>
+    <string name="xray_uri_link_placeholder">vless://…</string>
+    <string name="xray_uri_dual_route">Режим Dual-route</string>
+    <string name="xray_uri_dual_route_settings_title">Настройки Dual Route</string>
+    <string name="xray_uri_dual_route_short">Dual-route</string>
+    <string name="xray_uri_dual_route_desc">Предпочитать прямое подключение к серверу, используя локальный туннель только при ограничении прямого доступа</string>
+    <string name="xray_uri_direct_address">Прямой адрес сервера</string>
+    <string name="xray_uri_hc_interval">Интервал проверки (сек)</string>
+    <string name="xray_uri_hc_destination">URL для проверки</string>
+    <string name="xray_uri_hc_destination_desc">URL, который опрашивает балансировщик, чтобы выбрать рабочий маршрут</string>
+    <string name="xray_uri_socks5_chain_desc">Подключение пойдёт через локальный SOCKS5 ядра, а не напрямую</string>
+    <string name="xray_uri_socks5_chain_hysteria2_unsupported">Не поддерживается для ссылок Hysteria2</string>
+    <string name="xray_uri_mux">Mux concurrency</string>
+    <string name="xray_uri_mux_desc">Включает мультиплексирование Mux. 0 — выключено, >0 — количество соединений. Несовместимо с XTLS Vision.</string>
+    <string name="xray_uri_parse_from_link">Взять из ссылки</string>
+    <string name="direct_route_active">Прямой маршрут</string>
+
+    <!-- Предупреждения -->
+    <string name="warn_unsupported_arch_title">Архитектура не поддерживается</string>
+    <string name="warn_unsupported_arch_desc">Ваше устройство использует архитектуру (%1$s), которая не поддерживается встроенными бинарными файлами. Приложение может работать некорректно или не запускаться.\n\nПоддерживаемые архитектуры: arm64-v8a, x86_64, armeabi-v7a, x86.</string>
+
+    <string name="mismatch_title">Несоответствие протокола</string>
+    <string name="xray_uri_mismatch_tcp">Маршрут %1$s работает только по TCP (VLESS, Trojan)</string>
+    <string name="xray_uri_mismatch_udp">Маршрут %1$s работает только по UDP (WireGuard, Hysteria2)</string>
+    <string name="warn_vpn_requires_xray">Режим VPN требует включенного Xray!</string>
+
+    <string name="unsaved_changes_title">Несохранённые изменения</string>
+    <string name="unsaved_changes_desc">У вас есть несохранённые изменения. Сохранить их перед выходом?</string>
+    <string name="btn_discard">Сбросить</string>
+
+    <!-- Импорт через QR и расширенные параметры -->
+    <string name="qr_import">QR-код</string>
+    <string name="qr_scan_desc">Наведите камеру на QR-код конфигурации для импорта</string>
+    <string name="qr_frame_progress">Кадр %1$d из %2$d — держите камеру наведённой на экран</string>
+    <string name="qr_scan_progress">Получено %1$d из %2$d частей — продолжайте сканировать</string>
+    <string name="qr_force_static_label">Один QR-код</string>
+    <string name="qr_force_static_hint">Для сканирования сторонними приложениями, которые не понимают многокадровый формат; может не сканироваться</string>
+    <string name="settings_group_kernel_params">Параметры ядра</string>
+    <string name="settings_group_kernel_socks5">SOCKS5-параметры ядра</string>
+    <string name="xray_settings_group_connection">Подключение</string>
+    <string name="xray_proxy_auth">Авторизация прокси</string>
+    <string name="xray_proxy_auth_desc">Защитить прокси логином и паролем</string>
+    <string name="xray_proxy_user">Логин</string>
+    <string name="xray_proxy_pass">Пароль</string>
+    <string name="xray_protocol_desc">Выберите протокол для Xray-core</string>
+    <string name="connection_settings_title">Расширенные настройки</string>
+    <string name="connection_settings_desc">Адреса туннеля, DNS и настройки Xray</string>
+    <string name="xray_settings_title">Маршрутизация и DNS</string>
+    <string name="xray_settings_desc">DNS, маршрутизация и другие параметры Xray</string>
+    <string name="xray_settings_group_dns">DNS</string>
+    <string name="xray_settings_dns_label">DNS-серверы</string>
+    <string name="xray_settings_dns_desc">Через запятую, используются Xray для резолва доменов через туннель</string>
+    <string name="xray_settings_fakedns_label">FakeDNS</string>
+    <string name="xray_settings_fakedns_desc">В режиме локального прокси Xray выдаёт синтетические IP. В режиме VPN их обслуживает HEV; второй FakeDNS не запускается.</string>
+    <string name="xray_settings_group_routing">Маршрутизация</string>
+    <string name="xray_settings_route_direct_label">В обход (напрямую)</string>
+    <string name="xray_settings_route_direct_desc">Через запятую: domain:example.com, CIDR, или категории geosite:/geoip: (нужны скачанные гео-ресурсы) — идут напрямую, минуя туннель</string>
+    <string name="xray_settings_route_block_label">Блокировать</string>
+    <string name="xray_settings_route_block_desc">Через запятую: domain:example.com, CIDR, или категории geosite:/geoip: (нужны скачанные гео-ресурсы) — блокируются полностью</string>
+    <string name="xray_settings_group_geo">Гео-ресурсы</string>
+    <string name="geo_resources_dialog_desc">Нужны для записей geosite:/geoip: в правилах маршрутизации выше</string>
+    <string name="geo_variant_runetfreedom" translatable="false">RunetFreedom</string>
+    <string name="geo_variant_runetfreedom_desc">Домены/IP, заблокированные в России (Роскомнадзор), обновляется каждые 6ч</string>
+    <string name="geo_variant_v2fly">v2fly (официальный)</string>
+    <string name="geo_variant_v2fly_desc">Официальные geoip.dat и данные domain-list-community</string>
+    <string name="geo_variant_loyalsoldier">Loyalsoldier (community)</string>
+    <string name="geo_variant_loyalsoldier_desc">Набор правил сообщества с более детальным делением на категории</string>
+    <string name="geo_resources_download">Скачать</string>
+    <string name="geo_resources_downloading">Скачивание…</string>
+    <string name="geo_resources_download_failed">Ошибка загрузки: %1$s</string>
+    <string name="geo_resources_delete">Удалить</string>
+    <string name="geo_resources_delete_confirm_title">Удалить гео-ресурсы?</string>
+    <string name="geo_resources_delete_confirm_desc">Удалит скачанные geoip.dat/geosite.dat. Записи geosite:/geoip: в маршрутизации перестанут работать, пока не скачаете их заново.</string>
+    <string name="geo_resources_updated_at">Обновлено %1$s</string>
+    <string name="geo_resources_not_downloaded">Не скачано</string>
+    <string name="connection_details">Детали подключения</string>
+    <string name="server_settings_title">Настройки сервера</string>
+
+    <!-- Управление профилями -->
+    <string name="profiles_title">Профили</string>
+    <string name="profile_actions">Действия с профилем</string>
+    <string name="notification_btn_change_profile">Профиль</string>
+    <string name="share_profile">Поделиться</string>
+    <string name="show_qr_code">Показать QR-код</string>
+    <string name="profile_create">Создать профиль</string>
+    <string name="profile_create_hint">Настройте параметры подключения вручную</string>
+    <string name="profile_create_title">Создать</string>
+    <string name="profile_add">Добавить профиль</string>
+    <string name="profile_new">Новый профиль</string>
+    <string name="profile_clone">Клонировать</string>
+    <string name="profile_edit">Редактировать</string>
+    <string name="profile_edit_config">Конфигурация</string>
+    <string name="profile_rename">Переименовать</string>
+    <string name="profile_delete">Удалить</string>
+    <string name="profile_export">Экспортировать</string>
+    <string name="profile_export_all">Экспортировать всё</string>
+    <string name="profile_export_save">Сохранить в файл</string>
+    <string name="profile_export_share">Поделиться</string>
+    <string name="profile_share_large_archive">Набор слишком большой для ссылки. Отправляем его ZIP-архивом.</string>
+    <string name="profile_export_json">JSON</string>
+    <string name="profile_export_zip">ZIP (Архив)</string>
+    <string name="profile_import_title">Импорт профиля/подписки</string>
+    <string name="profile_import_json_zip">Импортировать файл</string>
+    <string name="profile_import_file_hint">JSON, ZIP, ссылки в TXT или конфигурация WireGuard/AmneziaWG (.conf)</string>
+    <string name="profile_name_label">Название профиля</string>
+    <string name="profile_delete_confirm">Удалить профиль %1$s?</string>
+    <string name="profile_delete_desc">Все настройки этого профиля будут удалены.</string>
+    <string name="profile_default_name">Профиль</string>
+    <string name="profile_select">Выбрать</string>
+    <string name="profile_selected_count">Выбрано: %1$d</string>
+    <string name="profile_delete_selected_confirm">Удалить выбранные профили (%1$d)?</string>
+    <string name="subscription_delete_confirm">Удалить подписку %1$s?</string>
+    <string name="subscription_delete_desc">Все профили, связанные с этой подпиской, будут удалены.</string>
+    <string name="profile_none_selected">Нет профилей</string>
+    <string name="profiles_empty">Профилей пока нет</string>
+
+    <string name="subscription_settings">Настройки подписки</string>
+    <string name="subscription_info">Информация о подписке</string>
+    <string name="auto_update">Автообновление</string>
+    <string name="auto_update_only_if_selected">Только если выбрана</string>
+    <string name="auto_update_only_if_selected_desc">Обновлять только если профиль из этой подписки активен в данный момент</string>
+    <string name="update_interval_min">Интервал обновления (мин)</string>
+    <string name="update_interval_min_error">Минимальный интервал — 20 минут</string>
+    <string name="update_require_tunnel">Обновлять только через туннель</string>
+    <string name="update_require_tunnel_desc">Автообновление не будет работать, если туннель отключен</string>
+    <string name="update_manual_no_tunnel_title">Туннель не запущен</string>
+    <string name="update_manual_no_tunnel_desc">Для этой подписки включена настройка «Обновлять только через туннель», но сейчас туннель не активен. Обновление будет выполнено напрямую. Продолжить?</string>
+    <string name="exit_without_saving_title">Выйти без сохранения?</string>
+    <string name="exit_without_saving_desc">Все несохраненные изменения будут потеряны.</string>
+    <string name="btn_exit">Выйти</string>
+
+    <string name="profile_import_group">Импорт конфигурации ядра</string>
+    <string name="profile_manual_setup">Ручная настройка</string>
+    <string name="profile_import_qr">Сканировать QR-код</string>
+    <string name="profile_import_qr_hint">Сканируйте код профиля, подписки или ядра</string>
+    <string name="profile_import_link">Вставить ссылку</string>
+    <string name="profile_import_link_hint">Поддерживаются ссылки, JSON или текст конфига</string>
+    <string name="profile_import_name_title">Название профиля</string>
+    <string name="guide_turnable">Инструкция по настройке сервера Turnable</string>
+    <string name="guide_olcrtc">Инструкция по настройке сервера olcRTC</string>
+    <string name="tunaturn_channel">Канал %1$d</string>
+    <string name="tunaturn_add">Добавить канал</string>
+    <string name="tunaturn_remove">Удалить канал</string>
+<string name="tunaturn_private_updates">Обновления находятся в приватном репозитории TunaTURN. Скачайте APK через GitHub в браузере.</string>
+    <string name="local_proxy_noauth_title">Отключить авторизацию прокси?</string>
+    <string name="local_proxy_noauth_warning">Другие приложения на устройстве смогут использовать этот прокси и ваше VPN-подключение без пароля. Адрес 127.0.0.1 ограничивает доступ из сети, но не изолирует приложения. Отключайте авторизацию только при необходимости.</string>
+    <string name="local_proxy_noauth_confirm">Отключить авторизацию</string>
+    <string name="local_proxy_keep_auth">Оставить авторизацию</string>
+    <string name="vk_hashes_required">Добавьте хеши VK или выберите их получение в настройках профиля.</string>
+    <string name="internet_access_checking">Проверяем соединение…</string>
+    <string name="internet_access_available">Сервер доступен</string>
+    <string name="internet_access_unconfirmed">Доступ не подтверждён</string>
+    <string name="internet_access_retry">Повторить проверку</string>
+    <string name="subscription_expanded">Развёрнута</string>
+    <string name="subscription_collapsed">Свёрнута</string>
+    <string name="subscription_server_count">Серверов: %1$d</string>
+    <string name="profile_export_error">Не удалось сохранить или отправить профили. Попробуйте другое место сохранения.</string>
+    <string name="protocol_guide_awg">Туннель на основе WireGuard с обфускацией пакетов. Параметры AWG должны совпадать с настройками сервера.</string>
+    <string name="protocol_guide_trusttunnel">Передаёт трафик через HTTPS (HTTP/2) или QUIC (HTTP/3), с проверкой TLS и авторизацией на сервере.</string>
+</resources>

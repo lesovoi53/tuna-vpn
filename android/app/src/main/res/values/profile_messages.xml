@@ -1,0 +1,9 @@
+<resources>
+    <string name="profile_import_partial_summary">Profiles imported: %1$d. Unsupported or invalid entries skipped: %2$d</string>
+    <string name="profile_import_skipped_suffix">" · Skipped: %1$d"</string>
+    <string name="profile_group_type">Group · %1$s</string>
+    <string name="profile_group_member">Server: %1$s</string>
+    <string name="profile_group_pending">selected when connecting</string>
+    <string name="profile_proxy_chain">Proxy chain</string>
+    <string name="profile_routing_menu">Routing</string>
+</resources>

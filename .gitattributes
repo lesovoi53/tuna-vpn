@@ -1,0 +1,6 @@
+* -text
+*.sh text eol=lf
+gradlew text eol=lf
+# Preserve exact native provenance input bytes (including existing line endings).
+*.png binary
+*.jar binary

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="protocol_guide_title">Supported protocols</string>
+    <string name="protocol_guide_components">Cores and components</string>
+    <string name="protocol_guide_summary">A short guide to connections and their capabilities</string>
+    <string name="protocol_guide_intro">These connections are available in TUNA. Protocol background was checked against material available by August 2026; app capabilities refer to this version. Availability depends on the server and network.</string>
+    <string name="protocol_guide_vpn">VPN</string>
+    <string name="protocol_guide_bypass">Allowlist bypass</string>
+    <string name="protocol_guide_chain">Additional chain</string>
+    <string name="protocol_guide_source">Project documentation</string>
+    <string name="protocol_guide_vless">A proxy protocol with multiple transports, including XHTTP. Connection protection depends on the profile TLS, REALITY or encryption settings; choosing VLESS alone does not guarantee it.</string>
+    <string name="protocol_guide_hysteria2">A QUIC-based proxy carrying TCP and UDP. Designed to work on lossy networks as well; requires UDP connectivity between client and server.</string>
+    <string name="protocol_guide_snell">An encrypted Surge proxy with a pre-shared key. Supports compatible v4/v5 and Snell v6 modes: default, unshaped and unsafe-raw. QUIC Proxy is a separate v5 compatibility mode and requires server support.</string>
+    <string name="protocol_guide_mieru">An encrypted TCP- or UDP-based proxy with padding to vary traffic patterns. No TLS certificate is required; compatible settings and server credentials are needed.</string>
+    <string name="protocol_guide_trojan">Carries proxy traffic inside a TLS connection. Requires a password and correct server certificate verification; it uses the same secure transport as HTTPS.</string>
+    <string name="protocol_guide_shadowsocks">An encrypted proxy for TCP and UDP. The cipher and password must match the server; available variants depend on profile compatibility.</string>
+    <string name="protocol_guide_tuic">A QUIC-based proxy with multiple streams and TCP/UDP forwarding. Requires UDP connectivity and matching protocol versions; TUNA uses TUIC v5 profiles.</string>
+    <string name="protocol_guide_anytls">A TLS-based proxy with padding and connection reuse. These mechanisms alter traffic patterns; a compatible AnyTLS server is required.</string>
+    <string name="protocol_guide_naive">Uses the Chromium network stack and padding to connect through an HTTPS proxy. TUNA supports naive+https with TCP and optional UDP over TCP (UoT). UDP requires a server supporting sing-box UoT; a standard Caddy NaiveProxy server does not support this extension.</string>
+    <string name="protocol_guide_qwdtt">A tunnel through VK call TURN infrastructure to a personal exit server. Uses multiple transport workers; depends on VK availability and valid call credentials.</string>
+    <string name="protocol_guide_masterdns">Carries TCP traffic through DNS queries and responses. Requires a tunnel domain, key and reachable resolvers. TUNA also imports StormDNS profiles; speed depends on the DNS path.</string>
+    <string name="protocol_guide_webdav">Carries TCP traffic by exchanging files in WebDAV storage. The client and exit server share the same storage; additional backends are supported. File polling can increase latency.</string>
+    <string name="protocol_guide_wireguard">An encrypted IP tunnel over UDP with key exchange. Available as a standalone profile and in an additional Xray chain. Use AmneziaWG when packet obfuscation is required.</string>
+</resources>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="battery_hint_title">Работа в фоне</string>
+    <string name="battery_hint_description">Android не подтвердил исключение из энергосбережения. На устройстве может быть отдельная настройка «Нет ограничений». Если вы уже включили её, можно скрыть эту подсказку.</string>
+    <string name="battery_hint_dismiss">Больше не показывать</string>
+    <string name="notifications_hint_description">Разрешите уведомления, чтобы видеть состояние подключения и управлять им вне приложения.</string>
+</resources>

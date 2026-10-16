@@ -1,0 +1,42 @@
+{
+  "schema": "tuna.subscription",
+  "schemaVersion": 1,
+  "subscriptionId": "tuna-local-test",
+  "revision": 1,
+  "name": "TUNA local test",
+  "complete": true,
+  "updateIntervalSeconds": 43200,
+  "requiredCapabilities": [
+    "happ-routing-v1",
+    "split-dns-v1"
+  ],
+  "profiles": [
+    {
+      "id": "test-1",
+      "name": "Test profile 1",
+      "uri": "vless://11111111-2222-4333-8444-555555555555@example.com:443?type=tcp&security=tls#DEMO",
+      "routingPolicyId": "main"
+    }
+  ],
+  "routingPolicies": [
+    {
+      "id": "main",
+      "revision": 1,
+      "enabled": true,
+      "format": "happ-routing-v1",
+      "source": "happ://routing/onadd/eyJOYW1lIjogIlRVTkEgc3BsaXQgRE5TIHRlc3QiLCAiR2xvYmFsUHJveHkiOiAidHJ1ZSIsICJSb3V0ZU9yZGVyIjogImJsb2NrLXByb3h5LWRpcmVjdCIsICJSZW1vdGVETlNUeXBlIjogIkRvSCIsICJSZW1vdGVETlNEb21haW4iOiAiaHR0cHM6Ly84LjguOC44L2Rucy1xdWVyeSIsICJSZW1vdGVETlNJUCI6ICI4LjguOC44IiwgIkRvbWVzdGljRE5TVHlwZSI6ICJEb0giLCAiRG9tZXN0aWNETlNEb21haW4iOiAiaHR0cHM6Ly8xLjEuMS4xL2Rucy1xdWVyeSIsICJEb21lc3RpY0ROU0lQIjogIjEuMS4xLjEiLCAiRGlyZWN0U2l0ZXMiOiBbImRvbWFpbjpleGFtcGxlLmNvbSJdLCAiRGlyZWN0SXAiOiBbIjE5Mi4wLjIuMC8yNCJdLCAiUHJveHlTaXRlcyI6IFsiZG9tYWluOmV4YW1wbGUub3JnIl0sICJQcm94eUlwIjogW10sICJCbG9ja1NpdGVzIjogWyJkb21haW46YmxvY2tlZC5pbnZhbGlkIl0sICJCbG9ja0lwIjogW10sICJEbnNIb3N0cyI6IHsibG9jYWwtdGVzdC5pbnZhbGlkIjogIjE5Mi4wLjIuMTgifSwgIkRvbWFpblN0cmF0ZWd5IjogIklQSWZOb25NYXRjaCIsICJGYWtlRE5TIjogImZhbHNlIn0="
+    }
+  ],
+  "settings": {
+    "schemaVersion": 1,
+    "scope": "SUBSCRIPTION",
+    "applyMode": "MERGE",
+    "values": {
+      "appearance.themeMode": "SYSTEM",
+      "connection.waitForNetwork": true,
+      "connection.restartOnNetworkChange": true
+    },
+    "resetPaths": []
+  },
+  "groups": []
+}

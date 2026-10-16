@@ -1,0 +1,6 @@
+/vless-client
+/bin/
+*.exe
+*.log
+.idea/
+*.test
