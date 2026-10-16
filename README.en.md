@@ -4,6 +4,24 @@ An Android VPN client built around Xray, sing-box-extended and Mieru, with a sta
 
 [Download release 1.5](https://github.com/lesovoi53/tuna-vpn/releases/tag/v1.5) · [Build](docs/development/build.md) · [Licenses](docs/licenses.md)
 
+## Supported protocols
+
+VPN profiles: **VLESS, Hysteria2, Snell, Mieru, Trojan, Shadowsocks, TUIC, AnyTLS, NaiveProxy, WireGuard, AmneziaWG and TrustTunnel**. Dedicated connection types: **qWDTT, MasterDnsVPN / StormDNS and WebDAV tunneling**. Full Xray JSON import is also supported; it is a configuration format, not a separate protocol. Compatibility depends on the profile parameters and bundled core. [Protocol details](docs/user/protocols.md).
+
+## CDN and Cloudflare categories
+
+List placement uses the **individual profile name**, including names supplied by a subscription, not automatic IP/DNS/CDN detection:
+
+| Destination | Profile-name rule | Example |
+| --- | --- | --- |
+| Обход БС → CDN | An ordinary VPN profile contains the Russian phrase `обход бс` | `Москва обход БС` |
+| VPN → VLESS CF | A VLESS profile contains the separate Latin tag `CF` | `Germany [CF]` |
+| Normal VPN protocol section | Neither applicable naming rule matches | `Germany VLESS` |
+
+Matching is case-insensitive. The bypass phrase requires whitespace between its words; the CF tag must not touch letters, digits or `_`. `CDN` alone does not select the bypass category. `Cloudflare`, `CF1`, `my_cf` and Cyrillic `КФ` do not match `CF`. If both tags are present, **Обход БС → CDN takes precedence**. Only VLESS gets the separate VLESS CF section. qWDTT, MasterDnsVPN / StormDNS and WebDAV are already in Обход БС by connection type.
+
+These labels do not change the protocol or turn an ordinary endpoint into a CDN/Cloudflare server. They do not guarantee connectivity under network restrictions. [Detailed naming examples](docs/user/subscriptions.md#категории-профилей-по-названию).
+
 ## Included
 
 - Android 8.0+ ARM64 APK, version 1.5.
@@ -18,4 +36,3 @@ The compatibility APK is a non-debuggable release build, but retains the histori
 Clone with `git clone --recurse-submodules https://github.com/lesovoi53/tuna-vpn.git`. GitHub's default source ZIP excludes submodule contents. Native source modifications live under `android/native/`; wrappers live under `android/external/`. Some native components are extracted from a checksum-pinned upstream APK; see the explicit provenance limitations.
 
 Derived from WireTurn. TUNA patches do not claim authorship of upstream cores. Project code is GPL-3.0 unless a file declares another license; third-party licenses and credits are retained. [Core forks](docs/development/cores-and-forks.md) · [Security reporting](SECURITY.md).
-
