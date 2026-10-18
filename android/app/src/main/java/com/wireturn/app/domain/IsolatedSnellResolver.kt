@@ -44,19 +44,22 @@ internal object IsolatedSnellResolver {
         val localConfig = config.copy(socksAddr = address, isSocksAuthEnabled = true,
             socksUser = java.util.UUID.randomUUID().toString(), socksPass = java.util.UUID.randomUUID().toString())
         var child: Process? = null
+        var dnsBridge: com.wireturn.app.kernel.SystemDnsBridge? = null
         var reader: Job? = null
         var killer: Job? = null
         try {
+            dnsBridge = com.wireturn.app.kernel.SystemDnsBridge(context)
             val ca = if (config.useCustomCerts) CaBundleUtil.ensure(context) else null
             val builder = ProcessBuilder(listOf("${context.applicationInfo.nativeLibraryDir}/libxray.so",
                 "-listen", address, "-proxy-user", localConfig.socksUser, "-proxy-pass", localConfig.socksPass,
                 "-local-socks5", SnellDestinationResolver.upstream(config),
                 "-dns", network.dns.servers)).directory(directory).redirectErrorStream(true)
+            dnsBridge.applyTo(builder.environment())
             builder.environment().apply {
                 put(SnellDestinationResolver.ENVIRONMENT_KEY, "1")
                 put("TUNA_ROUTING_FILE", policy.absolutePath)
                 remove("TUNA_BOOTSTRAP_DNS")
-                BootstrapDns.parse(network.dns.bootstrap)?.let { put("TUNA_BOOTSTRAP_DNS", it.xrayAddress()) }
+                BootstrapDns.parse(com.wireturn.app.kernel.EffectiveDnsBootstrap.resolve(network))?.let { put("TUNA_BOOTSTRAP_DNS", it.xrayAddress()) }
                 if (ca != null) put("SSL_CERT_FILE", ca)
             }
             ensureActive()
@@ -81,6 +84,7 @@ internal object IsolatedSnellResolver {
             withTimeout(15_000L) { ready.await() }
             block(localConfig)
         } finally {
+            dnsBridge?.close()
             withContext(NonCancellable + Dispatchers.IO) {
                 reservation.close()
                 child?.let { process -> terminateCoreProcess(process, { signalAndroidProcess(it, 15) },

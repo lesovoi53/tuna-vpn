@@ -3,12 +3,12 @@
   "goVersion": "go version go1.26.3 windows/amd64",
   "sources": {
     "native/webdav/upstream-sha256.json": "a7214fc5691cafb502a6852ac803af8e27fa4827e27172bdf06c8b348886d917",
-    "native/webdav/bootstrap.go": "b7e6a2577fe88e68e89b11d512ee98407821f925cbeaf0829ba3efd7ab8ffd9c",
+    "native/webdav/bootstrap.go": "27056ed344bab469677c8f86fd1312affcb832caa316fc93ce68832fb235ab77",
     "native/webdav/build.ps1": "be018532018effe90fe800bf2eac9cc0b374f8dbd47e4de2a24c38228a891c31",
     "native/webdav/config_test.go": "0109ca0773f1e3c161968ae83bafbd270ee8bbaafbcc96ddea3e7c04fa24e3c9",
     "native/webdav/loopback_test.py": "21cf83d41b8503b89f1ecebf329b7fe4b255cc08226a58fad93fc5c8ca834bc5",
     "native/webdav/prepare.py": "152b1ac89734a18a2f854a4819dba02a318c434c56ff0e7f13e04ccab03e91da",
-    "native/webdav/tuna_test.go": "668a1bbfc2d1c969c1557288bbe0d6bacadfbec0e10f66225773206a3ae91f97",
+    "native/webdav/tuna_test.go": "a874caf914013773e38c4168fb1b4352a09b78f4774e60554ea954853f4481b7",
     "external/webdav-tunnel/.gitignore": "93364b6dd7afe581814b6b64aa3cf22ea9f03bbca0dcdc299f6fe1823abf9784",
     "external/webdav-tunnel/.goreleaser.yaml": "807749017c417a77b70d14617ace7d1302e9ec0abbcfaf5fb1fb8e8ec40c8786",
     "external/webdav-tunnel/build.ps1": "3929838029e3a88997c284f5e1ad298d636498bc0eb56e0a755c25bac434e45e",
@@ -48,7 +48,7 @@
     "external/webdav-tunnel/tunnel/webdav.go": "99fcd116a6788aa8fa2f9cb81e9d1366f878ab1d90bd093b40cb37ec2cc7859a"
   },
   "binaries": {
-    "webdav-check.exe": "474fd4524dc315468c9ae7d0f36cb39b036a0c85f7f0ed930475da5350d65ff6",
-    "libwebdav.so": "379e725d2cbb818bbbcc19d594b7edf9bae44536a9fb06c396f36b5ce39cb9eb"
+    "webdav-check.exe": "1587b348a0214a9909481dd489e70aa2aaffba8d8ed0d1e3e469746914dbede1",
+    "libwebdav.so": "9ea5f452eb2816d44e0766986d430a43b809d258d6cd0fd8e2d61b919e92ecfc"
   }
 }

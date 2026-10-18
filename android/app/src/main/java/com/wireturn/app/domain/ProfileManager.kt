@@ -421,14 +421,20 @@ class ProfileManager internal constructor(
         return bos.toByteArray()
     }
 
-    suspend fun importProfilesFromZip(inputStream: java.io.InputStream, onAutoSelect: ((Profile) -> Unit)? = null): ImportResult {
+    suspend fun importProfilesFromZip(inputStream: java.io.InputStream, onAutoSelect: ((Profile) -> Unit)? = null): ImportResult =
+        importProfilesFromZipWithResult(inputStream, onAutoSelect).first
+
+    /** Return committed local IDs just like the plain-document import. */
+    suspend fun importProfilesFromZipWithResult(inputStream: java.io.InputStream, onAutoSelect: ((Profile) -> Unit)? = null): Pair<ImportResult, List<Profile>> {
         try {
             val extractedData = readProfileArchive(inputStream)
-            return if (extractedData.isNotEmpty()) importProfiles(extractedData, onAutoSelect = onAutoSelect).first else ImportResult()
+            if (extractedData.isEmpty()) return ImportResult() to emptyList()
+            val (result, imported, _) = importProfiles(extractedData, onAutoSelect = onAutoSelect)
+            return result to imported
         } catch (e: kotlinx.coroutines.CancellationException) { throw e
         } catch (e: Exception) {
             com.wireturn.app.AppLogsState.addLog("ZIP Import Error: архив не прошёл проверку")
-            return ImportResult()
+            return ImportResult() to emptyList()
         }
     }
 

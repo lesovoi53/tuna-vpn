@@ -155,12 +155,13 @@ fun ConnectionDetailsDialog(session: CoreServiceState.RunningSession?, config: C
                     else -> WorkerStatusCard(config.kernelConfig)
                 }
                 RoutingSettingsGroup(stringResource(R.string.cd_routing_dns), routingSource) {
-                    val split = remember(settings.splitDnsJson) { runCatching { com.wireturn.app.domain.SplitDnsSettings.parse(settings.splitDnsJson) }.getOrNull() }
+                    val dnsDisplay = remember(settings, config.dns, config.kernelConfig) {
+                        com.wireturn.app.domain.EffectiveDnsDisplay.resolve(settings, config.dns,
+                            (config.kernelConfig as? KernelConfig.Vpn)?.config?.isRawXray == true)
+                    }
                     FactCard(stringResource(R.string.cd_applied_settings), listOf(
-                        ConnectionFact(R.string.cd_routing, routingSource, valueResource = if(routingEnabled) null else R.string.cd_disabled),
-                        ConnectionFact(R.string.cd_remote_dns, split?.remote?.endpoint ?: settings.dns, sensitive = true),
-                        ConnectionFact(R.string.cd_direct_dns, split?.domestic?.endpoint.orEmpty(), valueResource = if(split?.domestic == null) R.string.cd_not_separate else null, sensitive = true),
-                        ConnectionFact(R.string.cd_bootstrap, settings.bootstrapDns.ifBlank { config.dns }, valueResource = if(settings.bootstrapDns.isBlank() && config.dns.isBlank()) R.string.cd_system else null, sensitive = true),
+                        ConnectionFact(R.string.cd_routing, routingSource, valueResource = if(routingEnabled) null else R.string.cd_disabled)) +
+                        dnsDisplay.rows + listOf(
                         ConnectionFact(R.string.cd_apps, if(!vpn.filteringEnabled) stringResource(R.string.cd_all_apps) else
                             stringResource(if(vpn.bypassMode) R.string.cd_excluded_apps else R.string.cd_selected_apps, vpn.excludedApps.size))), privacy)
                 }

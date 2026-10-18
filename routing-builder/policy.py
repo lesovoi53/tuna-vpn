@@ -86,8 +86,53 @@ def https(value):
     return value
 
 
+def validate_resolver(server, route):
+    if not isinstance(server, dict) or set(server) - {'transport', 'endpoint', 'bootstrapIp', 'route'}:
+        raise ValueError('Некорректное описание DNS-сервера')
+    if server.get('route', route) != route:
+        raise ValueError('Маршрут DNS не соответствует группе')
+    server['route'] = route
+    t = server.get('transport')
+    if not isinstance(t, str) or t.upper() not in ('DOH', 'DOT', 'UDP', 'TCP'):
+        raise ValueError('DNS: выберите DoH, DoT, UDP или TCP')
+    t = server['transport'] = t.upper()
+    endpoint = server.get('endpoint')
+    if not isinstance(endpoint, str) or not endpoint or any(c.isspace() for c in endpoint):
+        raise ValueError('Укажите адрес DNS без пробелов')
+    u = urlsplit(endpoint if t in ('DOH', 'DOT') else 'dns://' + endpoint)
+    if not u.hostname or u.username or u.password or u.fragment or (u.port is not None and not 1 <= u.port <= 65535):
+        raise ValueError('Некорректный адрес DNS')
+    bootstrap = server.get('bootstrapIp')
+    if bootstrap is not None and (not isinstance(bootstrap, str) or bootstrap and not ip(bootstrap)):
+        raise ValueError('Bootstrap DNS должен быть IP-адресом')
+    if t in ('DOH', 'DOT'):
+        if u.scheme != ('https' if t == 'DOH' else 'tls') or t == 'DOT' and (u.path or u.query):
+            raise ValueError('DNS: нужен https:// для DoH или tls://host:port для DoT')
+        if t == 'DOT' and not ip(u.hostname) and not bootstrap:
+            raise ValueError('Для DoT с доменом укажите Bootstrap IP')
+    elif not ip(u.hostname) or u.path or u.query:
+        raise ValueError('UDP/TCP DNS требует IP:порт')
+
+
+def validate_dns_choice(value, route, *, bootstrap=False):
+    modes = ('system', 'resolver') if bootstrap else ('system', 'disabled', 'resolver')
+    if not isinstance(value, dict) or value.get('mode') not in modes:
+        raise ValueError('Неизвестный режим Bootstrap DNS' if bootstrap else 'Неизвестный режим аварийного DNS')
+    if value['mode'] != 'resolver':
+        if set(value) != {'mode'}:
+            raise ValueError('Системный или отключённый DNS не должен содержать resolver и другие поля')
+        return
+    if set(value) != {'mode', 'resolver'}:
+        raise ValueError('Ручной DNS требует ровно mode и resolver')
+    validate_resolver(value['resolver'], route)
+    if value['resolver']['transport'] not in ('UDP', 'TCP', 'DOH'):
+        raise ValueError('Аварийный DNS: выберите UDP, TCP или DoH')
+    if bootstrap and (value['resolver']['transport'] != 'TCP' or value['resolver'].get('bootstrapIp')):
+        raise ValueError('Bootstrap DNS: только TCP с IP-адресом, без собственного bootstrap')
+
+
 def validate_dns(source, fallback):
-    allowed = {'remoteServers', 'domesticServers', 'remoteSelectionMode', 'domesticSelectionMode', 'timeoutMs', 'hosts', 'queryStrategy', 'disableCache'}
+    allowed = {'remoteServers', 'domesticServers', 'remoteSelectionMode', 'domesticSelectionMode', 'timeoutMs', 'hosts', 'queryStrategy', 'disableCache', 'remoteEmergency', 'domesticEmergency', 'bootstrap'}
     if not isinstance(source, dict) or set(source) - allowed:
         raise ValueError('Неизвестные поля DNS')
     result = copy.deepcopy(source)
@@ -102,35 +147,15 @@ def validate_dns(source, fallback):
             raise ValueError('В каждой группе требуется от 1 до 8 DNS-серверов')
         identities = set()
         for server in servers:
-            if not isinstance(server, dict) or set(server) - {'transport', 'endpoint', 'bootstrapIp', 'route'}:
-                raise ValueError('Некорректное описание DNS-сервера')
-            if server.get('route', route) != route:
-                raise ValueError('Маршрут DNS не соответствует группе')
-            server['route'] = route
-            t = server.get('transport')
-            if not isinstance(t, str) or t.upper() not in ('DOH', 'DOT', 'UDP', 'TCP'):
-                raise ValueError('DNS: выберите DoH, DoT, UDP или TCP')
-            t = server['transport'] = t.upper()
-            endpoint = server.get('endpoint')
-            if not isinstance(endpoint, str) or not endpoint or any(c.isspace() for c in endpoint):
-                raise ValueError('Укажите адрес DNS без пробелов')
-            u = urlsplit(endpoint if t in ('DOH', 'DOT') else 'dns://' + endpoint)
-            if not u.hostname or u.username or u.password or u.fragment or (u.port is not None and not 1 <= u.port <= 65535):
-                raise ValueError('Некорректный адрес DNS')
-            bootstrap = server.get('bootstrapIp')
-            if bootstrap is not None and (not isinstance(bootstrap, str) or bootstrap and not ip(bootstrap)):
-                raise ValueError('Bootstrap DNS должен быть IP-адресом')
-            if t in ('DOH', 'DOT'):
-                if u.scheme != ('https' if t == 'DOH' else 'tls') or t == 'DOT' and (u.path or u.query):
-                    raise ValueError('DNS: нужен https:// для DoH или tls://host:port для DoT')
-                if t == 'DOT' and not ip(u.hostname) and not bootstrap:
-                    raise ValueError('Для DoT с доменом укажите Bootstrap IP')
-            elif not ip(u.hostname) or u.path or u.query:
-                raise ValueError('UDP/TCP DNS требует IP:порт')
-            identity = (t, endpoint.lower().rstrip('/'))
+            validate_resolver(server, route)
+            identity = (server['transport'], server['endpoint'].lower().rstrip('/'))
             if identity in identities:
                 raise ValueError('Повтор DNS-сервера')
             identities.add(identity)
+        emergency = result.setdefault(key + 'Emergency', {'mode': 'system'})
+        validate_dns_choice(emergency, route)
+    if 'bootstrap' in result:
+        validate_dns_choice(result['bootstrap'], 'DIRECT', bootstrap=True)
     timeout = result.setdefault('timeoutMs', 5000)
     if type(timeout) is not int or not 1000 <= timeout <= 10000:
         raise ValueError('Общий тайм-аут DNS: 1000–10000 мс')
@@ -139,7 +164,8 @@ def validate_dns(source, fallback):
     hosts = result.get('hosts', {})
     if not isinstance(hosts, dict) or any(not domain(k) or ip(k) or not isinstance(v, str) or not ip(v) for k, v in hosts.items()):
         raise ValueError('Некорректные DNS hosts')
-    for server in result['remoteServers'] + result['domesticServers']:
+    emergency_resolvers = [result[key]['resolver'] for key in ('remoteEmergency', 'domesticEmergency') if result[key]['mode'] == 'resolver']
+    for server in result['remoteServers'] + result['domesticServers'] + emergency_resolvers:
         host = urlsplit(server['endpoint'] if server['transport'] in ('DOH', 'DOT') else 'dns://' + server['endpoint']).hostname
         if not ip(host) and host in hosts and server.get('bootstrapIp') and hosts[host] != server.get('bootstrapIp'):
             raise ValueError('DNS hosts конфликтует с Bootstrap IP')
@@ -263,7 +289,7 @@ def tuna_link(doc):
 def happ_export(policy, kind='link'):
     p = validate_policy(policy)
     if 'TunaDNS' in p:
-        raise ValueError('Несколько DNS и выбор сервера требуют ссылки TUNA. Happ-экспорт не может сохранить эти настройки.')
+        raise ValueError('DNS-группы, аварийный DNS и Bootstrap требуют ссылки TUNA. Happ-экспорт не может представить их без потери; эквивалентный экспорт невозможен.')
     if kind == 'json':
         return json.dumps(p, ensure_ascii=False, indent=2)
     encoded = base64.b64encode(compact(p)).decode()

@@ -196,39 +196,32 @@ class AddProfileActivity : ComponentActivity() {
                 if (uris.isEmpty()) return@rememberLauncherForActivityResult
                 
                 scope.launch(Dispatchers.IO) {
-                    var totalImported = 0
-                    var filesFailed = 0
-                    uris.forEach { uri ->
-                        val importedBefore = totalImported
-                        try {
-                            val fileName = contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-                                val index = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
-                                if (index != -1 && cursor.moveToFirst()) cursor.getString(index) else null
-                            } ?: uri.lastPathSegment
+                    val batch = com.wireturn.app.domain.importProfileFiles(uris) { uri ->
+                        val fileName = contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                            val index = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                            if (index != -1 && cursor.moveToFirst()) cursor.getString(index) else null
+                        } ?: uri.lastPathSegment
 
-                            if (fileName?.endsWith(".zip", ignoreCase = true) == true) {
-                                contentResolver.openInputStream(uri)?.use { stream ->
-                                    totalImported += viewModel.importProfilesFromZip(stream).total
-                                }
-                            } else {
-                                val json = contentResolver.openInputStream(uri)?.use { stream ->
-                                    readProfileText(stream)
-                                }
-                                if (json != null) {
-                                    totalImported += viewModel.importProfiles(listOf(fileName to json)).total
-                                }
+                        if (fileName?.endsWith(".zip", ignoreCase = true) == true) {
+                            contentResolver.openInputStream(uri)?.use { stream ->
+                                viewModel.importProfilesFromZipWithResult(stream)
                             }
-                        } catch (_: Exception) {}
-                        if (totalImported == importedBefore) filesFailed++
+                        } else {
+                            val json = contentResolver.openInputStream(uri)?.use { stream ->
+                                readProfileText(stream)
+                            }
+                            json?.let { viewModel.importProfilesWithResult(listOf(fileName to it)) }
+                        }
                     }
 
                     launch(Dispatchers.Main) {
+                        batch.revealProfileId?.let { com.wireturn.app.ui.UIEventBus.requestScroll(it) }
                         when {
-                            totalImported > 0 && filesFailed == 0 -> finish()
-                            totalImported > 0 -> {
+                            batch.totalImported > 0 && batch.filesFailed == 0 -> finish()
+                            batch.totalImported > 0 -> {
                                 HapticUtil.perform(this@AddProfileActivity, HapticUtil.Pattern.ERROR)
                                 context.showExclusiveToast(
-                                    getString(R.string.profile_import_partial_failure, filesFailed, uris.size),
+                                    getString(R.string.profile_import_partial_failure, batch.filesFailed, uris.size),
                                     Toast.LENGTH_LONG
                                 )
                                 finish()

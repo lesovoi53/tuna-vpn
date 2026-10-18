@@ -11,6 +11,9 @@ import com.wireturn.app.R
 import com.wireturn.app.viewmodel.UpdateState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,8 +23,6 @@ import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
-import java.net.HttpURLConnection
-import java.net.URL
 
 class AppUpdater(private val context: Context) {
 
@@ -116,7 +117,8 @@ class AppUpdater(private val context: Context) {
                     _state.value = UpdateState.NoUpdate
                 }
             } catch (e: Exception) {
-                AppLogsState.addLog("Update check failed: ${e.message}")
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                AppLogsState.addLog("Update check failed")
                 _state.value = if (silent) UpdateState.Idle
                 else UpdateState.Error(context.getString(R.string.error_no_connection))
             }
@@ -124,6 +126,7 @@ class AppUpdater(private val context: Context) {
     }
 
     suspend fun downloadUpdate() {
+        if (com.wireturn.app.BuildConfig.PRIVATE_DISTRIBUTION) return
         val url = latestApkUrl ?: run {
             _state.value = UpdateState.Error(context.getString(R.string.error_update_url_not_found))
             return
@@ -135,50 +138,50 @@ class AppUpdater(private val context: Context) {
             AppLogsState.addLog("Downloading update...")
             _state.value = UpdateState.Downloading
             _downloadProgress.value = 0
+            var staged: File? = null
+            var completed: File? = null
             try {
-                val apkFile = File(context.cacheDir, "update.apk")
                 withContext(Dispatchers.IO) {
+                    val directory = File(context.filesDir, "updates").apply { check(isDirectory || mkdirs()) }
+                    val partial = File.createTempFile("update-", ".part", directory)
+                    staged = partial
                     val proxy = activeLocalSocksProxy()
-                    AppLogsState.addLog("Starting download from: $url" + (if (proxy != java.net.Proxy.NO_PROXY) " (via proxy)" else ""))
-                    val connection = URL(url).openConnection(proxy) as HttpURLConnection
-                    connection.instanceFollowRedirects = true
-                    connection.connect()
-
-                    val totalSize = connection.contentLength.toLong()
-                    var downloaded = 0L
-
-                    connection.inputStream.use { input ->
-                        apkFile.outputStream().use { output ->
-                            val buffer = ByteArray(8192)
-                            var bytesRead: Int
-                            var lastProgress = -1
-                            while (input.read(buffer).also { bytesRead = it } != -1) {
+                    val connection = UpdateSecurity.open(url, proxy)
+                    val totalSize = connection.contentLengthLong
+                    val digest = try {
+                        connection.inputStream.use { input -> partial.outputStream().use { output ->
+                            UpdateSecurity.copyBounded(input, output, UpdateSecurity.MAX_APK_BYTES, totalSize) { count ->
                                 ensureActive()
-                                output.write(buffer, 0, bytesRead)
-                                downloaded += bytesRead
-                                if (totalSize > 0) {
-                                    val progress = (downloaded * 100 / totalSize).toInt()
-                                    if (progress != lastProgress) {
-                                        _downloadProgress.value = progress
-                                        lastProgress = progress
-                                    }
-                                }
+                                if (totalSize > 0) _downloadProgress.value = (count * 100 / totalSize).toInt().coerceAtMost(100)
                             }
-                        }
-                    }
+                            .also { output.fd.sync() }
+                        } }
+                    } finally { connection.disconnect() }
+                    ensureActive()
+                    UpdateApkValidator.verify(context, partial)
+                    require(UpdateSecurity.sha256(partial) == digest) { "Файл изменился после загрузки" }
+                    check(partial.setReadOnly()) { "Не удалось защитить файл обновления" }
+                    val ready = File(directory, partial.nameWithoutExtension + ".apk")
+                    java.nio.file.Files.move(partial.toPath(), ready.toPath(), java.nio.file.StandardCopyOption.ATOMIC_MOVE)
+                    completed = ready
+                    ensureActive()
+                    synchronized(artifactLock) { readyApk = VerifiedApk(ready, digest) }
                 }
-                AppLogsState.addLog("Update downloaded successfully")
+                AppLogsState.addLog("Update downloaded and signature verified")
                 _state.value = UpdateState.ReadyToInstall
             } catch (e: Exception) {
                 if (e is kotlinx.coroutines.CancellationException) throw e
-                AppLogsState.addLog("Download failed: ${e.message}")
-                File(context.cacheDir, "update.apk").delete()
-                _state.value = UpdateState.Error(context.getString(R.string.error_download_failed, e.message))
+                AppLogsState.addLog("Update download or verification failed")
+                _state.value = UpdateState.Error(context.getString(R.string.error_download_failed, "Проверка обновления не пройдена"))
+            } finally {
+                staged?.delete()
+                completed?.let { file -> synchronized(artifactLock) { if (readyApk?.file != file) file.delete() } }
             }
         }
     }
 
     fun installUpdate() {
+        if (com.wireturn.app.BuildConfig.PRIVATE_DISTRIBUTION) return
         AppLogsState.addLog("Launching APK installer")
 
         if (!context.packageManager.canRequestPackageInstalls()) {
@@ -191,20 +194,27 @@ class AppUpdater(private val context: Context) {
             return
         }
 
-        val apkFile = File(context.cacheDir, "update.apk")
-        if (!apkFile.exists()) {
-            _state.value = UpdateState.Error(context.getString(R.string.error_update_file_not_found))
-            return
+        if (!installing.compareAndSet(false, true)) return
+        installScope.launch {
+            try {
+                val intent = synchronized(artifactLock) {
+                    val artifact = requireNotNull(readyApk) { "Нет проверенного обновления" }
+                    require(artifact.file.parentFile?.canonicalFile == File(context.filesDir, "updates").canonicalFile)
+                    require(UpdateSecurity.sha256(artifact.file) == artifact.digest) { "Файл обновления изменился" }
+                    UpdateApkValidator.verify(context, artifact.file)
+                    require(UpdateSecurity.sha256(artifact.file) == artifact.digest) { "Файл обновления изменился" }
+                    val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", artifact.file)
+                    Intent(Intent.ACTION_VIEW).apply {
+                        setDataAndType(uri, "application/vnd.android.package-archive")
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        clipData = android.content.ClipData.newRawUri("Verified update", uri)
+                    }
+                }
+                withContext(Dispatchers.Main) { context.startActivity(intent) }
+            } catch (_: Exception) {
+                _state.value = UpdateState.Error("Проверка обновления не пройдена. Скачайте обновление заново.")
+            } finally { installing.set(false) }
         }
-
-        val uri = FileProvider.getUriForFile(
-            context, "${context.packageName}.fileprovider", apkFile
-        )
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(uri, "application/vnd.android.package-archive")
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
-        }
-        context.startActivity(intent)
     }
 
     // Private
@@ -215,7 +225,7 @@ class AppUpdater(private val context: Context) {
     }
 
     private fun fetchLatestUnstableRelease(proxy: java.net.Proxy? = null): JSONObject? {
-        val url = "https://api.github.com/repos/534188-create/TunaTURN/releases"
+        val url = "https://api.github.com/repos/lesovoi53/tuna-vpn/releases"
         val json = fetchString(url, proxy) ?: return null
         
         return try {
@@ -234,24 +244,16 @@ class AppUpdater(private val context: Context) {
     }
 
     private fun fetchString(url: String, proxy: java.net.Proxy? = null): String? {
-        val connection = if (proxy != null) {
-            URL(url).openConnection(proxy)
-        } else {
-            URL(url).openConnection()
-        } as HttpURLConnection
-        connection.setRequestProperty("Accept", "application/vnd.github+json")
-        connection.setRequestProperty("User-Agent", "TUNA-VPN-App")
-        connection.connectTimeout = 10_000
-        connection.readTimeout = 10_000
-
         return try {
-            if (connection.responseCode == 200) {
-                connection.inputStream.bufferedReader().readText()
-            } else null
+            val connection = UpdateSecurity.open(url, proxy ?: java.net.Proxy.NO_PROXY, metadata = true)
+            try {
+                val output = java.io.ByteArrayOutputStream()
+                connection.inputStream.use { UpdateSecurity.copyBounded(it, output, UpdateSecurity.MAX_METADATA_BYTES,
+                    connection.contentLengthLong, timeoutMs = 30_000) }
+                output.toString(Charsets.UTF_8.name())
+            } finally { connection.disconnect() }
         } catch (_: Exception) {
             null
-        } finally {
-            connection.disconnect()
         }
     }
 
@@ -307,7 +309,13 @@ class AppUpdater(private val context: Context) {
 
     companion object {
         private const val RELEASES_URL =
-            "https://api.github.com/repos/534188-create/TunaTURN/releases/latest"
+            "https://api.github.com/repos/lesovoi53/tuna-vpn/releases/latest"
+
+        private data class VerifiedApk(val file: File, val digest: String)
+        private val artifactLock = Any()
+        private var readyApk: VerifiedApk? = null
+        private val installScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        private val installing = java.util.concurrent.atomic.AtomicBoolean(false)
 
         private val _state = MutableStateFlow<UpdateState>(UpdateState.Idle)
         private val _downloadProgress = MutableStateFlow(0)

@@ -8,6 +8,30 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class TcpOnlyDnsTest {
+    @Test fun emergencyUdpAdaptsEvenWithOnlyDohPrimaryAndKeepsDirectReserve() {
+        val original = SplitDnsSettings()
+        val remote = original.remote.copy(transport = "UDP", endpoint = "192.0.2.90", bootstrapIp = null)
+        val split = original.copy(remoteEmergency = DnsRecoverySettings("resolver", remote),
+            domesticEmergency = DnsRecoverySettings("resolver", original.domestic), bootstrap = DnsRecoverySettings("system"))
+        val effective = resolve(SharedNetworkSettings(dns = NetworkDnsSettings(splitDnsJson = split.toJson())))
+        val actual = SplitDnsSettings.parse(effective.dns.splitDnsJson)
+        assertEquals(split.remote, actual.remote)
+        assertEquals(remote.copy(transport = "TCP"), actual.remoteEmergency?.resolver)
+        assertEquals(split.domesticEmergency, actual.domesticEmergency)
+        assertEquals(split.bootstrap, actual.bootstrap)
+        assertEquals("UDP", split.remoteEmergency?.resolver?.transport)
+        val compiled = JsonParser.parseString(XrayNetworkCompiler.compile(effective, true).policyJson).asJsonObject
+        assertEquals(actual, SplitDnsSettings.parse(compiled["splitDns"].toString()))
+    }
+
+    @Test fun systemAndDisabledReservesAreNotConvertedToTcpResolvers() {
+        for (mode in listOf("system", "disabled")) {
+            val split = SplitDnsSettings(remoteEmergency = DnsRecoverySettings(mode))
+            val settings = SharedNetworkSettings(dns = NetworkDnsSettings(splitDnsJson = split.toJson()))
+            assertEquals(settings, resolve(settings))
+        }
+    }
+
     @Test fun everyRemotePoolMemberAdaptsEvenWhenPrimaryIsDoh() {
         val original = SplitDnsSettings()
         val udp = original.remote.copy(transport = "UDP", endpoint = "192.0.2.53", bootstrapIp = null)

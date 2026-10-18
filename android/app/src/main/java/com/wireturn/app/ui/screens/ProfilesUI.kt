@@ -2482,7 +2482,8 @@ private fun ExportDropdownMenus(
 
 private suspend fun shareFile(context: Context, bytes: ByteArray, fileName: String) {
     val uri = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-        val file = java.io.File(context.cacheDir, fileName)
+        val exportDir = java.io.File(context.cacheDir, "exports").apply { check(isDirectory || mkdirs()) }
+        val file = java.io.File(exportDir, java.io.File(fileName).name)
         file.writeBytes(bytes)
         androidx.core.content.FileProvider.getUriForFile(
             context,

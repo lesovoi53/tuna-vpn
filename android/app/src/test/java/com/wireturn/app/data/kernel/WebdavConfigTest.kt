@@ -8,6 +8,14 @@ import org.junit.Test
 
 class WebdavConfigTest {
     private val base = WebdavConfig(webdav = "https://storage.invalid/dav/a%20b", login = "u+ser%@", password = "p:ass%3A+@\"\\\n\r\tЮникод\u0001")
+    @Test fun systemBootstrapIsExplicitAndOwnDnsRetainsPriority() {
+        fun dns(config: WebdavConfig, shared: String) = JsonParser.parseString(
+            WebdavRuntimeConfig.build(config, "127.0.0.1:1080", "u", "p", shared)).asJsonObject["dns"].asString
+        assertEquals("system", dns(base, "system"))
+        assertEquals("system", dns(base.copy(dns = "system"), "tcp://192.0.2.53:53"))
+        assertEquals("tcp://192.0.2.54:5353", dns(base.copy(dns = "tcp://192.0.2.54:5353"), "system"))
+        assertEquals(base.copy(dns = "system"), WebdavConfig.parse(base.copy(dns = "system").toUri()))
+    }
     @Test fun credentialsRoundTripExactlyOnce() {
         val cfg = base.copy(encrypt = true, dns = "tcp://127.0.0.1:5353", backends = listOf(WebdavBackend(url = "http://backup.invalid/dav", login = "a:b", password = "c:d%25")))
         assertEquals(cfg, WebdavConfig.parse(cfg.toUri("Тест профиля")))

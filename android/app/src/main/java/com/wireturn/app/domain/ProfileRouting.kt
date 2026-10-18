@@ -7,9 +7,16 @@ object ProfileRouting {
     fun common(settings: SharedNetworkSettings, subscriptions: List<Subscription>): SharedNetworkSettings {
         val source = settings.routing.subscriptionSource
         if (source.isBlank() || subscriptions.none { it.routingSource == source }) return settings
-        val copiedDns = runCatching { SplitDnsSettings.fromPolicy(SubscriptionPolicyParser.parseHapp(source)).toJson() }.getOrNull()
+        // Older versions copied the source before subscription emergency defaults
+        // existed. Match both exact generated representations, never strip fields
+        // from a user override to make it resemble the subscription.
+        val copiedDns = runCatching {
+            val policy = SubscriptionPolicyParser.parseHapp(source)
+            setOf(SplitDnsSettings.fromPolicy(policy).toJson(),
+                (policy.dns ?: SplitDnsSettings(policy.remote, policy.domestic, policy.hosts)).toJson())
+        }.getOrDefault(emptySet())
         return settings.copy(routing = settings.routing.copy(subscriptionSource = ""),
-            dns = if (settings.dns.splitDnsJson == copiedDns) settings.dns.copy(splitDnsJson = "") else settings.dns)
+            dns = if (settings.dns.splitDnsJson in copiedDns) settings.dns.copy(splitDnsJson = "") else settings.dns)
     }
     fun enabled(subscription: Subscription): Boolean = subscription.useSubscriptionRouting
         ?: (subscription.routingRecommended && !subscription.routingSource.isNullOrBlank())

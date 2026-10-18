@@ -332,8 +332,17 @@ class CoreService : Service() {
         }
 
         launch {
-            prefs.sharedNetworkSettingsFlow.map { it.dns.bootstrap }.distinctUntilChanged().drop(1).collect {
-                if (!userStopped.get() && currentRunningCfg.get()?.kernelVariant in setOf(KernelVariant.VPN, KernelVariant.WEBDAV)) {
+            // Keep both snapshots, not a projection chosen by the previous profile:
+            // switching to/from raw Xray changes which bootstrap field is effective.
+            var previous: com.wireturn.app.data.SharedNetworkSettings? = null
+            prefs.sharedNetworkSettingsFlow.collect { settings ->
+                val before = previous
+                previous = settings
+                val config = currentRunningCfg.get()
+                val rawXray = (config?.kernelConfig as? KernelConfig.Vpn)?.config?.isRawXray == true
+                if (before != null && !userStopped.get() &&
+                    config?.kernelVariant in setOf(KernelVariant.VPN, KernelVariant.WEBDAV) &&
+                    com.wireturn.app.kernel.EffectiveDnsBootstrap.changed(before, settings, rawXray)) {
                     stopBinaryProcessGracefully(forRestart = true)
                 }
             }
@@ -488,6 +497,8 @@ class CoreService : Service() {
         CoreServiceState.endWorkers()
         val state = BinaryOutputState()
         var startedProc: Process? = null
+        var dnsBridge: com.wireturn.app.kernel.SystemDnsBridge? = null
+        var runtime: com.wireturn.app.kernel.PrivateRuntimeDirectory? = null
 
         try {
             val vpn = (cfg.kernelConfig as? KernelConfig.Vpn)?.config
@@ -500,12 +511,14 @@ class CoreService : Service() {
                 CoreServiceState.setStatusText("Ядро: ${selected.engineLabel}")
             }
             val sharedNetwork = AppPreferences(applicationContext).sharedNetworkSettingsFlow.first()
-            val bootstrap = sharedNetwork.dns.bootstrap
+            val bootstrap = com.wireturn.app.kernel.EffectiveDnsBootstrap.resolve(sharedNetwork, selected?.isRawXray == true)
+            dnsBridge = com.wireturn.app.kernel.SystemDnsBridge(this@CoreService)
 
             val chainPreferences = AppPreferences(applicationContext)
             com.wireturn.app.kernel.ChainCompatibility.validate(preparedCfg, chainPreferences.xrayConfigFlow.first(),
                 chainPreferences.vlessConfigFlow.first(), com.wireturn.app.kernel.LocalProxyPorts.resolve(preparedCfg, chainPreferences.effectiveXraySettingsFlow.first()))
-            val cmdArgs = buildCommandArgs(preparedCfg, bootstrap)
+            runtime = com.wireturn.app.kernel.PrivateRuntimeDirectory(this@CoreService, "core")
+            val cmdArgs = buildCommandArgs(preparedCfg, bootstrap, runtime.directory)
             if (selected != null && com.wireturn.app.kernel.SingBoxConfig.snellTfoSuppressed(selected)) {
                 AppLogsState.addLog(getString(R.string.snell_tfo_log))
             }
@@ -517,6 +530,9 @@ class CoreService : Service() {
                     .directory(filesDir)
                     .redirectErrorStream(true)
                 val env = builder.environment()
+                dnsBridge.applyTo(env)
+                env.remove("TUNA_BOOTSTRAP_DNS")
+                if (bootstrap.isNotBlank()) env["TUNA_BOOTSTRAP_DNS"] = com.wireturn.app.data.BootstrapDns.parse(bootstrap)!!.xrayAddress()
                 val nativeLibDir = applicationInfo.nativeLibraryDir
                 
                 // Lets the spawned binary find shared libraries bundled as jniLibs.
@@ -632,6 +648,7 @@ class CoreService : Service() {
             handleProcessException(e)
             false
         } finally {
+            dnsBridge?.close()
             CoreServiceState.endWorkers(state.workerRun)
             CoreServiceState.setCaptchaSession(null)
             // NonCancellable: this finally often runs on an already-cancelled coroutine; without
@@ -642,7 +659,7 @@ class CoreService : Service() {
                 // unconditional set(null) would clear that instead and leak it.
                 process.compareAndSet(startedProc, null)
                 vkAuthJob.cancel()
-
+                runtime?.close()
             }
         }
     }
@@ -674,9 +691,10 @@ class CoreService : Service() {
         return CommandLogRedactor.redact(cmdArgs, sensitiveFlags)
     }
 
-    private fun buildCommandArgs(cfg: ClientConfig, bootstrap: String): List<String> {
+    private fun buildCommandArgs(cfg: ClientConfig, bootstrap: String, runtimeDirectory: java.io.File): List<String> {
         val snapshotContext = object : KernelCommandContext by commandContext {
             override val bootstrapDns = bootstrap
+            override val filesDir = runtimeDirectory
         }
         return KernelRegistry.get(cfg.kernelVariant).buildCommand(snapshotContext, cfg)
     }

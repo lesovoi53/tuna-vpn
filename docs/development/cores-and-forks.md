@@ -7,7 +7,7 @@
 | Android | [WireTurn](https://github.com/spkprsnts/WireTurn), v8.3 `4fe1cf6d14a0bc5a3a8f4f254f0dbb90ebb8d879` | Compose/UI, профили, группы, DNS/маршрутизация, lifecycle и диагностика |
 | Xray | XTLS/Xray-core `52a412d9e2f5`, module version в `external/vless-client/go.mod` | `native/routing/`: adaptive DNS, bootstrap, политика и XHTTP; wrapper в `external/vless-client/` |
 | sing-box-extended | shtorm-7, `55faa763f986f4ca8a492d9b2719bc6330d2bef5`, v1.14.1-extended-2.7.2 | `native/singbox/source-overlay.json`, dependency-overlay, версии uTLS/Cronet; startup/DNS/Snell/TrustTunnel и совместимость |
-| Mieru | enfein, `162c240b5366139a83dbd338e89907e8575ce0d8` | Launcher `external/mieru-adapter`, локальная SOCKS-auth в `native/mieru` |
+| Mieru | enfein, v3.38.1 `a2208ee7a38fb41d843a13ecdde858e67ef2f485` | Launcher `external/mieru-adapter`, локальная SOCKS-auth в `native/mieru`; upstream-тесты аутентификации сохранены |
 | WebDAV | spkprsnts, `b1af4c05eb80fd29a6f676be894fa61cd12a3dec` | `native/webdav`: overlay, локальная auth, проверки и provenance |
 | MasterDnsVPN | masterking32, `7de2476f1c33e69eec35360c52810dab43c5c986` | `native/masterdns`: CLI/lifecycle adapter; upstream DNS-транспорт |
 | qWDTT | SpaceNeuroX, `a296c57eaba69bb9479a24f9157856490890e47d` | Готовый бинарник из checksum-pinned WireTurn 8.3, не новая собственная сборка |

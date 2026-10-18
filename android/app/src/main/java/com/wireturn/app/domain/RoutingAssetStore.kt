@@ -133,7 +133,7 @@ internal object RoutingAssetStore {
     suspend fun download(address: String, target: File, progress: (Int) -> Unit = {}) {
         var url = URL(address)
         repeat(6) { attempt ->
-            require(url.protocol in setOf("http", "https") && url.userInfo == null) { "Недопустимый URL базы" }
+            ConfigurationUrlPolicy.validate(url)
             val connection = url.openConnection(activeLocalSocksProxy()) as HttpURLConnection
             connection.instanceFollowRedirects = false
             connection.connectTimeout = 15000
@@ -141,8 +141,7 @@ internal object RoutingAssetStore {
             try {
                 if (connection.responseCode in setOf(301, 302, 303, 307, 308)) {
                     require(attempt < 5) { "Слишком много перенаправлений базы" }
-                    val next = URL(url, requireNotNull(connection.getHeaderField("Location")))
-                    require(url.protocol != "https" || next.protocol == "https") { "Небезопасное перенаправление базы" }
+                    val next = ConfigurationUrlPolicy.redirect(url, requireNotNull(connection.getHeaderField("Location")))
                     url = next
                 } else {
                     require(connection.responseCode == 200) { "База: HTTP ${connection.responseCode}" }

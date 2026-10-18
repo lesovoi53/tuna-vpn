@@ -9,6 +9,7 @@ rules = (root / 'app/proguard-rules.pro').read_text(encoding='utf-8')
 models = set(re.findall(r'^-keep class ([\w.$]+) \{ \*; \}', rules, re.M))
 # These contracts must remain checked even if someone accidentally removes a keep rule.
 models.update({'com.wireturn.app.domain.SplitDnsSettings',
+               'com.wireturn.app.domain.DnsRecoverySettings',
                'com.wireturn.app.domain.SubscriptionPolicyParser$Resolver',
                'com.wireturn.app.domain.MasterDnsResolverResult'})
 seen = set()

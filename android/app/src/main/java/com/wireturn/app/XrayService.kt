@@ -140,9 +140,14 @@ class XrayService : Service() {
     private suspend fun startXray(snapshot: XrayConfigsSnapshot) {
         val executable = "${applicationInfo.nativeLibraryDir}/libxray.so"
         var ownedProcess: Process? = null
+        var dnsBridge: com.wireturn.app.kernel.SystemDnsBridge? = null
+        var runtime: com.wireturn.app.kernel.PrivateRuntimeDirectory? = null
         val dnsRun = com.wireturn.app.domain.DnsRuntimeTelemetry.begin()
 
         try {
+            dnsBridge = com.wireturn.app.kernel.SystemDnsBridge(this)
+            runtime = com.wireturn.app.kernel.PrivateRuntimeDirectory(this, "router")
+            val bootstrap = com.wireturn.app.kernel.EffectiveDnsBootstrap.resolve(com.wireturn.app.data.SharedNetworkSettings.fromLegacy(snapshot.settings))
             val wgConfig = snapshot.wg
             val xrayConfig = snapshot.xray
             val vlessConfig = snapshot.vless
@@ -152,7 +157,7 @@ class XrayService : Service() {
             val xraySettings = com.wireturn.app.kernel.LocalProxyPorts.resolve(runningClientConfig, snapshot.settings)
 
             if (xraySettings.networkRouter == com.wireturn.app.data.NetworkRouter.SING_BOX_EXTENDED) {
-                startExtendedRouter(snapshot, xraySettings) { ownedProcess = it }
+                startExtendedRouter(snapshot, xraySettings, dnsBridge, runtime.directory) { ownedProcess = it }
                 return
             }
 
@@ -228,7 +233,7 @@ class XrayService : Service() {
                 require(com.wireturn.app.domain.GeoAssetsManager.filesExist(this@XrayService)) { "Скачайте базы категорий в настройках маршрутизации" }
                 require(routingPolicy.geoSource.isBlank() || routingPolicy.geoSource == xraySettings.geoVariant) { "Для этих правил нужна база ${routingPolicy.geoSource}" }
             }
-            val policyFile = java.io.File(filesDir, "routing-policy.json").apply {
+            val policyFile = java.io.File(runtime.directory, "routing-policy.json").apply {
                 writeText(compiled.policyJson)
             }
             if (compiled.fakeDnsOwner == com.wireturn.app.kernel.FakeDnsOwner.XRAY) {
@@ -316,6 +321,7 @@ class XrayService : Service() {
             AppLogsState.addLog(getString(R.string.log_xray_starting, redactedCommandLog(cmdArgs)))
             val proc = withContext(Dispatchers.IO) {
                 val builder = ProcessBuilder(cmdArgs).redirectErrorStream(true)
+                dnsBridge.applyTo(builder.environment())
                 builder.environment().remove("TUNA_ROUTING_FILE")
                 builder.environment().remove("TUNA_BOOTSTRAP_DNS")
                 builder.environment().remove(com.wireturn.app.kernel.SnellDestinationResolver.ENVIRONMENT_KEY)
@@ -324,8 +330,8 @@ class XrayService : Service() {
                         fakeDnsEnabled = "-fakedns" in cmdArgs, hevEnabled = snapshot.hevEnabled)) {
                     builder.environment()[com.wireturn.app.kernel.SnellDestinationResolver.ENVIRONMENT_KEY] = "1"
                 }
-                if (snapshot.settings.bootstrapDns.isNotBlank()) {
-                    builder.environment()["TUNA_BOOTSTRAP_DNS"] = com.wireturn.app.data.BootstrapDns.parse(snapshot.settings.bootstrapDns)!!.xrayAddress()
+                if (bootstrap.isNotBlank()) {
+                    builder.environment()["TUNA_BOOTSTRAP_DNS"] = com.wireturn.app.data.BootstrapDns.parse(bootstrap)!!.xrayAddress()
                     builder.environment()["GODEBUG"] = "netdns=go"
                 }
                 policyFile?.let { builder.environment()["TUNA_ROUTING_FILE"] = it.absolutePath }
@@ -381,6 +387,7 @@ class XrayService : Service() {
             }
             AppLogsState.addLog(getString(R.string.log_xray_error, e.message ?: "Unknown"))
         } finally {
+            dnsBridge?.close()
             com.wireturn.app.domain.DnsRuntimeTelemetry.end(dnsRun)
             val child = ownedProcess
             if (child != null) withContext(kotlinx.coroutines.NonCancellable + Dispatchers.IO) {
@@ -391,6 +398,7 @@ class XrayService : Service() {
                 }
             }
             if (process.compareAndSet(child, null)) XrayServiceState.updateStatsSocketName(null)
+            runtime?.close()
             
             // Only set Idle if we are NOT being cancelled by a new start command
             val isJobActive = try {
@@ -416,6 +424,8 @@ class XrayService : Service() {
     private suspend fun startExtendedRouter(
         snapshot: XrayConfigsSnapshot,
         settings: XraySettings,
+        dnsBridge: com.wireturn.app.kernel.SystemDnsBridge,
+        runtimeDirectory: java.io.File,
         onProcess: (Process) -> Unit,
     ) = withContext(Dispatchers.IO) {
         require(snapshot.xray.routingEnabled) { "Для общего extended включите маршрутизацию" }
@@ -439,7 +449,7 @@ class XrayService : Service() {
         val upstream = com.wireturn.app.kernel.SingBoxNetworkCompiler.LocalSocks(
             snapshot.client.socksAddr.replace("0.0.0.0:", "127.0.0.1:"), snapshot.client.socksUser, snapshot.client.socksPass)
         val config = com.wireturn.app.kernel.SingBoxNetworkCompiler.compile(network, listener, upstream, categories, snapshot.hevEnabled)
-        val work = java.io.File(filesDir, "network-router").apply { mkdirs() }
+        val work = runtimeDirectory
         val configFile = java.io.File(work, "extended.json")
         val temporary = java.io.File.createTempFile("extended-", ".json", work)
         try {
@@ -460,6 +470,9 @@ class XrayService : Service() {
             XrayServiceState.updateStatsSocketName(null)
             currentCoroutineContext().ensureActive()
             val proc = ProcessBuilder(native, "run", "-c", configFile.absolutePath).redirectErrorStream(true).apply {
+                dnsBridge.applyTo(environment())
+                environment().remove("TUNA_BOOTSTRAP_DNS")
+                com.wireturn.app.data.BootstrapDns.parse(com.wireturn.app.kernel.EffectiveDnsBootstrap.resolve(network))?.let { environment()["TUNA_BOOTSTRAP_DNS"] = it.xrayAddress() }
                 environment().remove("TUNA_ROUTING_FILE")
                 if (snapshot.client.useCustomCerts) caBundlePath?.let { environment()["SSL_CERT_FILE"] = it }
             }.start()

@@ -78,6 +78,25 @@ class ProfileRoutingTest {
         assertEquals("", ProfileRouting.common(copied, listOf(s)).dns.splitDnsJson)
         assertEquals("", ProfileRouting.resolve(ProfileRouting.common(copied, listOf(s)), profile(null), listOf(s)).routing.subscriptionSource)
     }
+    @Test fun preEmergencyDefaultCopyIsRemovedButRealRecoveryOverridesSurvive() {
+        val subscription = sub("a")
+        val source = subscription.routingSource!!
+        val policy = SubscriptionPolicyParser.parseHapp(source)
+        val oldCopy = policy.dns ?: SplitDnsSettings(policy.remote, policy.domestic, policy.hosts)
+        val legacy = common.copy(routing = common.routing.copy(subscriptionSource = source),
+            dns = common.dns.copy(splitDnsJson = oldCopy.toJson()))
+        assertEquals("", ProfileRouting.common(legacy, listOf(subscription)).dns.splitDnsJson)
+        val overrides = listOf(oldCopy.copy(remoteEmergency = DnsRecoverySettings("disabled")),
+            oldCopy.copy(remoteEmergency = DnsRecoverySettings("system")),
+            oldCopy.copy(bootstrap = DnsRecoverySettings("system")),
+            oldCopy.copy(timeoutMs = 2000))
+        for (override in overrides) {
+            val settings = legacy.copy(dns = legacy.dns.copy(splitDnsJson = override.toJson()))
+            val migrated = ProfileRouting.common(settings, listOf(subscription))
+            assertEquals(override.toJson(), migrated.dns.splitDnsJson)
+            assertEquals("", migrated.routing.subscriptionSource)
+        }
+    }
     @Test fun routerIsAlwaysXrayAndProtocolSelectionIsNotInvolved() {
         assertEquals(NetworkRouter.XRAY, ProfileRouting.resolve(common.copy(router = NetworkRouter.SING_BOX_EXTENDED), profile(null), emptyList()).router)
     }

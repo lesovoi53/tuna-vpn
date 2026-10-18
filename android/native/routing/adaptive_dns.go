@@ -1,7 +1,7 @@
 package dns
 
-// TUNA's bounded resolver pool. All child queries retain the calling client's
-// inbound tag; no local/direct resolver or cross-pool fallback is created here.
+// TUNA's bounded resolver pool. Primary and manual emergency queries retain the
+// calling client's inbound tag. Explicit system emergency uses Android's bridge.
 import (
 	"context"
 	"encoding/base64"
@@ -25,6 +25,7 @@ type tunaPoolSpec struct {
 	Mode      string   `json:"mode"`
 	TimeoutMs int      `json:"timeoutMs"`
 	Addresses []string `json:"addresses"`
+	Emergency string   `json:"emergency,omitempty"`
 }
 type tunaPoolsKey struct{}
 type tunaPools struct {
@@ -45,6 +46,7 @@ type tunaHealth struct {
 type tunaDNSServer struct {
 	spec         tunaPoolSpec
 	children     []Server
+	emergency    Server
 	probes       []Server
 	cacheOff     bool
 	now          func() time.Time
@@ -87,7 +89,7 @@ func newTunaDNSServer(ctx context.Context, encoded string, dispatcher routing.Di
 		return nil, fmt.Errorf("invalid DNS pool")
 	}
 	legacy := spec.Mode == "legacy"
-	if (legacy && (len(spec.Addresses) != 1 || spec.TimeoutMs != 0)) || (!legacy && ((spec.Mode != "auto" && spec.Mode != "priority") || spec.TimeoutMs < 1000 || spec.TimeoutMs > 10000)) {
+	if (legacy && (len(spec.Addresses) != 1 || spec.TimeoutMs != 0 || spec.Emergency != "")) || (!legacy && ((spec.Mode != "auto" && spec.Mode != "priority") || spec.TimeoutMs < 1000 || spec.TimeoutMs > 10000)) {
 		return nil, fmt.Errorf("invalid DNS pool")
 	}
 	registry, _ := ctx.Value(tunaPoolsKey{}).(*tunaPools)
@@ -105,13 +107,20 @@ func newTunaDNSServer(ctx context.Context, encoded string, dispatcher routing.Di
 	}
 	s := &tunaDNSServer{spec: spec, cacheOff: disableCache, now: time.Now, health: make([]tunaHealth, len(spec.Addresses)), lastProbe: time.Now()}
 	seen := map[string]bool{}
-	for _, address := range spec.Addresses {
-		if seen[address] {
+	addresses := append([]string(nil), spec.Addresses...)
+	if spec.Emergency != "" {
+		addresses = append(addresses, spec.Emergency)
+	}
+	for index, address := range addresses {
+		isEmergency := index == len(spec.Addresses)
+		if seen[address] && !isEmergency {
 			return nil, fmt.Errorf("duplicate DNS pool endpoint")
 		}
 		seen[address] = true
 		dest := net.Destination{Network: net.Network_UDP, Address: net.ParseAddress(address), Port: 53}
-		if strings.HasPrefix(address, "tuna-doh://") {
+		if address == "tuna-system://android" && isEmergency {
+			// Android's authenticated, network-bound bridge, never libc/localhost.
+		} else if strings.HasPrefix(address, "tuna-doh://") {
 			// The dedicated factory validates the encoded endpoint and bootstrap.
 		} else if strings.Contains(address, "://") {
 			u, e := url.Parse(address)
@@ -131,6 +140,10 @@ func newTunaDNSServer(ctx context.Context, encoded string, dispatcher routing.Di
 		child, e := NewServer(ctx, dest, dispatcher, disableCache, serveStale, ttl, clientIP)
 		if e != nil {
 			return nil, e
+		}
+		if isEmergency {
+			s.emergency = child
+			continue
 		}
 		s.children = append(s.children, child)
 		if legacy {
@@ -277,7 +290,11 @@ func (s *tunaDNSServer) QueryIP(ctx context.Context, domain string, option fdns.
 		remaining := time.Until(deadline)
 		// The budget is TOTAL, not N multiplied timeouts. Reserve each untried
 		// resolver a share so an unresponsive first server cannot consume it all.
-		attempt, cancelAttempt := context.WithTimeout(ctx, remaining/time.Duration(len(order)-position))
+		shares := len(order) - position
+		if s.emergency != nil {
+			shares++
+		}
+		attempt, cancelAttempt := context.WithTimeout(ctx, remaining/time.Duration(shares))
 		begin := s.now()
 		server := s.children[index]
 		if index == probe {
@@ -290,9 +307,13 @@ func (s *tunaDNSServer) QueryIP(ctx context.Context, domain string, option fdns.
 		}
 		// Negative DNS answers are not transport failures; do not punish the
 		// resolver or leak the question to another resolver for a different answer.
-		if errors.Is(err, fdns.ErrEmptyResponse) || fdns.RCodeFromError(err) == 3 {
+		if errors.Is(err, fdns.ErrEmptyResponse) || fdns.RCodeFromError(err) == 3 || (err == nil && len(ips) == 0) {
+			s.observe(index, s.now().Sub(begin), true)
 			s.report(index, "negative")
 			return ips, ttl, err
+		}
+		if errors.Is(err, context.Canceled) {
+			return nil, 0, err
 		}
 		success := err == nil && len(ips) > 0
 		s.observe(index, s.now().Sub(begin), success)
@@ -307,6 +328,29 @@ func (s *tunaDNSServer) QueryIP(ctx context.Context, domain string, option fdns.
 			return ips, ttl, nil
 		}
 		last = err
+	}
+	if s.emergency != nil {
+		if err := ctx.Err(); err != nil {
+			return nil, 0, err
+		}
+		ips, ttl, err := s.emergency.QueryIP(ctx, domain, option)
+		if ctx.Err() != nil {
+			return nil, 0, ctx.Err()
+		}
+		if errors.Is(err, context.Canceled) {
+			return nil, 0, err
+		}
+		reason := "emergency-resolver"
+		if s.spec.Emergency == "tuna-system://android" {
+			reason = "emergency-system"
+		}
+		if errors.Is(err, fdns.ErrEmptyResponse) || fdns.RCodeFromError(err) == 3 || (err == nil && len(ips) == 0) {
+			reason += "-negative"
+		}
+		if err == nil || errors.Is(err, fdns.ErrEmptyResponse) || fdns.RCodeFromError(err) == 3 {
+			s.report(-1, reason)
+		}
+		return ips, ttl, err
 	}
 	if last == nil {
 		last = fdns.ErrEmptyResponse

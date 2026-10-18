@@ -13,10 +13,10 @@
     {
       "name": "mieru",
       "repository": "https://github.com/enfein/mieru",
-      "commit": "162c240b5366139a83dbd338e89907e8575ce0d8",
-      "url": "https://codeload.github.com/enfein/mieru/tar.gz/162c240b5366139a83dbd338e89907e8575ce0d8",
-      "archive": "mieru-162c240b5366139a83dbd338e89907e8575ce0d8.tar.gz",
-      "sha256": "0440f0e7e07336f4fd2caea1178262319783599720a65e4022d299aa34f86f40",
+      "commit": "a2208ee7a38fb41d843a13ecdde858e67ef2f485",
+      "url": "https://codeload.github.com/enfein/mieru/tar.gz/a2208ee7a38fb41d843a13ecdde858e67ef2f485",
+      "archive": "mieru-a2208ee7a38fb41d843a13ecdde858e67ef2f485.tar.gz",
+      "sha256": "fdc42f6abc8d5fdee35d510bc1c2309d1a767add23032ad8d6c479e9d2d22bce",
       "submodule": "android/external/mieru"
     },
     {

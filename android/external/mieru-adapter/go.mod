@@ -3,7 +3,7 @@ module tuna-mieru-adapter
 go 1.26.3
 
 require (
-	github.com/enfein/mieru/v3 v3.0.0
+	github.com/enfein/mieru/v3 v3.38.1
 	google.golang.org/protobuf v1.34.2
 )
 

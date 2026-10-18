@@ -153,7 +153,7 @@ class App:
         header.grid(row=0, column=0, columnspan=2, sticky="ew", padx=28, pady=(24, 20))
         ctk.CTkLabel(header, text="TUNA", font=("Segoe UI", 30, "bold"), text_color="#bcacff").pack(side="left")
         ctk.CTkLabel(header, text="  /  ROUTING BUILDER", font=("Segoe UI", 14), text_color=MUTED).pack(side="left", padx=12)
-        ctk.CTkLabel(header, text="DESKTOP  2.3.1", text_color=MUTED).pack(side="right")
+        ctk.CTkLabel(header, text="DESKTOP  2.4", text_color=MUTED).pack(side="right")
         self.tabs = ctk.CTkTabview(root)
         self.tabs.grid(row=1, column=0, sticky="nsew", padx=(24, 14), pady=(0, 14))
         self.tabs.add('Приложения')

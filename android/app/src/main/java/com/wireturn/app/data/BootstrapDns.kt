@@ -7,17 +7,18 @@ import java.net.URI
 
 /** Literal IP avoids resolving the resolver through the tunnel it is bootstrapping. */
 data class BootstrapDns(val transport: String, val address: String, val port: Int) {
-    fun xrayAddress(): String = "tcp://" +
+    fun xrayAddress(): String = if (transport == "local") "system" else "tcp://" +
         (if (':' in address) "[$address]" else address) + ":$port"
 
     fun singBoxServer(tag: String = "bootstrap") = JsonObject().apply {
         addProperty("type", transport); addProperty("tag", tag)
-        addProperty("server", address); addProperty("server_port", port)
+        if (transport != "local") { addProperty("server", address); addProperty("server_port", port) }
     }
 
     companion object {
         fun parse(value: String): BootstrapDns? {
             if (value.isBlank()) return null // Retain old per-adapter defaults until explicitly configured.
+            if (value == "system") return BootstrapDns("local", "", 0)
             val uri = URI(value.trim())
             require(uri.scheme == "tcp" && uri.host != null && uri.rawUserInfo == null &&
                 uri.path.isNullOrEmpty() && uri.rawQuery == null && uri.rawFragment == null &&

@@ -24,6 +24,14 @@
       "sumFile": "native/singbox/utls.sum"
     }
   },
+  "Mieru": {
+    "url": "https://github.com/enfein/mieru.git",
+    "tag": "v3.38.1",
+    "version": "3.38.1",
+    "commit": "a2208ee7a38fb41d843a13ecdde858e67ef2f485",
+    "sourceDir": "external/mieru",
+    "build": "native/mieru/build.ps1"
+  },
   "MasterDnsVPN": {
     "url": "https://github.com/masterking32/MasterDnsVPN.git",
     "tag": "v2026.06.13.234407-7de2476",

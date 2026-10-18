@@ -100,6 +100,7 @@ data class WebdavConfig(
         fun normalizeBootstrap(value: String): String {
             if (value.isBlank()) return ""
             val input = value.trim()
+            if (input == "system") return input
             val transport = if (input.startsWith("tcp://")) "tcp" else "udp"
             val literal = input.removePrefix("tcp://").removePrefix("udp://")
             val parsed = requireNotNull(BootstrapDns.parse("tcp://$literal"))

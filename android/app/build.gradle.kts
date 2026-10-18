@@ -143,6 +143,7 @@ kotlin {
 }
 
 dependencies {
+    implementation("com.android.tools.build:apksig:9.4.0")
     testImplementation("junit:junit:4.13.2")
     coreLibraryDesugaring(libs.desugar.jdk.libs)
     implementation(libs.androidx.core.splashscreen)

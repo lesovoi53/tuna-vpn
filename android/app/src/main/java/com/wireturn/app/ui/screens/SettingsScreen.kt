@@ -170,6 +170,7 @@ fun SettingsScreen(
             // 1. Оформление
             InterfaceStyleChoice(viewModel)
             DefaultFragmentationSection()
+            TunMtuSection()
             val themeModes = remember(supportsSystemTheme) {
                 if (supportsSystemTheme) {
                     ThemeMode.entries

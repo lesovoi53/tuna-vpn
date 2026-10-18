@@ -12,6 +12,16 @@
 
 ## Минимальная автоматическая регрессия
 
+`AdvancedProtocolFixtureTest.bundledAndOptionalPrivateFixtures` всегда проверяет
+встроенные синтетические конфигурации Snell v6, TUIC, AnyTLS и расширенный
+AWG: разбор, валидность и генерацию outbounds/endpoints с маршрутом VPN. Результаты находятся в игнорируемом
+`android/app/build/advanced-synthetic-fixtures/`. Рабочие ключи не требуются.
+Для дополнительного аудита частных `.uri` задайте `TUNA_ADVANCED_FIXTURES` на
+каталог вне публичного дерева; JSON и summary будут записаны в тот же каталог.
+Явно заданный пустой, несуществующий или не содержащий `.uri` каталог — ошибка,
+а не пропуск. Без переменной выполняется встроенный набор. Этот тест не
+устанавливает сетевые соединения и не заменяет проверку native-бинарника.
+
 - Android: `:app:testDebugUnitTest`, `:app:lintRelease`, `:app:assembleRelease` с `tools/synthetic-tests.init.gradle`.
 - Python Builder: `test_core`, `test_policy`, `test_geo`, `test_routing_sources`, `test_dns_pools`; GUI отдельными процессами; frozen EXE self-test.
 - `tools/check_removed_protocols.py <apk>`: запрет возвращения удалённых реализаций.
@@ -20,6 +30,30 @@
 - `tools/check_vless_import_native.py`, `check_core_fixtures.py`, `check_network_fixtures.py`, `check_release_xhttp.py`: проверьте аргументы `--help` перед запуском; отдельные проверки требуют подготовленных native fixtures.
 - Native build-скрипты запускают собственные unit/loopback tests. Их сбой нельзя игнорировать после успешного Gradle.
 - `python scripts/check_public_tree.py`: файлы/ссылки и базовые publication guards; не является полным secret scanner.
+
+Для полного JVM-прогона сначала создайте синтетический localhost TLS fixture.
+Команды ниже выполняются из корня репозитория при заданном `JAVA_HOME` JDK 21:
+
+```powershell
+python android/tools/generate_test_tls.py
+```
+
+Генератор создаёт только тестовый
+`android/app/src/test/resources/group-probe-fixture.p12` с SAN localhost/127.0.0.1
+и паролем `fixture-only`. Рабочие ключи/сертификаты не используются; тесты
+GroupProbeInformationalTest проверяют настоящие loopback SOCKS/TLS ответы.
+Файл игнорируется Git, но publication guard намеренно запрещает любые `.p12`
+в экспортируемом дереве. После тестов, **до проверки публичного дерева и упаковки
+исходников**, удалите только этот сгенерированный файл:
+
+```powershell
+Remove-Item -LiteralPath android/app/src/test/resources/group-probe-fixture.p12
+python scripts/check_public_tree.py
+```
+
+Перед следующим полным JVM-прогоном снова запустите генератор. Не переносите
+настоящие keystore в test/resources и не добавляйте исключение в secret guard
+ради этого fixture.
 
 ## Ручная матрица
 
@@ -44,4 +78,3 @@
 Для A/B используйте несколько повторов и медиану; укажите погрешность и аварийные остановки видео. Не экстраполируйте планшет на другой телефон как измеренный результат. Не опрашивайте ADB каждую секунду в sleep-тесте. Записывайте локально с ограничением объёма; отключение питания вручную не заменяется `dumpsys battery unplug`.
 
 Старые частные тесты не публикуются вместе с личными логами. В 1.5 публикационная проверка не включает повторный многочасовой battery/TUN тест: это явно отражается в отчёте релиза.
-

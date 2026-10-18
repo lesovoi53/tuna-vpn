@@ -18,11 +18,15 @@ object TcpOnlyDns {
             SplitDnsOverride.INHERIT -> inherited?.let(SplitDnsSettings::parse)
         }
         if (split != null) {
-            if (split.effectiveRemoteServers.none { it.transport == "UDP" }) return settings
+            if (split.effectiveRemoteServers.none { it.transport == "UDP" } &&
+                split.remoteEmergency?.resolver?.transport != "UDP") return settings
             fun adapt(resolver: SubscriptionPolicyParser.Resolver) =
                 if (resolver.transport == "UDP") resolver.copy(transport = "TCP") else resolver
             return settings.copy(dns = settings.dns.copy(splitDnsJson =
-                split.copy(remote = adapt(split.remote), remoteServers = split.remoteServers?.map(::adapt)).toJson()))
+                split.copy(remote = adapt(split.remote), remoteServers = split.remoteServers?.map(::adapt),
+                    remoteEmergency = split.remoteEmergency?.let { recovery ->
+                        recovery.copy(resolver = recovery.resolver?.let(::adapt))
+                    }).toJson()))
         }
         val servers = settings.dns.servers.split(',', '\n').map(String::trim).filter(String::isNotEmpty).joinToString(",") {
             when {

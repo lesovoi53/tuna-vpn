@@ -13,6 +13,16 @@
 # ── DataStore ─────────────────────────────────────────────────────────────────
 # Preferences DataStore does not require broad keep rules.
 
+# Retain the APK signature boundary for installed-code Android acceptance while
+# PRIVATE_DISTRIBUTION keeps the updater disabled. Only the singleton and this
+# entry point are retained; its dependencies still undergo normal R8 shrinking.
+# Names may change: the external, same-signer instrumentation uses the R8 mapping
+# and parameter types. This adds no exported Android component or updater path.
+-keep,allowobfuscation class com.wireturn.app.domain.UpdateSecurity {
+    public static final com.wireturn.app.domain.UpdateSecurity INSTANCE;
+    public final void verifySignature(java.io.File, int, java.util.List);
+}
+
 # ── GSON / Data Models ────────────────────────────────────────────────────────
 # Mandatory rules for GSON to work with obfuscation
 -keepattributes Signature, *Annotation*, EnclosingMethod, InnerClasses
@@ -55,6 +65,7 @@
 -keep class com.wireturn.app.data.kernel.VpnOptions { *; }
 -keep class com.wireturn.app.data.kernel.MasterDnsConfig { *; }
 -keep class com.wireturn.app.domain.SplitDnsSettings { *; }
+-keep class com.wireturn.app.domain.DnsRecoverySettings { *; }
 -keep class com.wireturn.app.domain.SubscriptionRuleOverrides { *; }
 -keep class com.wireturn.app.domain.SubscriptionPolicyParser$Resolver { *; }
 -keep class com.wireturn.app.domain.MasterDnsResolverResult { *; }

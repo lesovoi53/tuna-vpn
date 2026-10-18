@@ -1,6 +1,101 @@
-"""Ordered DNS pools. Each pool has its own mode and never crosses routing boundaries."""
+"""Ordered DNS pools with an explicit, separate emergency resolver and bootstrap."""
 import copy
 import customtkinter as ctk
+
+
+# Same basic provider endpoints as Android DnsPresets. These are choices, not
+# availability claims; custom endpoints remain editable and are never resolved here.
+DNS_PRESETS = {
+    'Россия · Яндекс · UDP': ('UDP', '77.88.8.8'),
+    'Глобальный · Google · UDP': ('UDP', '8.8.8.8'),
+    'Глобальный · Cloudflare · UDP': ('UDP', '1.1.1.1'),
+    'Глобальный · Google · DoH': ('DOH', 'https://dns.google/dns-query'),
+    'Глобальный · Cloudflare · DoH': ('DOH', 'https://cloudflare-dns.com/dns-query'),
+}
+
+
+class DnsChoiceEditor:
+    SYSTEM = 'Системный / провайдера (localhost)'
+    DISABLED = 'Отключён'
+    INHERIT = 'Наследовать настройки Android'
+    CUSTOM = 'Ввести вручную'
+
+    def __init__(self, parent, route, changed, *, bootstrap=False):
+        self.route, self.changed, self.bootstrap = route, changed, bootstrap
+        self.mode = 'inherit' if bootstrap else 'system'
+        self.resolver = dict(transport='TCP', endpoint='', bootstrapIp=None, route=route)
+        self.presets = ({label.replace('UDP', 'TCP'): ('TCP', endpoint + ':53')
+                         for label, (transport, endpoint) in DNS_PRESETS.items() if transport == 'UDP'}
+                        if bootstrap else DNS_PRESETS)
+        self.frame = ctk.CTkFrame(parent)
+        self.frame.pack(fill='x', padx=8, pady=8)
+        title = 'Bootstrap DNS · адреса серверов' if bootstrap else 'Аварийный DNS · после отказа всей группы'
+        ctk.CTkLabel(self.frame, text=title, anchor='w').pack(fill='x', padx=8, pady=5)
+        self.selection = ctk.StringVar(value=self.INHERIT if bootstrap else self.SYSTEM)
+        choices = ([self.INHERIT, self.SYSTEM] if bootstrap else [self.SYSTEM, self.DISABLED]) + list(self.presets) + [self.CUSTOM]
+        ctk.CTkOptionMenu(self.frame, variable=self.selection, values=choices, command=self.select).pack(fill='x', padx=8, pady=5)
+        text = ('Системный / localhost — DNS исходной сети Android (Wi-Fi или оператора), всегда напрямую, вне VPN. Это не 127.0.0.1 и не DNS внутри TUN. '
+                + ('Bootstrap разрешает только адреса серверов. В ручном режиме: TCP и IP; пустое наследование сохраняет настройки Android.' if bootstrap
+                   else 'Используется после отказа основных DNS. Ручной резерв идёт по маршруту этой группы. Он не занимает место в списке 1–8.'))
+        ctk.CTkLabel(self.frame, text=text, wraplength=550, justify='left').pack(anchor='w', padx=8, pady=5)
+        ctk.CTkLabel(self.frame, text='Доступность выбранного сервиса зависит от сети; пресет её не гарантирует.', wraplength=550, justify='left').pack(anchor='w', padx=8)
+        self.fields = ctk.CTkFrame(self.frame, fg_color='transparent')
+        self.fields.pack(fill='x')
+        self.render()
+
+    def load(self, value=None):
+        value = copy.deepcopy(value) if value is not None else {'mode': 'inherit' if self.bootstrap else 'system'}
+        self.mode = value['mode']
+        if self.mode == 'resolver':
+            self.resolver = value['resolver']
+            self.selection.set(self.CUSTOM)
+        else:
+            self.selection.set({'inherit': self.INHERIT, 'system': self.SYSTEM, 'disabled': self.DISABLED}[self.mode])
+        self.render()
+
+    def select(self, label):
+        self.selection.set(label)
+        self.mode = {self.INHERIT: 'inherit', self.SYSTEM: 'system', self.DISABLED: 'disabled'}.get(label, 'resolver')
+        if label in self.presets:
+            transport, endpoint = self.presets[label]
+            self.resolver = dict(transport=transport, endpoint=endpoint, bootstrapIp=None, route=self.route)
+        self.render()
+        self.changed()
+
+    def value(self):
+        if self.mode == 'inherit':
+            return None
+        if self.mode == 'resolver':
+            return dict(mode='resolver', resolver=copy.deepcopy(self.resolver))
+        return dict(mode=self.mode)
+
+    def render(self):
+        for child in self.fields.winfo_children():
+            child.destroy()
+        if self.mode != 'resolver':
+            return
+        if self.bootstrap:
+            ctk.CTkLabel(self.fields, text='TCP · напрямую · IP:порт (IPv6 в квадратных скобках)').pack(anchor='w', padx=8)
+        else:
+            self.transport = ctk.StringVar(value=self.resolver['transport'])
+            def set_transport(value):
+                self.resolver['transport'] = value
+                self.selection.set(self.CUSTOM)
+                self.changed()
+            ctk.CTkOptionMenu(self.fields, variable=self.transport, values=['DOH', 'UDP', 'TCP'], command=set_transport).pack(fill='x', padx=8, pady=5)
+        for key, title in [('endpoint', 'Адрес Bootstrap: IP:порт' if self.bootstrap else 'Адрес аварийного DNS: IP:порт / https://…'),
+                           *([] if self.bootstrap else [('bootstrapIp', 'Bootstrap IP резервного DoH (необязательно)')])]:
+            ctk.CTkLabel(self.fields, text=title, anchor='w').pack(fill='x', padx=8)
+            variable = ctk.StringVar(value=self.resolver.get(key) or '')
+            def update(*_, var=variable, field=key):
+                value = var.get().strip()
+                self.resolver[field] = value if field == 'endpoint' else value or None
+                self.selection.set(self.CUSTOM)
+                self.changed()
+            variable.trace_add('write', update)
+            entry = ctk.CTkEntry(self.fields, textvariable=variable)
+            entry.pack(fill='x', padx=8, pady=5)
+            entry._dns_variable = variable
 
 
 class DnsPoolEditor:
@@ -16,10 +111,12 @@ class DnsPoolEditor:
         self.rows.pack(fill='x')
         self.add_button = ctk.CTkButton(self.frame, text='+ Добавить DNS', command=self.add)
         self.add_button.pack(anchor='w', padx=8, pady=8)
+        self.emergency = DnsChoiceEditor(self.frame, route, changed)
 
-    def load(self, servers, mode='auto'):
+    def load(self, servers, mode='auto', emergency=None):
         self.servers = copy.deepcopy(servers)
         self.mode.set('Приоритет' if mode == 'priority' else 'Авто')
+        self.emergency.load(emergency)
         self.render()
 
     def value(self):

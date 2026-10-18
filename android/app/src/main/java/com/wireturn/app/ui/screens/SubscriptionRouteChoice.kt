@@ -110,24 +110,27 @@ fun AppliedRoutingSummary(privacyMode: Boolean = false) {
         else -> "Применится при подключении"
     }, color = MaterialTheme.colorScheme.primary)
     val actual = session?.settings?.takeIf { running } ?: expected
-    if ((coreSession?.clientConfig?.kernelConfig as? com.wireturn.app.data.KernelConfig.Vpn)?.config?.isRawXray == true) {
-        Text("Полный Xray JSON: внутренние DNS и маршруты задаются самим профилем. Общие настройки не заменяют его конфигурацию.",
-            style = MaterialTheme.typography.bodySmall)
-    }
     actual?.takeUnless { privacyMode }?.let { settings ->
-        val split = runCatching {
-            if (settings.splitDnsJson.isNotBlank() && settings.splitDnsJson != "disabled") com.wireturn.app.domain.SplitDnsSettings.parse(settings.splitDnsJson)
-            else if (settings.splitDnsJson != "disabled" && settings.happRoutingSource.isNotBlank()) com.wireturn.app.domain.SplitDnsSettings.fromPolicy(com.wireturn.app.domain.SubscriptionPolicyParser.parseHapp(settings.happRoutingSource))
-            else null
-        }.getOrNull()
-        Text("Bootstrap: ${settings.bootstrapDns.ifBlank { "по умолчанию ядра" }}", style = MaterialTheme.typography.bodySmall)
+        val display = com.wireturn.app.domain.EffectiveDnsDisplay.resolve(settings,
+            rawXray = (coreSession?.clientConfig?.kernelConfig as? com.wireturn.app.data.KernelConfig.Vpn)?.config?.isRawXray == true)
+        val notice = display.notice
+        if (notice != null) {
+            Text(notice, style = MaterialTheme.typography.bodySmall)
+            return@let
+        }
+        val split = display.split
+        Text("Bootstrap: ${display.rows.single { it.label == com.wireturn.app.R.string.cd_bootstrap }.value}", style = MaterialTheme.typography.bodySmall)
         if (split == null) Text("DNS маршрутизатора: ${settings.dns}", style = MaterialTheme.typography.bodySmall)
         else {
             AppliedDnsPool("DNS через VPN", split.effectiveRemoteServers, split.remoteSelectionMode,
                 dnsObservations["remote"].takeIf { running })
+            Text("Аварийный резерв VPN DNS: ${com.wireturn.app.domain.EffectiveDnsDisplay.recovery(split.remoteEmergency)}",
+                style = MaterialTheme.typography.bodySmall)
             AppliedDnsPool("Прямой DNS", split.effectiveDomesticServers, split.domesticSelectionMode,
                 dnsObservations["domestic"].takeIf { running })
-            Text("Bootstrap определяет IP сервера DNS. Для DoH без указанного IP используется общий Bootstrap DNS по маршруту группы; выбор A/AAAA к нему не относится.",
+            Text("Аварийный резерв прямого DNS: ${com.wireturn.app.domain.EffectiveDnsDisplay.recovery(split.domesticEmergency)}",
+                style = MaterialTheme.typography.bodySmall)
+            Text("Bootstrap определяет IP сервера DNS через физическую сеть напрямую (DIRECT), вне VPN. Выбор A/AAAA к bootstrap не относится.",
                 style = MaterialTheme.typography.bodySmall)
         }
     }
@@ -138,15 +141,7 @@ private fun AppliedDnsPool(title: String, servers: List<com.wireturn.app.domain.
     observed: com.wireturn.app.domain.DnsRuntimeTelemetry.Observation? = null) {
     val selection = if (mode == "priority") "по порядку списка" else "авто: быстрый и стабильный"
     Text("$title · $selection", style = MaterialTheme.typography.bodySmall)
-    if (observed != null && observed.index in 1..servers.size) {
-        val reason = when (observed.reason) {
-            "fallback" -> "резерв после ошибки или таймаута"
-            "probe" -> "проверка альтернативного DNS"
-            "negative" -> "отрицательный DNS-ответ; не повод менять резолвер"
-            else -> "выбран согласно режиму группы"
-        }
-        Text("Последний ответ: DNS ${observed.index} · $reason", style = MaterialTheme.typography.bodySmall)
-    } else Text("Ядро ещё не сообщило фактически использованный DNS. Порядок списка не подтверждает выбор.",
+    Text(com.wireturn.app.domain.EffectiveDnsDisplay.observation(observed, servers.size),
         style = MaterialTheme.typography.bodySmall)
     servers.forEachIndexed { index, server ->
         val bootstrap = server.bootstrapIp?.takeIf { it.isNotBlank() }?.let { " · Bootstrap IP: $it" }.orEmpty()

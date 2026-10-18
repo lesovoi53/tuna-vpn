@@ -27,3 +27,11 @@ the upstream submodule is never edited. The overlay hash is part of the native
 manifest and is verified before packaging. Only a local path is supported: Xray's
 optional crawler query controls are rejected instead of silently discarded.
 Reality authentication and certificate verification are unchanged.
+
+For application-generated local DNS transports tagged `bootstrap` or ending in
+`-bootstrap`, `TUNA_BOOTSTRAP_DNS=system` selects the Android physical-network
+resolver bridge. `TUNA_SYSTEM_DNS_SOCKET` must name the session's authenticated
+abstract socket. Missing/unavailable bridge fails closed; libc/resolv.conf is not
+a fallback. Literal TCP bootstrap and unrelated local DNS transports retain their
+existing behavior. See [the bridge contract](../routing/README.md). The native
+build runs framed-wire, negative-response, scoped-hook and cancellation tests.

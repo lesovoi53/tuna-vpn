@@ -17,6 +17,14 @@ class VkHostApplication : Application(), Application.ActivityLifecycleCallbacks 
             android.webkit.WebView.setDataDirectorySuffix("server-auth")
             return
         }
+        val currentProcess = if (android.os.Build.VERSION.SDK_INT >= 28) getProcessName() else {
+            java.io.File("/proc/self/cmdline").inputStream().use { input ->
+                val bytes = ByteArray(256)
+                val count = input.read(bytes)
+                if (count > 0) String(bytes, 0, count, Charsets.UTF_8).substringBefore('\u0000') else ""
+            }
+        }
+        if (currentProcess == packageName) com.wireturn.app.kernel.PrivateRuntimeDirectory.removeAbandoned(this)
         com.wireturn.app.AppLogsState.configure(this); registerActivityLifecycleCallbacks(this)
     }
     override fun onActivityResumed(activity: Activity) {

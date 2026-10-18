@@ -1008,6 +1008,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun getProfilesJson(ids: List<String>) = profileManager.getProfilesJson(ids)
     fun exportProfilesToZip(ids: List<String>) = profileManager.exportProfilesToZip(ids)
     suspend fun importProfilesFromZip(s: java.io.InputStream) = profileManager.importProfilesFromZip(s)
+    suspend fun importProfilesFromZipWithResult(s: java.io.InputStream) = profileManager.importProfilesFromZipWithResult(s)
     suspend fun importProfiles(data: List<Pair<String?, String>>) = profileManager.importProfiles(data).first
 
     /** Like [importProfiles], but also returns the freshly-imported profiles (with their newly

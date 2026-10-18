@@ -62,6 +62,8 @@ try {
     if ($LASTEXITCODE) { throw 'Network startup readiness regression tests failed' }
     & $GoExe test @modArgs -count=1 -timeout=45s ./dns/transport/fallback -run TestTuna
     if ($LASTEXITCODE) { throw 'Adaptive DNS regression tests failed' }
+    & $GoExe test @modArgs -count=1 -timeout=45s ./dns/transport/local -run TestTunaSystem
+    if ($LASTEXITCODE) { throw 'System DNS bootstrap regression tests failed' }
     if ($hostTags -match 'with_naive_outbound') { $hostTags += ',with_purego' }
     & $GoExe test @modArgs -count=1 -timeout=45s -tags $hostTags ./transport/trusttunnel -run TestTuna
     if ($LASTEXITCODE) { throw 'TrustTunnel ClientHello regression tests failed' }

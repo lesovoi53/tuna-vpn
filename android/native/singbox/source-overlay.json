@@ -201,6 +201,18 @@
   "transport/trusttunnel/trusttunnel_cronet_test.go": {
     "source": "native/singbox/trusttunnel_cronet_test.go"
   },
+  "dns/transport/local/local.go": [
+    {
+      "old": "func NewTransport(ctx context.Context, logger log.ContextLogger, tag string, options option.LocalDNSServerOptions) (adapter.DNSTransport, error) {\n",
+      "new": "func NewTransport(ctx context.Context, logger log.ContextLogger, tag string, options option.LocalDNSServerOptions) (adapter.DNSTransport, error) {\n\tif tunaSystemBootstrapEnabled(tag) { return newTunaSystemBootstrap(ctx, tag) }\n"
+    }
+  ],
+  "dns/transport/local/tuna_system_dns.go": {
+    "source": "native/singbox/system_dns.go"
+  },
+  "dns/transport/local/tuna_system_dns_test.go": {
+    "source": "native/singbox/system_dns_test.go"
+  },
   "dns/transport/fallback/tuna_adaptive.go": {
     "source": "native/singbox/tuna_adaptive.go"
   },

@@ -6,7 +6,7 @@ import policy
 import geo
 from pathlib import Path
 from completion import RuleCompletion
-from dns_editor import DnsPoolEditor
+from dns_editor import DnsPoolEditor, DnsChoiceEditor
 
 
 class PolicyEditor:
@@ -43,8 +43,9 @@ class PolicyEditor:
         for prefix, title in [('Remote', 'DNS через VPN'), ('Domestic', 'DNS напрямую')]:
             ctk.CTkLabel(dns, text=title, font=('Segoe UI', 18, 'bold')).pack(anchor='w', pady=(10, 5))
             self.dns_pools[prefix] = DnsPoolEditor(dns, 'VPN' if prefix == 'Remote' else 'DIRECT', changed)
+        self.bootstrap_dns = DnsChoiceEditor(dns, 'DIRECT', changed, bootstrap=True)
         self.field(dns, 'DnsTimeoutMs', 'Общий тайм-аут одного DNS-запроса, мс (1000–10000)')
-        ctk.CTkLabel(dns, text='Резервирование только внутри своей группы. DNS через VPN никогда не переходит напрямую. DoT требует extended, Xray его не поддерживает.', wraplength=580).pack(anchor='w', pady=8)
+        ctk.CTkLabel(dns, text='Основные DNS и ручной резерв следуют маршруту группы. Системный аварийный DNS обеих групп выходит напрямую через исходную сеть Android. DoT требует extended, Xray его не поддерживает.', wraplength=580).pack(anchor='w', pady=8)
         ctk.CTkLabel(dns, text='Статические hosts: домен = IP, одна запись на строку').pack(anchor='w', pady=10)
         self.hosts = ctk.CTkTextbox(dns, height=150, font=('Consolas', 13))
         self.hosts.pack(fill='x')
@@ -135,7 +136,8 @@ class PolicyEditor:
             key = prefix.lower()
             transport = source.get(prefix + 'DNSType', 'UDP').upper()
             primary = dict(transport=transport, endpoint=source.get(prefix + ('DNSDomain' if transport == 'DOH' else 'Dns'), ''), bootstrapIp=source.get(prefix + 'DNSIP') or None, route=pool.route)
-            pool.load(dns.get(key + 'Servers', [primary]), dns.get(key + 'SelectionMode', 'auto'))
+            pool.load(dns.get(key + 'Servers', [primary]), dns.get(key + 'SelectionMode', 'auto'), dns.get(key + 'Emergency'))
+        self.bootstrap_dns.load(dns.get('bootstrap'))
         for key, box in self.rules.items():
             box.delete('1.0', 'end')
             box.insert('1.0', '\n'.join(source.get(key, [])))
@@ -167,6 +169,7 @@ class PolicyEditor:
             servers = pool.value()
             dns[prefix.lower() + 'Servers'] = servers
             dns[prefix.lower() + 'SelectionMode'] = pool.selection_mode()
+            dns[prefix.lower() + 'Emergency'] = pool.emergency.value()
             primary = servers[0]
             # Legacy fields remain a compatible first-server description.
             legacy = primary if primary['transport'] != 'DOT' else dict(transport='UDP', endpoint='1.1.1.1', bootstrapIp=None)
@@ -179,10 +182,13 @@ class PolicyEditor:
         if not timeout.isdigit():
             raise ValueError('Тайм-аут DNS должен быть целым числом миллисекунд')
         dns['timeoutMs'] = int(timeout)
-        if p.get('TunaDNS') is not None or dns['timeoutMs'] != 5000 or any(len(pool.servers) > 1 or pool.selection_mode() != 'auto' or pool.servers[0]['transport'] == 'DOT' for pool in self.dns_pools.values()):
-            p['TunaDNS'] = dns
+        bootstrap = self.bootstrap_dns.value()
+        if bootstrap is not None:
+            dns['bootstrap'] = bootstrap
         else:
-            p.pop('TunaDNS', None)
+            dns.pop('bootstrap', None)
+        # Even one default server must retain the explicit emergency settings.
+        p['TunaDNS'] = dns
         for key in ('Geoipurl', 'Geositeurl'):
             if not p[key]:
                 p.pop(key)

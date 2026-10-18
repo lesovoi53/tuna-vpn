@@ -10,6 +10,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.wireturn.app.R
 import com.wireturn.app.domain.SplitDnsSettings
+import com.wireturn.app.domain.DnsRecoverySettings
 import com.wireturn.app.domain.SubscriptionPolicyParser
 import com.wireturn.app.ui.screens.kernel.VkChoice
 
@@ -28,8 +29,15 @@ fun SplitDnsSection(enabled: Boolean, settings: SplitDnsSettings, editable: Bool
         if (enabled) {
             ResolverPool(true, settings.effectiveRemoteServers, settings.remoteSelectionMode, editable, extended,
                 { onChange(settings.copy(remoteSelectionMode = it)) }) { onChange(settings.copy(remote = it.first(), remoteServers = it)) }
+            DnsRecoveryEditor("Аварийный резерв DNS через VPN", settings.remoteEmergency, true, editable) {
+                onChange(settings.copy(remoteEmergency = it))
+            }
             ResolverPool(false, settings.effectiveDomesticServers, settings.domesticSelectionMode, editable, extended,
                 { onChange(settings.copy(domesticSelectionMode = it)) }) { onChange(settings.copy(domestic = it.first(), domesticServers = it)) }
+            DnsRecoveryEditor("Аварийный резерв прямого DNS", settings.domesticEmergency, false, editable) {
+                onChange(settings.copy(domesticEmergency = it))
+            }
+            BootstrapEditor(settings.bootstrap, editable) { onChange(settings.copy(bootstrap = it)) }
             OutlinedCard(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text("Общий тайм-аут DNS-запроса: ${settings.timeoutMs / 1000} с")
@@ -45,7 +53,7 @@ fun SplitDnsSection(enabled: Boolean, settings: SplitDnsSettings, editable: Bool
                         }
                         Switch(!settings.disableCache, { onChange(settings.copy(disableCache = !it)) }, enabled = editable)
                     }
-                    Text("Автоматический переход VPN-DNS на прямой DNS запрещён. Выбор A/AAAA не меняет маршруты IPv6 и не относится к bootstrap.", style = MaterialTheme.typography.bodySmall)
+                    Text("Аварийный резерв используется после сетевого отказа всей группы. NXDOMAIN и корректный пустой ответ его не включают. Системный резерв VPN DNS — явное исключение: имена уходят напрямую вне VPN. Выбор A/AAAA не меняет маршруты IPv6 и не относится к bootstrap.", style = MaterialTheme.typography.bodySmall)
                 }
             }
             StaticHostsEditor(settings.hosts, editable) { onChange(settings.copy(hosts = it)) }
@@ -54,6 +62,46 @@ fun SplitDnsSection(enabled: Boolean, settings: SplitDnsSettings, editable: Bool
         } else {
             Text("Разделение выключено. Используется общий DNS из блока «Общий DNS» ниже. Сохранённые серверы для двух маршрутов сейчас не применяются.",
                 style = MaterialTheme.typography.bodySmall)
+        }
+    }
+}
+
+@Composable
+private fun DnsRecoveryEditor(title: String, settings: DnsRecoverySettings?, throughVpn: Boolean,
+    editable: Boolean, onChange: (DnsRecoverySettings) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        VkChoice(title, settings?.mode ?: "disabled", listOf("disabled" to "Отключён",
+            "system" to "Системный DNS Android (Localhost)", "resolver" to "Заданный сервер"), enabled = editable) { mode ->
+            onChange(DnsRecoverySettings(mode, if (mode == "resolver") settings?.resolver ?: SubscriptionPolicyParser.Resolver(
+                "TCP", "", null, if (throughVpn) com.wireturn.app.data.RouteAction.VPN else com.wireturn.app.data.RouteAction.DIRECT) else null))
+        }
+        if (settings?.mode == "system") Text("DNS физической сети Android, напрямую (DIRECT), вне VPN. Android Private DNS может менять резолвер. Localhost не означает 127.0.0.1:53.",
+            style = MaterialTheme.typography.bodySmall)
+        settings?.resolver?.let { resolver ->
+            ResolverCard(throughVpn, resolver, editable, false) { onChange(settings.copy(resolver = it)) }
+        }
+        Text("Отдельный аварийный резерв не входит в 1–8 основных серверов и не участвует в фоновых пробах.", style = MaterialTheme.typography.bodySmall)
+    }
+}
+
+@Composable
+private fun BootstrapEditor(settings: DnsRecoverySettings?, editable: Boolean, onChange: (DnsRecoverySettings?) -> Unit) {
+    OutlinedCard(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            VkChoice("Bootstrap DNS", settings?.mode ?: "inherit", listOf("inherit" to "Общая настройка",
+                "system" to "Системный DNS Android (Localhost)", "resolver" to "TCP DNS с IP-адресом"), enabled = editable) { mode ->
+                onChange(if (mode == "inherit") null else DnsRecoverySettings(mode,
+                    if (mode == "resolver") settings?.resolver ?: SubscriptionPolicyParser.Resolver("TCP", "", null,
+                        com.wireturn.app.data.RouteAction.DIRECT) else null))
+            }
+            if (settings?.mode == "system") Text("Имя сервера DNS определяется через физическую сеть Android напрямую (DIRECT), вне VPN.",
+                style = MaterialTheme.typography.bodySmall)
+            settings?.resolver?.let { resolver ->
+                OutlinedTextField(resolver.endpoint, { onChange(settings.copy(resolver = resolver.copy(endpoint = it.trim()))) },
+                    label = { Text("IP:порт Bootstrap DNS") }, supportingText = { Text("TCP напрямую (DIRECT), вне VPN. Например: 192.0.2.53:53 или [2001:db8::53]:53") },
+                    modifier = Modifier.fillMaxWidth(), enabled = editable)
+            }
+            Text("Указанный у DoH Bootstrap IP имеет приоритет. Пустое поле не заменяется скрытым публичным сервером.", style = MaterialTheme.typography.bodySmall)
         }
     }
 }
@@ -121,7 +169,7 @@ private fun ResolverCard(throughVpn: Boolean, resolver: SubscriptionPolicyParser
                 if (resolver.transport in setOf("DOH", "DOT")) OutlinedTextField(resolver.bootstrapIp.orEmpty(),
                     { onChange(resolver.copy(bootstrapIp = it.trim().ifBlank { null })) },
                     label = { Text("IP сервера DNS (bootstrap)") },
-                    supportingText = { Text(if (resolver.transport == "DOH") "Необязательно. Имя DoH определяется через общий Bootstrap DNS (по умолчанию 1.1.1.1), по маршруту этой группы. Для внутреннего имени укажите IP или доступный Bootstrap DNS."
+                    supportingText = { Text(if (resolver.transport == "DOH") "Необязательно. Имя DoH определяется выбранным Bootstrap DNS напрямую (DIRECT), вне VPN."
                         else "Нужен, если в адресе DoT указано доменное имя.") },
                     modifier = Modifier.fillMaxWidth(), enabled = editable)
             }

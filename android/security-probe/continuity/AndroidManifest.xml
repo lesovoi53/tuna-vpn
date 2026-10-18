@@ -1,0 +1,7 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="app.tuna.securityprobe.continuity">
+    <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="37" />
+    <application android:label="TUNA Continuity Check" android:allowBackup="false" android:debuggable="false" />
+    <instrumentation android:name="app.tuna.securityprobe.DataContinuityRunner"
+        android:targetPackage="app.tunaturn.android.debug" android:functionalTest="true"
+        android:label="TUNA data continuity" />
+</manifest>

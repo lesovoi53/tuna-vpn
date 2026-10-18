@@ -79,10 +79,9 @@ object SubscriptionRoutingAssets {
         require(!p.fakeDns) { "Subscription FakeDNS is not supported yet" }
         val root = Gson().toJsonTree(effective ?: p.routing).asJsonObject
         root.addProperty("domainStrategy", p.domainStrategy)
-        val dns = JsonObject()
-        dns.add("remote", Gson().toJsonTree(p.remote))
-        dns.add("domestic", Gson().toJsonTree(p.domestic))
-        dns.add("hosts", Gson().toJsonTree(p.hosts))
+        // Materialize the complete subscription policy, including the explicitly
+        // documented system emergency default. Local overrides remain separate.
+        val dns = Gson().toJsonTree(SplitDnsSettings.fromPolicy(p))
         root.add("splitDns", dns)
         return root.toString()
     }

@@ -3,25 +3,25 @@
     "name": "Xray",
     "version": "26.9.9",
     "tunaFork": true,
-    "sha256": "bb5abe7a41b57d6440d5a6ec992ddc9dc6962d2e3d9088b75ede230eda3ba478"
+    "sha256": "cf336a3bc91153c21cb602caa1be853dcc01ef7920bea140369b2daacecfb41b"
   },
   {
     "name": "sing-box-extended",
     "version": "1.14.1-extended-2.7.2",
     "tunaFork": true,
-    "sha256": "222b4b2d6b47c7b5e16515142e0b8e08efcb85304137985dd3f52da6fad8595f"
+    "sha256": "3ac21026166690b5b0872355ddf9786bbe0eb7f88d2eed8f190ec50fdfbfe4ba"
   },
   {
     "name": "Mieru",
-    "version": "3.37",
+    "version": "3.38.1",
     "tunaFork": true,
-    "sha256": "2808b758392a5ed555af91bb93975db0dcc5b0ef38c1a916c7059b5d1e08421c"
+    "sha256": "5159abecda488a38dc61d271167f25e9a4cfe6359352e3d2fdeac9b673484f29"
   },
   {
     "name": "WebDAV",
     "version": "b1af4c05eb80",
     "tunaFork": true,
-    "sha256": "379e725d2cbb818bbbcc19d594b7edf9bae44536a9fb06c396f36b5ce39cb9eb"
+    "sha256": "9ea5f452eb2816d44e0766986d430a43b809d258d6cd0fd8e2d61b919e92ecfc"
   },
   {
     "name": "MasterDNS / StormDNS",

@@ -42,6 +42,14 @@ def generate():
     assert digest(ROOT / 'native/masterdns/prepare.py') == master['overlayScriptSha256'].lower()
     dep = re.search(r'github.com/xtls/xray-core\s+(\S+)', (ROOT / 'external/vless-client/go.mod').read_text()).group(1)
     paths = ['external/vless-client/main.go', 'external/vless-client/outbound_patch.go',
+             'app/src/main/java/com/wireturn/app/kernel/SystemDnsBridge.kt',
+             'app/src/main/java/com/wireturn/app/kernel/SystemDnsWire.kt',
+             'app/src/main/java/com/wireturn/app/kernel/PhysicalNetwork.kt',
+             'app/src/main/java/com/wireturn/app/kernel/EffectiveDnsBootstrap.kt',
+             'app/src/main/java/com/wireturn/app/kernel/PrivateRuntimeDirectory.kt',
+             'app/src/main/java/com/wireturn/app/kernel/TunAddressPolicy.kt',
+             'app/src/main/java/com/wireturn/app/data/security/EncryptedPreferences.kt',
+             'app/src/main/java/com/wireturn/app/data/security/AndroidPreferenceCipher.kt',
              'native/routing/policy.go', 'native/routing/prepare.py', 'native/routing/bootstrap.go',
              'native/routing/xhttp_alpn_test.go',
              'app/src/main/java/com/wireturn/app/domain/IsolatedProfileTest.kt',
@@ -153,7 +161,7 @@ def generate():
         'webDAV': {'commit': webdav_lock['commit'], 'sha256': digest(binary_dir / 'libwebdav.so'), 'socksAuth': True, 'udp': 'DNS port 53 only; relayed over TCP'},
         'singBox': sb, 'xray': {'version': '26.9.9', 'dependency': dep, 'sourceOverlay': 'xhttp-explicit-http1-alpn-v1', 'sha256': digest(binary_dir / 'libxray.so')},
         'adapterSources': {path: digest(ROOT / path) for path in paths},
-        'standaloneEditors': {'vless': ['sing-box', 'xray'], 'hysteria2': ['sing-box', 'xray'], 'trojan': ['sing-box', 'xray'], 'shadowsocks': ['sing-box'], 'tuic': ['sing-box'], 'anytls': ['sing-box'], 'snell-v4': ['sing-box'], 'snell-v6': ['sing-box'], 'awg': ['sing-box'], 'wireguard': ['sing-box'], 'trusttunnel': ['sing-box'], 'naive': ['sing-box'], 'mieru': ['mieru-3.37']},
+        'standaloneEditors': {'vless': ['sing-box', 'xray'], 'hysteria2': ['sing-box', 'xray'], 'trojan': ['sing-box', 'xray'], 'shadowsocks': ['sing-box'], 'tuic': ['sing-box'], 'anytls': ['sing-box'], 'snell-v4': ['sing-box'], 'snell-v6': ['sing-box'], 'awg': ['sing-box'], 'wireguard': ['sing-box'], 'trusttunnel': ['sing-box'], 'naive': ['sing-box'], 'mieru': ['mieru-3.38.1']},
         'routingOwner': 'xray', 'tunOwner': 'hev',
         'optionalRoutingOwner': 'sing-box-extended (experimental, authenticated SOCKS profiles without chains)',
         'configurationValidation': 'packaged-native-check',
@@ -169,7 +177,7 @@ def generate():
     components = [
         ('Xray', '26.9.9', True, 'xray'),
         ('sing-box-extended', sb['version'], True, 'singbox'),
-        ('Mieru', '3.37', True, 'mieru'),
+        ('Mieru', '3.38.1', True, 'mieru'),
         ('WebDAV', webdav_lock['commit'][:12], True, 'webdav'),
         ('MasterDNS / StormDNS', '2026.06.13 / 7de2476', True, 'masterdns'),
         # These two are extracted unchanged from WireTurn, not rebuilt from our checkout.

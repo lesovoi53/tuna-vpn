@@ -11,7 +11,7 @@ import urllib.request
 
 SOURCES = [
     ('sing-box-extended', 'shtorm-7/sing-box-extended', '55faa763f986f4ca8a492d9b2719bc6330d2bef5', 'android/external/sing-box-extended'),
-    ('mieru', 'enfein/mieru', '162c240b5366139a83dbd338e89907e8575ce0d8', 'android/external/mieru'),
+    ('mieru', 'enfein/mieru', 'a2208ee7a38fb41d843a13ecdde858e67ef2f485', 'android/external/mieru'),
     ('masterdnsvpn', 'masterking32/MasterDnsVPN', '7de2476f1c33e69eec35360c52810dab43c5c986', 'android/external/masterdnsvpn'),
     ('webdav-tunnel', 'spkprsnts/webdav-tunnel', 'b1af4c05eb80fd29a6f676be894fa61cd12a3dec', 'android/external/webdav-tunnel'),
     ('qwdtt', 'SpaceNeuroX/proxy-turn-vk-android', 'a296c57eaba69bb9479a24f9157856490890e47d', 'android/external/proxy-turn-vk-android'),
@@ -34,7 +34,7 @@ def main():
         target = a.cache / filename
         url = f'https://codeload.github.com/{repo}/tar.gz/{commit}'
         if not target.exists():
-            request = urllib.request.Request(url, headers={'User-Agent': 'TUNA-source-distribution/1.5'})
+            request = urllib.request.Request(url, headers={'User-Agent': 'TUNA-source-distribution/1.6'})
             temp = target.with_suffix('.part')
             with urllib.request.urlopen(request, timeout=90) as response, temp.open('wb') as out:
                 while chunk := response.read(1024 * 1024):

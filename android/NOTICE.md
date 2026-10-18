@@ -56,3 +56,9 @@ The Windows libcronet.dll is a host validation dependency only; it is not packag
 TrustTunnel Chrome transport and ClientHello prefix adaptation from AlwaysBusyStack/NekoBoxForAndroid e4a4e055 (GPL-3.0-or-later; TrustTunnel-NekoBox-GPL.txt).
 Snell QUIC Proxy adaptation from reF1nd/sing-box bccceeb3dabea6687212c1fff651a9bcb7733de1 and reF1nd/sing-snell 96ee7c6bc2e172915030a504af06942f117d4b51 (GPL-3.0-or-later; GPL-3.0.txt).
 WireGuard/AWG uses github.com/shtorm-7/wireguard-go v0.0.6-extended-1.6.1 with the source-pinned TUNA handshake MAC fix. Build overlay inputs and hashes are recorded in native-lock.json and assets/native/singbox.json.
+
+## Android APK verification
+
+Android apksig 9.4.0, Copyright The Android Open Source Project.
+Apache License 2.0; source https://android.googlesource.com/platform/tools/apksig/ .
+Used for cryptographic APK signature and signing-lineage verification before installation.

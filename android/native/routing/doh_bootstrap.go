@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/xtls/xray-core/common/net"
+	"github.com/xtls/xray-core/common/session"
 	fdns "github.com/xtls/xray-core/features/dns"
 	"github.com/xtls/xray-core/features/routing"
 	"golang.org/x/net/http2"
@@ -23,8 +24,9 @@ func newTunaDoHServer(encoded string, dispatcher routing.Dispatcher, disableCach
 		return nil, fmt.Errorf("invalid DoH bootstrap encoding")
 	}
 	var spec struct {
-		Endpoint  string `json:"endpoint"`
-		Bootstrap string `json:"bootstrap"`
+		Endpoint       string `json:"endpoint"`
+		Bootstrap      string `json:"bootstrap"`
+		BootstrapRoute string `json:"bootstrapRoute"`
 	}
 	if json.Unmarshal(data, &spec) != nil {
 		return nil, fmt.Errorf("invalid DoH bootstrap configuration")
@@ -33,18 +35,35 @@ func newTunaDoHServer(encoded string, dispatcher routing.Dispatcher, disableCach
 	if err != nil || endpoint.Scheme != "https" || endpoint.Hostname() == "" || endpoint.User != nil || endpoint.Fragment != "" {
 		return nil, fmt.Errorf("invalid DoH endpoint")
 	}
-	bootstrapURL, err := url.Parse(spec.Bootstrap)
-	if err != nil || bootstrapURL.Scheme != "tcp" || net.ParseIP(bootstrapURL.Hostname()) == nil || bootstrapURL.User != nil || bootstrapURL.Path != "" || bootstrapURL.RawQuery != "" || bootstrapURL.Fragment != "" {
-		return nil, fmt.Errorf("DoH bootstrap requires tcp://literal-IP:port")
+	var bootstrap Server
+	if spec.Bootstrap == "system" {
+		bootstrap = &tunaSystemDNSServer{}
+	} else {
+		bootstrapURL, err := url.Parse(spec.Bootstrap)
+		if err != nil || bootstrapURL.Scheme != "tcp" || net.ParseIP(bootstrapURL.Hostname()) == nil || bootstrapURL.User != nil || bootstrapURL.Path != "" || bootstrapURL.RawQuery != "" || bootstrapURL.Fragment != "" {
+			return nil, fmt.Errorf("DoH bootstrap requires tcp://literal-IP:port")
+		}
+		bootstrap, err = NewTCPNameServer(bootstrapURL, dispatcher, false, false, 0, nil)
+		if err != nil {
+			return nil, err
+		}
 	}
-	bootstrap, err := NewTCPNameServer(bootstrapURL, dispatcher, false, false, 0, nil)
-	if err != nil {
-		return nil, err
+	if spec.BootstrapRoute != "" && spec.BootstrapRoute != "DIRECT" {
+		return nil, fmt.Errorf("invalid bootstrap route")
+	}
+	if spec.BootstrapRoute == "DIRECT" {
+		bootstrap = &tunaDirectBootstrap{Server: bootstrap}
 	}
 	server := NewDoHNameServer(endpoint, dispatcher, false, disableCache, serveStale, ttl, clientIP)
 	transport := server.httpClient.Transport.(*http2.Transport)
 	transport.DialTLSContext = tunaDoHBootstrapDial(bootstrap, endpoint.Hostname(), transport.DialTLSContext)
 	return server, nil
+}
+
+type tunaDirectBootstrap struct{ Server }
+
+func (s *tunaDirectBootstrap) QueryIP(ctx context.Context, domain string, option fdns.IPOption) ([]net.IP, uint32, error) {
+	return s.Server.QueryIP(session.ContextWithInbound(ctx, &session.Inbound{Tag: "tuna-dns-bootstrap"}), domain, option)
 }
 
 func tunaDoHBootstrapDial(bootstrap Server, hostname string, dial func(context.Context, string, string, *tls.Config) (net.Conn, error)) func(context.Context, string, string, *tls.Config) (net.Conn, error) {

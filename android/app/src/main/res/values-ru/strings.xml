@@ -615,4 +615,12 @@
     <string name="profile_export_error">Не удалось сохранить или отправить профили. Попробуйте другое место сохранения.</string>
     <string name="protocol_guide_awg">Туннель на основе WireGuard с обфускацией пакетов. Параметры AWG должны совпадать с настройками сервера.</string>
     <string name="protocol_guide_trusttunnel">Передаёт трафик через HTTPS (HTTP/2) или QUIC (HTTP/3), с проверкой TLS и авторизацией на сервере.</string>
+    <string name="vpn_tun_mtu_title">MTU VPN</string>
+    <string name="vpn_tun_mtu_value">%1$d байт</string>
+    <string name="vpn_tun_mtu_hint">Для VPN-интерфейса Android. Применится при следующем подключении. MTU транспорта в профиле задаётся отдельно.</string>
+    <string name="vpn_tun_mtu_bytes">MTU, байт</string>
+    <string name="vpn_tun_mtu_range">Целое число от %1$d до %2$d. По умолчанию: 1280.</string>
+    <string name="vpn_tun_mtu_save_error">Не удалось сохранить MTU. Повторите попытку.</string>
+    <string name="vpn_tun_mtu_save">Сохранить</string>
+    <string name="vpn_tun_mtu_cancel">Отмена</string>
 </resources>

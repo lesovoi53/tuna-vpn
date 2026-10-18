@@ -226,6 +226,7 @@ fun ConnectionSettingsScreen(
                 .padding(bottom = 80.dp),
             verticalArrangement = Arrangement.spacedBy(19.dp)
         ) {
+            TunMtuSection()
             SectionItem(
                 position = ItemPosition.Single,
                 onClick = {

@@ -130,6 +130,46 @@ func TestTunaDoHVerifiedTLSAndPoolIsolation(t *testing.T) {
 	roots := x509.NewCertPool()
 	roots.AddCert(ca)
 	x509.SetFallbackRoots(roots)
+	t.Run("coalesced-waiter-keeps-own-deadline", func(t *testing.T) {
+		started := make(chan struct{})
+		release := make(chan struct{})
+		defer close(release)
+		fixture := tunaNewWireFixture(t, tunaTestCertificate(t, ca, key, "same-doh.invalid", time.Now().Add(time.Hour)), func(group int, _ string) {
+			if group == 0 {
+				close(started)
+				<-release
+			}
+		})
+		pool := fixture.pool(t, tunaPoolContext(context.Background()), "remote")
+		leader, cancelLeader := context.WithCancel(tunaWireContext("remote"))
+		defer cancelLeader()
+		done := make(chan error, 1)
+		go func() {
+			_, _, err := pool.QueryIP(leader, "coalesced.invalid", fdns.IPOption{IPv4Enable: true})
+			done <- err
+		}()
+		select {
+		case <-started:
+		case <-time.After(3 * time.Second):
+			t.Fatal("leader did not reach DoH")
+		}
+		waiter, cancelWaiter := context.WithTimeout(tunaWireContext("remote"), 40*time.Millisecond)
+		defer cancelWaiter()
+		start := time.Now()
+		_, _, err := pool.QueryIP(waiter, "coalesced.invalid", fdns.IPOption{IPv4Enable: true})
+		if !errors.Is(err, context.DeadlineExceeded) || time.Since(start) > 500*time.Millisecond {
+			t.Fatalf("coalesced waiter deadline: %v (%v)", err, time.Since(start))
+		}
+		cancelLeader()
+		select {
+		case <-done:
+		case <-time.After(time.Second):
+			t.Fatal("leader did not cancel")
+		}
+		if fixture.requests[0].Load() != 1 {
+			t.Fatal("coalesced request duplicated")
+		}
+	})
 	for _, scenario := range []string{"valid", "wrong-host", "untrusted", "expired"} {
 		t.Run(scenario, func(t *testing.T) {
 			issuer, signer := ca, key

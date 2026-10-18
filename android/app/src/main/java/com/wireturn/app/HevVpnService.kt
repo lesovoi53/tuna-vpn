@@ -51,80 +51,50 @@ class HevVpnService : VpnService() {
     )
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var tunInterface: ParcelFileDescriptor? = null
+    @Volatile private var activeTunMtu: com.wireturn.app.domain.TunMtuPolicy.Snapshot? = null
     private val isStopping = AtomicBoolean(false)
     private val nativeLock = Mutex()
+    private val runtimeDirectory = lazy { com.wireturn.app.kernel.PrivateRuntimeDirectory(this, "hev") }
     private var startJob: kotlinx.coroutines.Job? = null
     private fun trace(event: String) = AppLogsState.addLog(
         "[VPN lifecycle] service=${System.identityHashCode(this)} t=${android.os.SystemClock.elapsedRealtime()} $event"
     )
 
-    private var underlyingNetworkCallback: ConnectivityManager.NetworkCallback? = null
+    private var physicalNetworkLease: java.io.Closeable? = null
     @Volatile private var vpnEstablished = false
-
-    // Kept live (not just set once at establish()) so the system's view of the VPN's dependency
-    // stays accurate across e.g. a Wi-Fi/cellular handover.
-    @Volatile
-    private var underlyingNetwork: Network? = null
-        set(value) {
-            if (field == value) return
-            field = value
-            PersistentDiagnosticLog.append("[VPN dependency] underlying=$value established=$vpnEstablished")
-            if (vpnEstablished) {
-                try {
-                    setUnderlyingNetworks(value?.let { arrayOf(it) })
-                    PersistentDiagnosticLog.append("[VPN dependency] setUnderlyingNetworks applied")
-                } catch (failure: Exception) {
-                    PersistentDiagnosticLog.append("[VPN dependency] setUnderlyingNetworks failed=${failure.javaClass.simpleName}")
-                }
-            }
-        }
+    @Volatile private var underlyingNetwork: Network? = null
+    @Volatile private var activeTunAddresses: com.wireturn.app.kernel.TunAddressPolicy.Addresses? = null
 
     private fun registerUnderlyingNetworkTracking() {
-        val cm = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
-        val request = NetworkRequest.Builder()
-            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-            .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
-            .build()
-        val callback = object : ConnectivityManager.NetworkCallback() {
-            override fun onAvailable(network: Network) {
-                underlyingNetwork = network
+        physicalNetworkLease = com.wireturn.app.kernel.PhysicalNetwork.acquire(this) { snapshot ->
+            underlyingNetwork = snapshot.network
+            if (vpnEstablished) {
+                val cm = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
+                val properties = snapshot.network?.let(cm::getLinkProperties)
+                val addresses = activeTunAddresses
+                if (properties != null && addresses != null) {
+                    val occupied = properties.routes.map { it.destination }.filter { it.prefixLength > 0 }
+                    val conflict = listOf(addresses.ipv4, addresses.ipv6).any { address ->
+                        val bytes = java.net.InetAddress.getByName(address).address
+                        occupied.any { com.wireturn.app.kernel.TunAddressPolicy.Prefix(it.address.address, it.prefixLength).contains(bytes) }
+                    }
+                    if (conflict) {
+                        VpnServiceState.updateStatus(VpnState.Error("Адрес VPN пересекается с новой локальной сетью; переподключение"))
+                        stopVpn() // Preserve enabled preference; the supervisor selects fresh addresses.
+                        return@acquire
+                    }
+                }
+                try { setUnderlyingNetworks(snapshot.network?.let { arrayOf(it) }) }
+                catch (failure: Exception) {
+                    PersistentDiagnosticLog.append("[VPN dependency] update failed=${failure.javaClass.simpleName}")
+                }
             }
-
-            override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
-                if (network == underlyingNetwork) underlyingNetwork = network
-            }
-
-            override fun onLost(network: Network) {
-                if (network == underlyingNetwork) underlyingNetwork = null
-            }
-        }
-        underlyingNetworkCallback = callback
-
-        try {
-            val handler = Handler(Looper.getMainLooper())
-            when {
-                // registerDefaultNetworkCallback() alone returns the VPN's own network once
-                // established (since Android P), so request NOT_VPN explicitly instead.
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
-                    cm.registerBestMatchingNetworkCallback(request, callback, handler)
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.P ->
-                    cm.requestNetwork(request, callback, handler)
-                else ->
-                    cm.registerDefaultNetworkCallback(callback, handler)
-            }
-        } catch (e: Exception) {
-            AppLogsState.addLog(getString(R.string.log_vpn_error, "underlying network tracking: ${e.message}"))
-            underlyingNetworkCallback = null
         }
     }
 
     private fun unregisterUnderlyingNetworkTracking() {
-        underlyingNetworkCallback?.let { cb ->
-            try {
-                (getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager).unregisterNetworkCallback(cb)
-            } catch (_: Exception) {}
-        }
-        underlyingNetworkCallback = null
+        physicalNetworkLease?.close()
+        physicalNetworkLease = null
         underlyingNetwork = null
     }
 
@@ -212,7 +182,7 @@ class HevVpnService : VpnService() {
         return START_STICKY
     }
 
-    private fun buildConfigYaml(socks5Addr: String, socks5User: String?, socks5Pass: String?): String {
+    private fun buildConfigYaml(socks5Addr: String, socks5User: String?, socks5Pass: String?, tunMtu: com.wireturn.app.domain.TunMtuPolicy.Snapshot): String {
         val lastColon = socks5Addr.lastIndexOf(':')
         val socks5Host = if (lastColon > 0) socks5Addr.substring(0, lastColon) else socks5Addr
         val socks5Port = if (lastColon > 0) socks5Addr.substring(lastColon + 1).toIntOrNull() ?: 1080 else 1080
@@ -225,7 +195,7 @@ class HevVpnService : VpnService() {
 
         return """
 tunnel:
-  mtu: $TUN_MTU
+  mtu: ${tunMtu.mtu}
 socks5:
   port: $socks5Port
   address: '$socks5Host'
@@ -261,8 +231,8 @@ misc:
 
             nativeRuntime.stop()
 
-            val configFile = File(filesDir, "hev-socks5-tunnel.yaml")
-            configFile.writeText(buildConfigYaml(socks5Addr, socks5User, socks5Pass))
+            val configFile = File(runtimeDirectory.value.directory, "hev-socks5-tunnel.yaml")
+            configFile.writeText(buildConfigYaml(socks5Addr, socks5User, socks5Pass, requireNotNull(activeTunMtu)))
 
             AppLogsState.addLog(getString(R.string.log_vpn_retarget, socks5Addr))
             val success = nativeRuntime.start(configFile.absolutePath, fd)
@@ -289,18 +259,29 @@ misc:
             AppLogsState.addLog(getString(R.string.log_vpn_establishing))
             val prefs = AppPreferences(applicationContext)
             val vpnSettings = prefs.vpnSettingsFlow.first()
+            val tunMtu = com.wireturn.app.domain.TunMtuPolicy.Snapshot(prefs.tunMtuFlow.first())
+
+            val cm = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
+            val occupied = cm.allNetworks.filter {
+                cm.getNetworkCapabilities(it)?.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN) == true
+            }.flatMap { network ->
+                cm.getLinkProperties(network)?.let { properties ->
+                    properties.linkAddresses.map { com.wireturn.app.kernel.TunAddressPolicy.Prefix(it.address.address, it.prefixLength) } +
+                        properties.routes.map { com.wireturn.app.kernel.TunAddressPolicy.Prefix(it.destination.address.address, it.destination.prefixLength) }
+                }.orEmpty()
+            }
+            val addresses = com.wireturn.app.kernel.TunAddressPolicy.choose(occupied)
 
             val builder = this.Builder()
                 .setSession("TUNA VPN")
-                .setMtu(TUN_MTU)
-                .addAddress(TUN_IPV4_ADDRESS, 24)
+                .setMtu(tunMtu.mtu)
+                .addAddress(addresses.ipv4, 32)
                 // Without this, Android never captures IPv6 into the tun - it leaks straight
                 // out over the underlying network instead, unprotected.
-                .addAddress(TUN_IPV6_ADDRESS, 128)
+                .addAddress(addresses.ipv6, 128)
                 .addDnsServer(MAPDNS_ADDRESS)
 
-            val cm = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
-            (underlyingNetwork ?: cm.activeNetwork)?.let { builder.setUnderlyingNetworks(arrayOf(it)) }
+            underlyingNetwork?.let { builder.setUnderlyingNetworks(arrayOf(it)) }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 builder.setMetered(cm.isActiveNetworkMetered)
             }
@@ -360,14 +341,16 @@ misc:
             // must always be able to close an established descriptor exactly once.
             synchronized(this@HevVpnService) {
                 tunInterface = established
+                activeTunMtu = tunMtu
                 VpnServiceState.tunEstablished = true
             }
             vpnEstablished = true
+            activeTunAddresses = addresses
 
             val tunFd = established.fd
             trace("establish success fd=$tunFd")
-            val configFile = File(filesDir, "hev-socks5-tunnel.yaml")
-            configFile.writeText(buildConfigYaml(socks5Addr, socks5User, socks5Pass))
+            val configFile = File(runtimeDirectory.value.directory, "hev-socks5-tunnel.yaml")
+            configFile.writeText(buildConfigYaml(socks5Addr, socks5User, socks5Pass, tunMtu))
 
             nativeLock.withLock {
                 if (isStopping.get()) {
@@ -424,6 +407,7 @@ misc:
                 synchronized(this@HevVpnService) {
                     tunInterface?.let { try { it.close() } catch (_: Exception) {} }
                     tunInterface = null
+                    activeTunMtu = null
                     VpnServiceState.tunEstablished = false
                 }
             }
@@ -463,8 +447,10 @@ misc:
                 synchronized(this@HevVpnService) {
                     tunInterface?.let { try { it.close() } catch (_: Exception) {} }
                     tunInterface = null
+                    activeTunMtu = null
                     VpnServiceState.tunEstablished = false
                 }
+                if (runtimeDirectory.isInitialized()) runtimeDirectory.value.close()
             }
 
             val currentState = VpnServiceState.state.value
@@ -492,13 +478,9 @@ misc:
         const val EXTRA_SOCKS5_USER = "socks5_user"
         const val EXTRA_SOCKS5_PASS = "socks5_pass"
 
-        private const val TUN_MTU = 1280
         // Five-minute reaping reset healthy idle sockets in the controlled tablet test.
         // Keep a finite idle bound; connection setup and maximum session count stay bounded.
         private const val TCP_IDLE_TIMEOUT_MS = 30 * 60 * 1000
-        private const val TUN_IPV4_ADDRESS = "10.0.88.88"
-        // ULA (RFC 4193), same convention hev-socks5-tunnel's own README example uses.
-        private const val TUN_IPV6_ADDRESS = "fc00::1"
         // Not a real public resolver: Chrome auto-upgrades to DoH for known providers, which
         // would bypass the local fake-DNS responder. 198.18.0.1 (RFC 2544 benchmark range)
         // isn't on Chrome's built-in DoH provider list, so it can't trigger that.

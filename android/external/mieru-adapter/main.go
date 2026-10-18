@@ -14,6 +14,7 @@ import (
 	"github.com/enfein/mieru/v3/pkg/appctl"
 	pb "github.com/enfein/mieru/v3/pkg/appctl/appctlpb"
 	"github.com/enfein/mieru/v3/pkg/cli"
+	"github.com/enfein/mieru/v3/pkg/version"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 )
@@ -153,6 +154,10 @@ func run() error {
 	return nil
 }
 func main() {
+	if len(os.Args) == 2 && os.Args[1] == "--version" {
+		fmt.Printf("Mieru %s (TUNA adapter)\n", version.AppVersion)
+		return
+	}
 	if err := run(); err != nil {
 		// run returns fixed diagnostic messages, never the URI or upstream errors
 		// that could contain credentials. Preserve the reason for a rejected start.

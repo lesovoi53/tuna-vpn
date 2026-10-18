@@ -6,14 +6,16 @@ import kotlinx.coroutines.flow.asStateFlow
 /** Process-generation scoped observations; never infer a winner from the settings order. */
 object DnsRuntimeTelemetry {
     data class Observation(val group: String, val index: Int, val reason: String)
-    private val format = Regex("TUNA_DNS_STATUS (remote|domestic) ([1-8]) (selected|fallback|probe|negative)")
+    private val format = Regex("TUNA_DNS_STATUS (remote|domestic) ([0-8]) (selected|fallback|probe|negative|emergency-(?:system|resolver)(?:-negative)?)")
     private var generation = 0L
     private val mutable = MutableStateFlow<Map<String, Observation>>(emptyMap())
     val observations = mutable.asStateFlow()
 
     fun parse(line: String): Observation? {
         val fields = format.matchEntire(line)?.groupValues ?: return null
-        return Observation(fields[1], fields[2].toInt(), fields[3])
+        val index = fields[2].toInt()
+        if ((index == 0) != fields[3].startsWith("emergency-")) return null
+        return Observation(fields[1], index, fields[3])
     }
 
     @Synchronized fun begin(): Long {

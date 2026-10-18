@@ -52,6 +52,7 @@ class IsolatedProfileTest(private val context: Context) {
         val directory = Files.createTempDirectory(context.cacheDir.toPath(), "profile-test-").toFile()
         val vk = VkRuntime(context)
         var child: Process? = null
+        var dnsBridge: com.wireturn.app.kernel.SystemDnsBridge? = null
         var reader: Job? = null
         var killer: Job? = null
         val reservations = mutableListOf<ServerSocket>()
@@ -66,7 +67,9 @@ class IsolatedProfileTest(private val context: Context) {
                 socksUser = UUID.randomUUID().toString(), socksPass = UUID.randomUUID().toString()).fillDefaults(), preferences.defaultFragmentationFlow.first())
             val prepared = withTimeout(60_000L) { vk.prepare(config) }
             val network = AppPreferences(context).networkSettingsForProfile(profile)
-            val bootstrap = network.dns.bootstrap
+            val bootstrap = if ((prepared.kernelConfig as? KernelConfig.Vpn)?.config?.isRawXray == true) network.dns.bootstrap
+                else com.wireturn.app.kernel.EffectiveDnsBootstrap.resolve(network)
+            dnsBridge = com.wireturn.app.kernel.SystemDnsBridge(context)
             val commandContext = object : KernelCommandContext {
                 override val bootstrapDns = bootstrap
                 override val filesDir = directory
@@ -79,6 +82,9 @@ class IsolatedProfileTest(private val context: Context) {
             val process = withContext(Dispatchers.IO) {
                 reservations.forEach { it.close() }
                 ProcessBuilder(command).directory(directory).redirectErrorStream(true).apply {
+                    dnsBridge.applyTo(environment())
+                    environment().remove("TUNA_BOOTSTRAP_DNS")
+                    if (bootstrap.isNotBlank()) environment()["TUNA_BOOTSTRAP_DNS"] = BootstrapDns.parse(bootstrap)!!.xrayAddress()
                     environment()["LD_LIBRARY_PATH"] = commandContext.nativeLibraryDir
                     environment()["PATH"] = "${commandContext.nativeLibraryDir}:${environment()["PATH"].orEmpty()}"
                     if ((prepared.kernelConfig as? KernelConfig.Vpn)?.config?.usesXray == true) {
@@ -126,6 +132,7 @@ class IsolatedProfileTest(private val context: Context) {
                 IsolatedSnellResolver.withResolver(context, directory, prepared, network, block)
             } else block(prepared)
         } finally {
+            dnsBridge?.close()
             withContext(NonCancellable + Dispatchers.IO) {
                 reservations.forEach { runCatching { it.close() } }
                 child?.let { process ->

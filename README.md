@@ -16,14 +16,14 @@
 
 | Продукт | Готовый файл | Для чего |
 | --- | --- | --- |
-| **TUNA VPN 1.5** | [Android APK, arm64-v8a](https://github.com/lesovoi53/tuna-vpn/releases/download/v1.5/TUNA-VPN-1.5-arm64-v8a.apk) | Подключения, подписки, URL-test, маршрутизация и DNS |
-| **TUNA Routing Builder 2.3.1** | [Windows EXE, один файл](https://github.com/lesovoi53/tuna-vpn/releases/download/v1.5/TunaRoutingBuilder-v2.3.1.exe) | Редактор правил, приложений и DNS; экспорт `tuna://` |
-| Проверка файлов | [SHA256SUMS.txt](https://github.com/lesovoi53/tuna-vpn/releases/download/v1.5/SHA256SUMS.txt) | Контроль целостности скачивания |
-| Исходники выпуска | [TUNA-VPN-1.5-sources.zip](https://github.com/lesovoi53/tuna-vpn/releases/download/v1.5/TUNA-VPN-1.5-sources.zip) | Публичное дерево и закреплённые upstream-архивы |
+| **TUNA VPN 1.6** | [Android APK, arm64-v8a](https://github.com/lesovoi53/tuna-vpn/releases/download/v1.6/TUNA-VPN-1.6-arm64-v8a.apk) | Подключения, подписки, URL-test, маршрутизация и DNS |
+| **TUNA Routing Builder 2.4** | [Windows EXE, один файл](https://github.com/lesovoi53/tuna-vpn/releases/download/v1.6/TunaRoutingBuilder-v2.4.exe) | Редактор правил, приложений и DNS; экспорт `tuna://` |
+| Проверка файлов | [SHA256SUMS.txt](https://github.com/lesovoi53/tuna-vpn/releases/download/v1.6/SHA256SUMS.txt) | Контроль целостности скачивания |
+| Исходники выпуска | [TUNA-VPN-1.6-sources.zip](https://github.com/lesovoi53/tuna-vpn/releases/download/v1.6/TUNA-VPN-1.6-sources.zip) | Публичное дерево и закреплённые upstream-архивы |
 
 Клиент не продаёт доступ и не содержит личных VPN-серверов. Нужны свои профили или доверенная подписка. EXE — **редактор правил**, а не Windows VPN-клиент.
 
-> APK 1.5 — release-сборка без RC и без отладки, но с историческим пакетом `app.tunaturn.android.debug` и прежним сертификатом Android Debug для совместимости обновления. Это не новый production signing key. Перед установкой прочитайте [подпись и обновление](docs/development/release.md). Windows EXE не имеет Authenticode-подписи. Не удаляйте установленное приложение ради обхода ошибки подписи.
+> APK 1.6 — release-сборка без отладки, package `app.tunaturn.android.debug` сохранён для обновления. На Android 13+ применяется новый production-сертификат с проверяемой ротацией; Android 8–12 сохраняют прежнюю подпись. [Подпись и обновление](docs/development/release.md). Автообновление пока отключено: скачайте APK вручную и установите поверх существующего приложения. EXE не имеет Authenticode-подписи. Не удаляйте данные ради обхода ошибки подписи.
 
 ## Поддерживаемые протоколы
 

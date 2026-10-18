@@ -677,4 +677,12 @@
     <string name="profile_export_error">Could not save or share profiles. Try another destination.</string>
     <string name="protocol_guide_awg">A WireGuard-based tunnel with packet obfuscation. AWG parameters must match the server.</string>
     <string name="protocol_guide_trusttunnel">Carries traffic over HTTPS (HTTP/2) or QUIC (HTTP/3), with TLS verification and server authentication.</string>
+    <string name="vpn_tun_mtu_title">VPN MTU</string>
+    <string name="vpn_tun_mtu_value">%1$d bytes</string>
+    <string name="vpn_tun_mtu_hint">Applies to the Android VPN interface on the next connection. Profile transport MTU stays independent.</string>
+    <string name="vpn_tun_mtu_bytes">MTU, bytes</string>
+    <string name="vpn_tun_mtu_range">Whole number from %1$d to %2$d. Default: 1280.</string>
+    <string name="vpn_tun_mtu_save_error">Could not save MTU. Try again.</string>
+    <string name="vpn_tun_mtu_save">Save</string>
+    <string name="vpn_tun_mtu_cancel">Cancel</string>
 </resources>

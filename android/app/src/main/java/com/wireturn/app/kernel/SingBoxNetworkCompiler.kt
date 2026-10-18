@@ -48,6 +48,9 @@ object SingBoxNetworkCompiler {
         }
         require(policy.has("splitDns")) { "Для общего extended задайте отдельные DNS через VPN и напрямую" }
         val dns = SplitDnsSettings.parse(policy["splitDns"].toString())
+        require(listOf(dns.remoteEmergency, dns.domesticEmergency).all { it == null || it.mode == "disabled" }) {
+            "Аварийный DNS требует общего маршрутизатора Xray; extended пока не поддерживает терминальный резерв"
+        }
         val routing = RoutingPolicy.load(policy.toString(), "", "")
         val active = routing.activeRules()
         // Validate every active match before constructing an executable configuration.
@@ -73,8 +76,10 @@ object SingBoxNetworkCompiler {
                 fun pool(items: List<com.wireturn.app.domain.SubscriptionPolicyParser.Resolver>, tag: String, detour: String, mode: String, explicit: Boolean) {
                     val automaticBootstrap = items.any { it.transport == "DOH" && it.bootstrapIp.isNullOrBlank() &&
                         !com.wireturn.app.domain.StaticHosts.isIp(URI(it.endpoint).host.removeSurrounding("[", "]")) && dns.hosts?.get(URI(it.endpoint).host) == null }
-                    if (automaticBootstrap) servers.add((BootstrapDns.parse(settings.dns.bootstrap) ?: BootstrapDns("tcp", "1.1.1.1", 53))
-                        .singBoxServer("$tag-bootstrap").apply { addProperty("detour", detour) })
+                    if (automaticBootstrap) servers.add((BootstrapDns.parse(EffectiveDnsBootstrap.resolve(settings)) ?: BootstrapDns("tcp", "1.1.1.1", 53))
+                        .singBoxServer("$tag-bootstrap").apply {
+                            if (get("type").asString != "local") addProperty("detour", if (dns.bootstrap == null) detour else "direct")
+                        })
                     fun member(item: com.wireturn.app.domain.SubscriptionPolicyParser.Resolver, memberTag: String) =
                         resolver(item, memberTag, detour, "$tag-bootstrap", dns.hosts.orEmpty())
                     // Preserve legacy configurations; explicit pools honor even a singleton timeout.

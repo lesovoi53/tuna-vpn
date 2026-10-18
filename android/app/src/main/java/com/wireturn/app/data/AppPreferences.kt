@@ -31,7 +31,13 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.flowOn
 import java.io.StringReader
 
-private val Context.internalDataStore: DataStore<Preferences> by preferencesDataStore(name = "app_prefs")
+private val Context.rawAppDataStore: DataStore<Preferences> by preferencesDataStore(
+    name = "app_prefs",
+    produceMigrations = { listOf(com.wireturn.app.data.security.EncryptedPreferencesMigration(
+        com.wireturn.app.data.security.AppSecretPreferences.codec)) }
+)
+private val Context.internalDataStore: DataStore<Preferences>
+    get() = com.wireturn.app.data.security.AppSecretPreferences.wrap(rawAppDataStore)
 
 class SafeEnumTypeAdapterFactory : TypeAdapterFactory {
     override fun <T> create(gson: Gson, type: TypeToken<T>): TypeAdapter<T>? {
@@ -62,6 +68,12 @@ class SafeEnumTypeAdapterFactory : TypeAdapterFactory {
 }
 
 class AppPreferences(val context: Context) {
+    val tunMtuFlow: Flow<Int> = context.applicationContext.internalDataStore.data
+        .map(com.wireturn.app.domain.TunMtuPolicy::read).distinctUntilChanged()
+    suspend fun setTunMtu(value: Int) {
+        context.applicationContext.internalDataStore.edit { com.wireturn.app.domain.TunMtuPolicy.write(it, value) }
+    }
+
     private val defaultFragmentationKey = stringPreferencesKey("vpn_default_fragmentation_v1")
     val defaultFragmentationFlow: Flow<com.wireturn.app.data.kernel.VpnFragmentation?> = context.applicationContext.internalDataStore.data
         .map { p -> p[defaultFragmentationKey]?.let { json ->

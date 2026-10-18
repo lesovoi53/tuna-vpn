@@ -22,7 +22,7 @@ try {
     $env:GOOS='windows'; $env:GOARCH='amd64'; $env:CGO_ENABLED='0'
     & $GoExe test -v -modfile $modfile -overlay $overlay . *> (Join-Path $root 'build/stage-b2-native-test.log')
     if ($LASTEXITCODE) { throw 'Native tests failed' }
-    & $GoExe test -modfile $modfile -overlay $overlay github.com/xtls/xray-core/app/dns -run 'TestTuna(Adaptive|DoH|Legacy)' -count=1
+    & $GoExe test -modfile $modfile -overlay $overlay github.com/xtls/xray-core/app/dns -run 'TestTuna(Adaptive|DoH|Legacy|Emergency|System)' -count=1
     if ($LASTEXITCODE) { throw 'Adaptive DNS regression failed' }
     & $GoExe test -modfile $modfile -overlay $overlay github.com/xtls/xray-core/transport/internet/splithttp -run TestTunaXHTTPExplicitHTTP1ALPN -count=1
     if ($LASTEXITCODE) { throw 'XHTTP ALPN regression failed' }
@@ -36,8 +36,8 @@ try {
     $env:CGO_LDFLAGS='-target aarch64-linux-android26 -Wl,--no-undefined -Wl,-z,max-page-size=16384'
     & $GoExe build -modfile $modfile -overlay $overlay -buildvcs=false -trimpath -ldflags='-s -w -checklinkname=0' -o (Join-Path $output 'libxray-network.so') .
     if ($LASTEXITCODE) { throw 'Android Xray build failed' }
-    $provenance = [ordered]@{ goVersion = (& $GoExe version); sourceOverlay = 'xhttp-explicit-http1-alpn-v1-adaptive-dns-v1'; sources = [ordered]@{}; binaries = [ordered]@{} }
-    foreach ($name in @('native/routing/bootstrap.go','native/routing/policy.go','native/routing/prepare.py','native/routing/adaptive_dns.go','native/routing/adaptive_dns_test.go','native/routing/adaptive_policy_test.go','native/routing/doh_bootstrap.go','native/routing/doh_bootstrap_test.go','native/routing/xhttp_alpn_test.go','external/vless-client/main.go','external/vless-client/raw_xray.go','external/vless-client/raw_xray_test.go','external/vless-client/outbound_patch.go','external/vless-client/go.mod','external/vless-client/go.sum')) {
+    $provenance = [ordered]@{ goVersion = (& $GoExe version); sourceOverlay = 'xhttp-explicit-http1-alpn-v1-adaptive-dns-v2-system-emergency'; sources = [ordered]@{}; binaries = [ordered]@{} }
+    foreach ($name in @('native/routing/build.ps1','native/routing/bootstrap.go','native/routing/bootstrap_test.go','native/routing/policy.go','native/routing/policy_test.go','native/routing/socks_resolution_test.go','native/routing/prepare.py','native/routing/adaptive_dns.go','native/routing/adaptive_dns_test.go','native/routing/adaptive_policy_test.go','native/routing/emergency_policy_test.go','native/routing/emergency_dns_test.go','native/routing/system_dns.go','native/routing/system_dns_test.go','native/routing/doh_bootstrap.go','native/routing/doh_bootstrap_test.go','native/routing/xhttp_alpn_test.go','external/vless-client/main.go','external/vless-client/raw_xray.go','external/vless-client/raw_xray_test.go','external/vless-client/outbound_patch.go','external/vless-client/go.mod','external/vless-client/go.sum')) {
         $provenance.sources[$name] = (Get-FileHash -LiteralPath (Join-Path $root $name) -Algorithm SHA256).Hash.ToLower()
     }
     foreach ($name in @('xray-network-check.exe','libxray-network.so')) {

@@ -6,6 +6,28 @@ import com.google.gson.JsonParser
 import com.wireturn.app.data.RouteAction
 import java.net.URI
 
+/** A terminal reserve is not a ninth member of the primary adaptive pool. */
+data class DnsRecoverySettings(
+    val mode: String,
+    val resolver: SubscriptionPolicyParser.Resolver? = null,
+) {
+    fun validate(route: RouteAction, bootstrap: Boolean = false) {
+        require(mode in if (bootstrap) setOf("system", "resolver") else setOf("system", "resolver", "disabled")) {
+            "Неизвестный режим ${if (bootstrap) "Bootstrap" else "аварийного"} DNS"
+        }
+        require((mode == "resolver") == (resolver != null)) { "Сервер задаётся только для ручного резерва DNS" }
+        resolver?.let {
+            require(it.route == route) { "Маршрут резервного DNS не соответствует группе" }
+            require(it.transport in setOf("UDP", "TCP", "DOH")) { "Резерв DNS: выберите UDP, TCP или DoH" }
+            if (bootstrap) {
+                require(it.transport == "TCP" && it.bootstrapIp.isNullOrBlank()) {
+                    "Bootstrap DNS: TCP с IP-адресом, без собственного bootstrap"
+                }
+            }
+        }
+    }
+}
+
 /** Independent of subscription ownership and of the source of routing rules. */
 data class SplitDnsSettings(
     val remote: SubscriptionPolicyParser.Resolver = SubscriptionPolicyParser.Resolver("DOH", "https://8.8.8.8/dns-query", "8.8.8.8", RouteAction.VPN),
@@ -18,6 +40,9 @@ data class SplitDnsSettings(
     val remoteSelectionMode: String = "auto",
     val domesticSelectionMode: String = "auto",
     val timeoutMs: Int = 5000,
+    val remoteEmergency: DnsRecoverySettings? = null,
+    val domesticEmergency: DnsRecoverySettings? = null,
+    val bootstrap: DnsRecoverySettings? = null,
 ) {
     val effectiveRemoteServers get() = remoteServers ?: listOf(remote)
     val effectiveDomesticServers get() = domesticServers ?: listOf(domestic)
@@ -26,12 +51,16 @@ data class SplitDnsSettings(
         require(queryStrategy in setOf("UseIP", "UseIPv4", "UseIPv6")) { "Неизвестный режим DNS A/AAAA" }
         require(remoteSelectionMode in setOf("auto", "priority") && domesticSelectionMode in setOf("auto", "priority")) { "Неизвестный режим выбора DNS" }
         require(timeoutMs in 1000..10000) { "Общий тайм-аут DNS: 1000–10000 мс" }
+        remoteEmergency?.validate(RouteAction.VPN)
+        domesticEmergency?.validate(RouteAction.DIRECT)
+        bootstrap?.validate(RouteAction.DIRECT, bootstrap = true)
         for ((servers, route) in listOf(effectiveRemoteServers to RouteAction.VPN, effectiveDomesticServers to RouteAction.DIRECT)) {
             require(servers.size in 1..8) { "В каждой группе требуется от 1 до 8 DNS-серверов" }
             require(servers.map { it.transport to it.endpoint.lowercase().trimEnd('/') }.distinct().size == servers.size) { "Повтор DNS-сервера" }
             require(servers.all { it.route == route }) { "Маршрут DNS не соответствует группе" }
         }
-        for (r in effectiveRemoteServers + effectiveDomesticServers) {
+        for (r in effectiveRemoteServers + effectiveDomesticServers +
+            listOfNotNull(remoteEmergency?.resolver, domesticEmergency?.resolver, bootstrap?.resolver)) {
             require(r.transport in setOf("DOH", "DOT", "UDP", "TCP")) { "Выберите DoH, DoT, UDP или TCP" }
             val uri = URI(if (r.transport in setOf("DOH", "DOT")) r.endpoint else "dns://${r.endpoint}")
             require(!uri.host.isNullOrBlank() && uri.userInfo == null && uri.fragment == null && (uri.port == -1 || uri.port in 1..65535)) { "Некорректный адрес DNS" }
@@ -64,11 +93,18 @@ data class SplitDnsSettings(
             s.matches(Regex("[0-9a-fA-F:]+")) && runCatching { java.net.InetAddress.getByName(s) is java.net.Inet6Address }.getOrDefault(false)
         } else s.split('.').let { parts -> parts.size == 4 && parts.all { it.isNotEmpty() && it.all(Char::isDigit) && it.toIntOrNull() in 0..255 } }
 
-        fun fromPolicy(p: SubscriptionPolicyParser.HappPolicy) = p.dns ?: SplitDnsSettings(p.remote, p.domestic, p.hosts)
+        /** Subscription defaults are explicit; common/local overrides remain unchanged. */
+        fun fromPolicy(p: SubscriptionPolicyParser.HappPolicy): SplitDnsSettings =
+            (p.dns ?: SplitDnsSettings(p.remote, p.domestic, p.hosts)).withSubscriptionDefaults()
+
+        fun SplitDnsSettings.withSubscriptionDefaults() = copy(
+            remoteEmergency = remoteEmergency ?: DnsRecoverySettings("system"),
+            domesticEmergency = domesticEmergency ?: DnsRecoverySettings("system"),
+        )
 
         fun parse(json: String, fallback: SplitDnsSettings = SplitDnsSettings()): SplitDnsSettings {
             val root = JsonParser.parseString(json).asJsonObject
-            require(root.keySet().all { it in setOf("remote", "domestic", "hosts", "queryStrategy", "disableCache", "remoteServers", "domesticServers", "remoteSelectionMode", "domesticSelectionMode", "timeoutMs") }) { "Неизвестное поле DNS" }
+            require(root.keySet().all { it in setOf("remote", "domestic", "hosts", "queryStrategy", "disableCache", "remoteServers", "domesticServers", "remoteSelectionMode", "domesticSelectionMode", "timeoutMs", "remoteEmergency", "domesticEmergency", "bootstrap") }) { "Неизвестное поле DNS" }
             fun resolver(r: JsonObject, route: RouteAction): SubscriptionPolicyParser.Resolver {
                 require(r.keySet().all { it in setOf("transport", "endpoint", "bootstrapIp", "route") }) { "Неизвестное поле DNS-сервера" }
                 require(r["route"] == null || r["route"].asString == route.name) { "Маршрут DNS не соответствует группе" }
@@ -79,6 +115,20 @@ data class SplitDnsSettings(
                 require(value.isJsonArray && value.asJsonArray.size() in 1..8) { "В каждой группе требуется от 1 до 8 DNS-серверов" }
                 value.asJsonArray.map { resolver(it.asJsonObject, route) }
             }
+            fun recovery(key: String, route: RouteAction, inherited: DnsRecoverySettings?): DnsRecoverySettings? {
+                if (!root.has(key)) return inherited
+                val value = root[key]
+                require(value.isJsonObject) { "Настройки $key должны быть объектом" }
+                val obj = value.asJsonObject
+                require(obj.keySet().all { it in setOf("mode", "resolver") }) { "Неизвестное поле $key" }
+                val mode = obj["mode"]
+                require(mode != null && mode.isJsonPrimitive && mode.asJsonPrimitive.isString) { "Не задан режим $key" }
+                val target = if (obj.has("resolver")) {
+                    require(obj["resolver"].isJsonObject) { "Некорректный сервер $key" }
+                    resolver(obj.getAsJsonObject("resolver"), route)
+                } else null
+                return DnsRecoverySettings(mode.asString, target).also { it.validate(route, key == "bootstrap") }
+            }
             val remote = pool("remoteServers", RouteAction.VPN)
             val domestic = pool("domesticServers", RouteAction.DIRECT)
             val hosts = if (root.has("hosts")) root.get("hosts")?.takeUnless { it.isJsonNull }?.asJsonObject?.entrySet()?.associate { it.key to it.value.asString } else fallback.hosts
@@ -88,7 +138,10 @@ data class SplitDnsSettings(
                 root["queryStrategy"]?.asString ?: fallback.queryStrategy, root["disableCache"]?.asBoolean ?: fallback.disableCache,
                 remote ?: fallback.remoteServers, domestic ?: fallback.domesticServers,
                 root["remoteSelectionMode"]?.asString ?: fallback.remoteSelectionMode,
-                root["domesticSelectionMode"]?.asString ?: fallback.domesticSelectionMode, timeout).also { it.validate() }
+                root["domesticSelectionMode"]?.asString ?: fallback.domesticSelectionMode, timeout,
+                recovery("remoteEmergency", RouteAction.VPN, fallback.remoteEmergency),
+                recovery("domesticEmergency", RouteAction.DIRECT, fallback.domesticEmergency),
+                recovery("bootstrap", RouteAction.DIRECT, fallback.bootstrap)).also { it.validate() }
         }
 
         fun applyToPolicy(policy: String, settings: String): String {
@@ -106,6 +159,10 @@ data class SplitDnsSettings(
             dns.addProperty("remoteSelectionMode", parsed.remoteSelectionMode)
             dns.addProperty("domesticSelectionMode", parsed.domesticSelectionMode)
             dns.addProperty("timeoutMs", parsed.timeoutMs)
+            for ((key, value) in listOf("remoteEmergency" to parsed.remoteEmergency,
+                "domesticEmergency" to parsed.domesticEmergency, "bootstrap" to parsed.bootstrap)) {
+                if (value == null) dns.remove(key) else dns.add(key, Gson().toJsonTree(value))
+            }
             parsed.hosts?.let { dns.add("hosts", Gson().toJsonTree(it)) }
             root.add("splitDns", dns)
             return root.toString()

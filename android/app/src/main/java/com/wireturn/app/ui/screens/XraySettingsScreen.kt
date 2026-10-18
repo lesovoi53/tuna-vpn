@@ -387,13 +387,13 @@ fun XraySettingsScreen(
             SectionGroup(title = "Bootstrap DNS · адреса серверов") {
                 SectionItem(position = ItemPosition.Single) {
                     Column {
-                    val bootstrapPresets = listOf("" to "По умолчанию ядра", "tcp://77.88.8.8:53" to "Яндекс", "tcp://1.1.1.1:53" to "Cloudflare", "tcp://8.8.8.8:53" to "Google")
+                    val bootstrapPresets = listOf("" to "По умолчанию ядра", "system" to "Системный DNS Android (Localhost)", "tcp://77.88.8.8:53" to "Яндекс", "tcp://1.1.1.1:53" to "Cloudflare", "tcp://8.8.8.8:53" to "Google")
                     com.wireturn.app.ui.screens.kernel.VkChoice("Bootstrap DNS", if (customBootstrap) "custom" else bootstrapDns.takeIf { value -> bootstrapPresets.any { it.first == value } } ?: "custom",
                         bootstrapPresets + ("custom" to "Ввести вручную"), enabled = !privacyMode) { customBootstrap = it == "custom"; if (!customBootstrap) bootstrapDns = it }
                     TextFieldRow(label = "DNS для соединения с сервером", value = bootstrapDns,
                         onValueChange = { if (!privacyMode) { bootstrapDns = it; customBootstrap = true } },
                         placeholder = "tcp://1.1.1.1:53",
-                        supportingText = "Для профилей Xray и sing-box. IP и TCP; этот запрос идёт напрямую до установления VPN. Пусто — прежние DNS каждого ядра. Mieru и DNS-туннель используют свои настройки.",
+                        supportingText = "Для профилей Xray и sing-box. system — системный DNS физической сети Android; tcp://IP:порт — заданный TCP DNS. Запрос идёт напрямую (DIRECT), вне VPN. Пусто — прежние DNS каждого ядра. Mieru и DNS-туннель используют свои настройки.",
                         readOnly = privacyMode, isModified = bootstrapDns != initialXraySettings.bootstrapDns,
                         privacyMode = privacyMode)
                     }
