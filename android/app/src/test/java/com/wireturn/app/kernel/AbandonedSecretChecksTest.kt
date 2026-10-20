@@ -8,7 +8,7 @@ class AbandonedSecretChecksTest {
     @Test fun cleanupRemovesOnlyKnownGeneratedChecksAndPreservesOtherCache() {
         val cache = kotlin.io.path.createTempDirectory("tuna-check-cleanup-").toFile()
         try {
-            val removed = listOf("core-check-123.json", "core-check-456.log", "route-check-789.json")
+            val removed = listOf("core-check-123.json", "core-check-456.log", "route-check-789.json", "route-check-00000000-0000-0000-0000-000000000000.json", ".tuna-config-123456.tmp")
             val retained = listOf("core-check-not-generated.json", "my-profile.json", "update.apk", "route-check-123.txt")
             (removed + retained).forEach { File(cache, it).writeText("fixture") }
             val probe = File(cache, "profile-test-12345").apply { mkdirs() }

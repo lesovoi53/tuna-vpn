@@ -66,6 +66,7 @@ def generate():
              'app/src/main/java/com/wireturn/app/kernel/PrivateRuntimeDirectory.kt',
              'app/src/main/java/com/wireturn/app/kernel/MemoryConfigs.kt',
              'app/src/main/java/com/wireturn/app/kernel/MemoryFileDescriptor.kt',
+             'app/src/main/java/com/wireturn/app/kernel/PrivateRuntimeConfigFile.kt',
              'app/src/main/java/com/wireturn/app/kernel/TunAddressPolicy.kt',
              'app/src/main/java/com/wireturn/app/data/security/EncryptedPreferences.kt',
              'app/src/main/java/com/wireturn/app/data/security/AndroidPreferenceCipher.kt',

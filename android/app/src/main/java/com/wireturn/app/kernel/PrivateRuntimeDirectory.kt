@@ -38,7 +38,8 @@ class PrivateRuntimeDirectory(context: Context, prefix: String) : Closeable {
 
         /** Only generated names from isolated checks; never erase the whole shared cache. */
         internal fun removeAbandonedChecks(cache: File) {
-            removeMatchingFiles(cache, Regex("(?:core-check|route-check)-[0-9]+\\.(?:json|log)"))
+            removeMatchingFiles(cache, Regex("\\.tuna-config-[0-9]+\\.tmp"))
+            removeMatchingFiles(cache, Regex("(?:core-check|route-check)-(?:[0-9]+|[0-9a-f-]{36})\\.(?:json|log)"))
             val generatedDirectory = Regex("(?:profile-test|masterdns-scan)-[0-9]+|snell-health-[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")
             cache.listFiles()?.filter { generatedDirectory.matches(it.name) &&
                 Files.isDirectory(it.toPath(), java.nio.file.LinkOption.NOFOLLOW_LINKS) }?.forEach { directory ->

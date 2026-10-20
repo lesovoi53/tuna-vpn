@@ -7,15 +7,13 @@ import com.wireturn.app.data.kernel.MasterDnsConfig
 import com.wireturn.app.data.kernel.MasterDnsPoolSelection
 import com.wireturn.app.domain.MasterDnsPoolMember
 import com.wireturn.app.domain.MasterDnsPoolPlan
-import java.io.ByteArrayInputStream
-import java.io.DataInputStream
 import java.io.File
 import java.nio.file.Files
 import org.junit.Assert.*
 import org.junit.Test
 
 class MasterDnsPoolCommandTest {
-    @Test fun eightIndependentConfigsReachMemoryLauncherWithoutCredentialFiles() {
+    @Test fun eightIndependentPrivateConfigsAreReadableAndRemovedTogether() {
         val directory = Files.createTempDirectory("masterdns-pool-test").toFile()
         try {
             val members = (1..8).map { i -> MasterDnsPoolMember("member-$i", "Server $i",
@@ -31,27 +29,20 @@ class MasterDnsPoolCommandTest {
             }
             val command = MasterDnsKernel.buildCommand(ctx, config)
             assertEquals("-pool", command[1])
-            val frame = MemoryConfigs.frame(command, emptyMap())
-            DataInputStream(ByteArrayInputStream(frame.bytes)).use { input ->
-                fun field() = ByteArray(input.readInt()).also { input.readFully(it) }.toString(Charsets.UTF_8)
-                input.skipBytes(8)
-                val args = List(input.readInt()) { field() }
-                val files = linkedMapOf<String, String>()
-                repeat(input.readInt()) { files[field()] = field() }
-                assertEquals(17, files.size)
-                val manifest = JsonParser.parseString(files.getValue(args[2])).asJsonObject
-                val children = manifest["members"].asJsonArray.map { it.asJsonObject }
-                assertEquals(8, children.map { it["listen"].asString }.distinct().size)
-                assertEquals(8, children.map { it["password"].asString }.distinct().size)
-                children.forEachIndexed { index, child ->
-                    val toml = files.getValue(child["configPath"].asString)
-                    assertTrue(toml.contains("synthetic-key-${index + 1}"))
-                    assertTrue(toml.contains(child["password"].asString))
-                    assertFalse(toml.contains("front-password"))
-                    assertEquals("192.0.2.${index + 1}:53", files.getValue(child["resolversPath"].asString))
-                }
-                assertFalse(args.joinToString().contains("password"))
+            val manifest = JsonParser.parseString(File(command[2]).readText()).asJsonObject
+            val children = manifest["members"].asJsonArray.map { it.asJsonObject }
+            assertEquals(8, children.map { it["listen"].asString }.distinct().size)
+            assertEquals(8, children.map { it["password"].asString }.distinct().size)
+            children.forEachIndexed { index, child ->
+                val toml = File(child["configPath"].asString).readText()
+                assertTrue(toml.contains("synthetic-key-${index + 1}"))
+                assertTrue(toml.contains(child["password"].asString))
+                assertFalse(toml.contains("front-password"))
+                assertEquals("192.0.2.${index + 1}:53", File(child["resolversPath"].asString).readText())
             }
+            assertFalse(command.joinToString().contains("password"))
+            assertEquals(17, directory.walkTopDown().count { it.isFile })
+            MemoryConfigs.removeDirectory(directory)
             assertFalse(directory.walkTopDown().any { it.isFile })
         } finally {
             MemoryConfigs.removeDirectory(directory)
@@ -70,3 +61,4 @@ class MasterDnsPoolCommandTest {
         catch (expected: IllegalArgumentException) { assertTrue(expected.message!!.contains("состав")) }
     }
 }
+

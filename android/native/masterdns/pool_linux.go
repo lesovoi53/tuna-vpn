@@ -6,6 +6,7 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
@@ -14,7 +15,12 @@ import (
 func poolPrivatePath(path string) bool {
 	const prefix = "/proc/self/fd/"
 	if !strings.HasPrefix(path, prefix) {
-		return false
+		info, err := os.Lstat(path)
+		if err != nil || !filepath.IsAbs(path) || !info.Mode().IsRegular() || info.Mode().Perm()&0077 != 0 {
+			return false
+		}
+		stat, ok := info.Sys().(*syscall.Stat_t)
+		return ok && stat.Uid == uint32(os.Geteuid())
 	}
 	number, err := strconv.Atoi(strings.TrimPrefix(path, prefix))
 	return err == nil && number >= 3 && path == prefix+strconv.Itoa(number)

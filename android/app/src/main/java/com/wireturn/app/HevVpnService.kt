@@ -230,7 +230,7 @@ misc:
             nativeRuntime.stop()
 
             AppLogsState.addLog(getString(R.string.log_vpn_retarget, socks5Addr))
-            val configuration = com.wireturn.app.kernel.MemoryFileDescriptor.create(
+            val configuration = com.wireturn.app.kernel.PrivateRuntimeConfigFile.create(this@HevVpnService,
                 buildConfigYaml(socks5Addr, socks5User, socks5Pass, requireNotNull(activeTunMtu)))
             val success = nativeRuntime.start(configuration.path, fd, configuration)
 
@@ -357,7 +357,7 @@ misc:
                 }
                 
                 AppLogsState.addLog(getString(R.string.log_vpn_starting, tunFd, socks5Addr))
-                val configuration = com.wireturn.app.kernel.MemoryFileDescriptor.create(
+                val configuration = com.wireturn.app.kernel.PrivateRuntimeConfigFile.create(this@HevVpnService,
                     buildConfigYaml(socks5Addr, socks5User, socks5Pass, tunMtu))
                 val success = nativeRuntime.start(configuration.path, tunFd, configuration)
                 trace("JNI start returned=$success fd=$tunFd")
@@ -485,3 +485,4 @@ misc:
         private const val MAPDNS_NETMASK = "255.192.0.0"
     }
 }
+
