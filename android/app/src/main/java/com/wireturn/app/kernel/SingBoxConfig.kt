@@ -25,10 +25,13 @@ object SingBoxConfig {
         val address = URI("socks://$listenAddress")
         require(address.host in setOf("127.0.0.1", "[::1]", "::1") && address.port in 1..65535)
         val wireguard = profile.protocol in setOf("awg", "wireguard")
+        val trustIpv4Only = profile.protocol == "trusttunnel" &&
+            com.wireturn.app.data.kernel.TrustTunnelUri.ipv4Only(profile.uri)
         val wg = if (wireguard) com.wireturn.app.data.kernel.AwgUri.parse(profile.uri) else null
         val profileDns = wg?.dns.orEmpty()
         val innerAddresses = wg?.endpoint?.getAsJsonArray("address")?.map { it.asString }.orEmpty()
         val payloadStrategy = when {
+            trustIpv4Only -> "ipv4_only"
             innerAddresses.isEmpty() -> null
             innerAddresses.none { ':' in it } -> "ipv4_only"
             innerAddresses.all { ':' in it } -> "ipv6_only"
@@ -66,6 +69,19 @@ object SingBoxConfig {
             add(if (wireguard) "endpoints" else "outbounds", JsonArray().apply { add(outbound(profile)) })
             add("route", JsonObject().apply {
                 addProperty("final", "vpn")
+                if (trustIpv4Only) add("rules", JsonArray().apply {
+                    // Resolve payload domains to A records. IPv6 literals must fail closed,
+                    // never fall back to a direct outbound or the physical network.
+                    add(JsonObject().apply {
+                        addProperty("action", "resolve")
+                        addProperty("strategy", "ipv4_only")
+                        addProperty("server", "bootstrap")
+                    })
+                    add(JsonObject().apply {
+                        addProperty("ip_version", 6)
+                        addProperty("action", "reject")
+                    })
+                })
                 if (payloadStrategy != null) add("default_domain_resolver", JsonObject().apply {
                     addProperty("server", "bootstrap")
                     // The physical peer may use IPv6 even with an IPv4-only inner tunnel.

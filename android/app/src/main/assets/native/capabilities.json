@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "adapterVersion": "1.65.1",
+  "adapterVersion": "1.65.2-rc1",
   "abi": "arm64-v8a",
   "defaultEnginePolicy": {
     "vless": "xray",
@@ -170,10 +170,10 @@
     "app/src/main/java/com/wireturn/app/data/kernel/AdditionalVpnProtocols.kt": "e807338aa96449048debf956b79c5db272d90bc8044ec70212ca8989dba296e8",
     "app/src/main/java/com/wireturn/app/data/kernel/NaiveUri.kt": "24d0184b7f01c84b4ff30f8972f4583daaa0b6aac25953b54f3ea9b12b703d09",
     "app/src/main/java/com/wireturn/app/data/kernel/AwgUri.kt": "c57b7b759acca1e4eb8603c1f3396b064043732197ecf3c767fa8edcc2f603fa",
-    "app/src/main/java/com/wireturn/app/data/kernel/TrustTunnelUri.kt": "dc2f82977a944de390a5918a9ef82c1eb21c3b87e30baf5bc25dc14244a4d071",
+    "app/src/main/java/com/wireturn/app/data/kernel/TrustTunnelUri.kt": "adac4316c7cffde4b15aeccf1c46f87da2e470979207b8259906535dddf5f89f",
     "app/src/main/java/com/wireturn/app/domain/AwgProfileDedup.kt": "8d610d862fe36db28ea8b4ad9d8800a5b1e74e027cc8ad2908d975154fc914b1",
     "app/src/main/java/com/wireturn/app/domain/ProfileReveal.kt": "bc902fceb385d754a12463f1059143f73411850f46a183a48d1f199dbca93798",
-    "app/src/main/java/com/wireturn/app/kernel/SingBoxConfig.kt": "b3d87cc009d497a6c0560d39212ca9278839b940ed30182179df3b3f001ec705",
+    "app/src/main/java/com/wireturn/app/kernel/SingBoxConfig.kt": "09a115acff3bd8082cd72c0f9d4505a0e746747e10e22b003ff74835ff05c197",
     "app/src/main/java/com/wireturn/app/kernel/VpnCoreLog.kt": "3f96bf7c9078230538c01169bf5d0b882f4e2544ceffa0d69c2c6191e1efb031",
     "app/src/main/java/com/wireturn/app/kernel/VpnNativeValidation.kt": "952d28b38a9b3230c8fc70e4aee2314eb4a57eed0c02a3efa9fa2ee53bafcd61",
     "app/src/main/java/com/wireturn/app/kernel/ExtendedVless.kt": "030348fd30f23937aa0d1126df7c2dc2bb276508cd8c989fbd7f54bd75044789",

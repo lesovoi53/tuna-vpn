@@ -9,6 +9,11 @@ import java.util.Base64
 
 /** Normalizes panel links and official TLV links without discarding connection options. */
 object TrustTunnelUri {
+    /** Payload capability; the physical connection to the server may still use IPv6. */
+    fun ipv4Only(value: String): Boolean = URI(value).rawQuery.orEmpty().split('&').any {
+        VpnConfig.decode(it.substringBefore('=')) == "has_ipv6" &&
+            VpnConfig.decode(it.substringAfter('=', "")) in setOf("false", "0")
+    }
     private fun encode(s: String) = URLEncoder.encode(s,"UTF-8").replace("+", "%20")
     /** QUIC varints have 1/2/4/8-byte width, including lengths and numeric field values. */
     private class Reader(val bytes: ByteArray) {
@@ -109,7 +114,8 @@ object TrustTunnelUri {
                 addProperty("congestion_controller", it)
             }
             q["cwnd"]?.let { addProperty("cwnd",it.toInt().also { n -> require(n in 1..65535) }) }
-            q["has_ipv6"]?.let { require(bool(it)) { "TrustTunnel: ограничение удалённого IPv6 пока не поддерживается" } }
+            // Enforced by SingBoxConfig's payload resolve/reject rules, not a native outbound option.
+            q["has_ipv6"]?.let(::bool)
             q["anti_dpi"]?.let { require(!bool(it)) { "TrustTunnel: anti_dpi пока не поддерживается этим ядром" } }
             q["dns"]?.let { require(it.isBlank()) { "TrustTunnel: DNS из TLV требует настройки маршрутизации" } }
             q["client_random_prefix"]?.let {
