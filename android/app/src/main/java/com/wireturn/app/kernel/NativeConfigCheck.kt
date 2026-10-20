@@ -25,7 +25,7 @@ object NativeConfigCheck {
     /** Private files and bounded execution; never logs generated config/credentials. */
     suspend fun check(context: Context, profile: VpnConfig, preview: Boolean = false): String = permits.withPermit { withContext(Dispatchers.IO) {
         profile.validate()
-        if (profile.protocol == "mieru") return@withContext "Mieru: параметры ссылки проверены; отдельное ядро 3.37"
+        if (profile.protocol == "mieru") return@withContext "Mieru: параметры ссылки проверены; отдельное ядро 3.38.1"
         val config = if (profile.usesXray) XrayVpnConfig.generate(profile, "127.0.0.1:21089", "validation", "validation", false)
             else SingBoxConfig.generate(profile, "127.0.0.1:21089", "validation", "validation")
         if (profile.isRawXray) {
@@ -43,17 +43,34 @@ object NativeConfigCheck {
         val cacheable = !preview && !profile.isRawXray
         currentCoroutineContext().ensureActive()
         if (cacheable && synchronized(accepted) { cacheKey in accepted }) return@withContext success
-        val input = File.createTempFile("core-check-", ".json", context.cacheDir)
-        val output = File.createTempFile("core-check-", ".log", context.cacheDir)
+        val input = File(context.cacheDir, "core-check-${java.util.UUID.randomUUID()}.json")
+        var output: java.util.concurrent.FutureTask<String>? = null
         var process: Process? = null
         try {
-            input.writeText(config.toString())
+            MemoryConfigs.write(input, config.toString())
             val command = if (profile.usesXray) listOf("$library/libxray.so", "-config", input.absolutePath, if (preview) "-dump-config" else "-check-config")
                 else listOf("$library/libsingbox.so", "check", "-c", input.absolutePath)
-            process = ProcessBuilder(command).redirectErrorStream(true).redirectOutput(output).apply {
+            process = ProcessBuilder(command).redirectErrorStream(true).apply {
+                if (!preview) redirectOutput(File("/dev/null"))
                 environment()["GODEBUG"] = "netdns=cgo"
                 environment().remove("TUNA_ROUTING_FILE")
-            }.start()
+            }.let { MemoryConfigs.start(it) }
+            if (preview) {
+                val stream = process.inputStream
+                output = java.util.concurrent.FutureTask {
+                    val captured = java.io.ByteArrayOutputStream()
+                    val chunk = ByteArray(8192)
+                    stream.use {
+                        while (true) {
+                            val count = it.read(chunk)
+                            if (count < 0) break
+                            val keep = minOf(count, 262144 - captured.size())
+                            if (keep > 0) captured.write(chunk, 0, keep)
+                        }
+                    }
+                    captured.toString("UTF-8")
+                }.also { Thread(it, "native-preview").apply { isDaemon = true; start() } }
+            }
             val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15)
             while (!process.waitFor(100, TimeUnit.MILLISECONDS)) {
                 currentCoroutineContext().ensureActive()
@@ -66,16 +83,7 @@ object NativeConfigCheck {
                 if (accepted.size >= 128) accepted.remove(accepted.first())
                 accepted.add(cacheKey)
             }
-            val text = if (preview) output.inputStream().use { stream ->
-                val bytes = ByteArray(262144)
-                var count = 0
-                while (count < bytes.size) {
-                    val read = stream.read(bytes, count, bytes.size - count)
-                    if (read < 0) break
-                    count += read
-                }
-                String(bytes, 0, count, Charsets.UTF_8)
-            } else ""
+            val text = output?.get(1, TimeUnit.SECONDS).orEmpty()
             if (!preview) success
             else if (!profile.usesXray) config.toString()
             else text.lineSequence().firstOrNull { it.trimStart().startsWith("{") } ?: error("Ядро не вернуло конфигурацию")
@@ -84,7 +92,8 @@ object NativeConfigCheck {
                 process?.let { terminateCoreProcess(it, { child -> signalAndroidProcess(child, 15) },
                     graceMillis = 1_000, forceTerminate = { child -> signalAndroidProcess(child, 9) }) }
             } finally {
-                input.delete(); output.delete()
+                MemoryConfigs.remove(input)
+                output?.cancel(true)
             }
         }
     } }

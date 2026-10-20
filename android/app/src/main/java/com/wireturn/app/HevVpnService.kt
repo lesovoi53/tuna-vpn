@@ -24,7 +24,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -54,7 +53,6 @@ class HevVpnService : VpnService() {
     @Volatile private var activeTunMtu: com.wireturn.app.domain.TunMtuPolicy.Snapshot? = null
     private val isStopping = AtomicBoolean(false)
     private val nativeLock = Mutex()
-    private val runtimeDirectory = lazy { com.wireturn.app.kernel.PrivateRuntimeDirectory(this, "hev") }
     private var startJob: kotlinx.coroutines.Job? = null
     private fun trace(event: String) = AppLogsState.addLog(
         "[VPN lifecycle] service=${System.identityHashCode(this)} t=${android.os.SystemClock.elapsedRealtime()} $event"
@@ -231,11 +229,10 @@ misc:
 
             nativeRuntime.stop()
 
-            val configFile = File(runtimeDirectory.value.directory, "hev-socks5-tunnel.yaml")
-            configFile.writeText(buildConfigYaml(socks5Addr, socks5User, socks5Pass, requireNotNull(activeTunMtu)))
-
             AppLogsState.addLog(getString(R.string.log_vpn_retarget, socks5Addr))
-            val success = nativeRuntime.start(configFile.absolutePath, fd)
+            val configuration = com.wireturn.app.kernel.MemoryFileDescriptor.create(
+                buildConfigYaml(socks5Addr, socks5User, socks5Pass, requireNotNull(activeTunMtu)))
+            val success = nativeRuntime.start(configuration.path, fd, configuration)
 
             if (success) {
                 VpnServiceState.updateStatus(VpnState.Running)
@@ -337,7 +334,7 @@ misc:
                 stopSelf()
                 return
             }
-            // Take ownership before file IO or a suspension can fail. stopVpn/onDestroy
+            // Take ownership before memory allocation or a suspension can fail. stopVpn/onDestroy
             // must always be able to close an established descriptor exactly once.
             synchronized(this@HevVpnService) {
                 tunInterface = established
@@ -349,8 +346,6 @@ misc:
 
             val tunFd = established.fd
             trace("establish success fd=$tunFd")
-            val configFile = File(runtimeDirectory.value.directory, "hev-socks5-tunnel.yaml")
-            configFile.writeText(buildConfigYaml(socks5Addr, socks5User, socks5Pass, tunMtu))
 
             nativeLock.withLock {
                 if (isStopping.get()) {
@@ -362,7 +357,9 @@ misc:
                 }
                 
                 AppLogsState.addLog(getString(R.string.log_vpn_starting, tunFd, socks5Addr))
-                val success = nativeRuntime.start(configFile.absolutePath, tunFd)
+                val configuration = com.wireturn.app.kernel.MemoryFileDescriptor.create(
+                    buildConfigYaml(socks5Addr, socks5User, socks5Pass, tunMtu))
+                val success = nativeRuntime.start(configuration.path, tunFd, configuration)
                 trace("JNI start returned=$success fd=$tunFd")
                 
                 if (!success) {
@@ -450,7 +447,6 @@ misc:
                     activeTunMtu = null
                     VpnServiceState.tunEstablished = false
                 }
-                if (runtimeDirectory.isInitialized()) runtimeDirectory.value.close()
             }
 
             val currentState = VpnServiceState.state.value

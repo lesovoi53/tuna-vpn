@@ -8,14 +8,12 @@ import (
 	"net"
 	"net/url"
 	"os"
-	"path/filepath"
 	"strconv"
 
 	"github.com/enfein/mieru/v3/pkg/appctl"
 	pb "github.com/enfein/mieru/v3/pkg/appctl/appctlpb"
 	"github.com/enfein/mieru/v3/pkg/cli"
 	"github.com/enfein/mieru/v3/pkg/version"
-	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -133,15 +131,12 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	raw, err := protojson.Marshal(cfg)
-	if err != nil {
-		return fmt.Errorf("cannot encode configuration")
+	if err = appctl.SetTunaMemoryConfig(cfg); err != nil {
+		return fmt.Errorf("cannot set runtime configuration")
 	}
-	configPath := filepath.Join(filepath.Dir(path), "native.json")
-	if err = os.WriteFile(configPath, raw, 0600); err != nil {
-		return fmt.Errorf("cannot write configuration")
-	}
-	if err = os.Setenv(appctl.EnvMieruConfigJSONFile, configPath); err != nil {
+	// The upstream run command uses this presence marker to keep logging on stdout.
+	// LoadClientConfig is supplied by the memory overlay and never reads this path.
+	if err = os.Setenv(appctl.EnvMieruConfigJSONFile, "tuna-memory"); err != nil {
 		return fmt.Errorf("cannot configure runtime environment")
 	}
 	appctl.RecordAppStartTime()

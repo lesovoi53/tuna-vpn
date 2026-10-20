@@ -335,10 +335,24 @@ fun ProfilesBlock(
     val context = LocalContext.current
     val profileCountries by viewModel.profileCountries.collectAsStateWithLifecycle()
     val groupId by viewModel.activeConnectionGroupId.collectAsStateWithLifecycle()
+    val dnsGroupId by viewModel.activeMasterDnsGroupId.collectAsStateWithLifecycle()
+    val dnsGroups by viewModel.masterDnsGroups.collectAsStateWithLifecycle()
     val groups by viewModel.connectionGroups.collectAsStateWithLifecycle()
     val groupState by viewModel.groupRunState.collectAsStateWithLifecycle()
     val group = groups.find { it.id == groupId && it.type == com.wireturn.app.data.GroupTestType.URL_TEST && com.wireturn.app.domain.ManualGroupPolicy.allows(it) }
     val coreStatus by com.wireturn.app.CoreServiceState.status.collectAsStateWithLifecycle()
+    val dnsGroup = dnsGroups.find { it.id == dnsGroupId }
+    if (dnsGroup != null) {
+        SectionItem(position = ItemPosition.Single, onClick = onClick, modifier = modifier) {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(dnsGroup.name, style = MaterialTheme.typography.titleMedium)
+                Text("DNS-туннель · ${dnsGroup.memberIds.size} серверов")
+                Text(if (dnsGroup.strategy == "round_robin") "По кругу" else "Меньше активных соединений",
+                    style = MaterialTheme.typography.bodySmall)
+            }
+        }
+        return
+    }
     if (group != null) {
         val member = com.wireturn.app.domain.HomeSelection.member(group, currentProfile,
             coreStatus == com.wireturn.app.CoreStatus.Connected || coreStatus == com.wireturn.app.CoreStatus.Suppressed)
@@ -605,9 +619,11 @@ fun ProfilesDialog(
     val urlTests by viewModel.profileUrlTestState.collectAsStateWithLifecycle()
     val realCurrentId by viewModel.currentProfileId.collectAsStateWithLifecycle()
     val selectedGroupId by viewModel.activeConnectionGroupId.collectAsStateWithLifecycle()
+    val selectedDnsGroupId by viewModel.activeMasterDnsGroupId.collectAsStateWithLifecycle()
+    val dnsGroups by viewModel.masterDnsGroups.collectAsStateWithLifecycle()
     val storedGroups by viewModel.connectionGroups.collectAsStateWithLifecycle()
     val groups = remember(storedGroups) { storedGroups.filter { it.type == com.wireturn.app.data.GroupTestType.URL_TEST } }
-    val currentId = if (selectedGroupId == null) realCurrentId else ""
+    val currentId = if (selectedGroupId == null && selectedDnsGroupId == null) realCurrentId else ""
     val context = LocalContext.current
     val density = androidx.compose.ui.platform.LocalDensity.current
 
@@ -703,14 +719,21 @@ fun ProfilesDialog(
     // Local state for reordering
     val profiles = remember { mutableStateListOf<Profile>() }
     var selectedCategory by rememberSaveable { mutableStateOf(groups.find { it.id == selectedGroupId && com.wireturn.app.domain.ManualGroupPolicy.allows(it) }?.category ?: profilesSource.find { it.id == currentId }?.listCategory ?: ConnectionCategory.BYPASS) }
-    var showSubscriptions by rememberSaveable { mutableStateOf(profilesSource.find { it.id == currentId }?.subscriptionId != null) }
-    var expandedSection by remember(visible) { mutableStateOf<ProfileSection?>(null) }
+    var showSubscriptions by rememberSaveable { mutableStateOf(
+        dnsGroups.find { it.id == selectedDnsGroupId }?.subscriptionId != null ||
+            profilesSource.find { it.id == currentId }?.subscriptionId != null) }
+    var expandedSection by remember(visible) { mutableStateOf<ProfileSection?>(if (selectedDnsGroupId != null) ProfileSection.DNS else null) }
     var manageSubscriptions by remember(visible) { mutableStateOf(false) }
     val pinnedBalancers by remember { derivedStateOf { ProfileSections.pinnedBalancers(profiles) } }
     val pinnedItemCount by remember { derivedStateOf { ProfileSections.pinnedBalancerItemCount(profiles) } }
     val sectionGroups by remember { derivedStateOf {
         ProfileSections.groups(profiles, selectedCategory, showSubscriptions, favorites, sortOrder, searchQuery)
             .map { (section, members) -> section to filterAndSortProbedProfiles(members, probeHistory, successfulOnly, latencyOrder) }
+            .let { sections ->
+                if (selectedCategory == ConnectionCategory.BYPASS && sections.none { it.first == ProfileSection.DNS })
+                    (sections + (ProfileSection.DNS to emptyList())).sortedBy { it.first.ordinal }
+                else sections
+            }
     } }
     val visibleProfiles by remember { derivedStateOf { profiles.filter { ProfileSections.isPinnedBalancer(it) ||
         (it.listCategory == selectedCategory && (it.subscriptionId != null) == showSubscriptions &&
@@ -1548,10 +1571,16 @@ fun ProfilesDialog(
                     sectionGroups.forEach { (section, members) ->
                         val expanded = expandedSection == section || searchQuery.isNotBlank()
                         item(key = "section:${section.name}") {
+                            Column {
                             ProfileSectionHeader(profileSectionTitle(section), members.size, expanded,
-                                selected = members.any { it.id == (optimisticSelectedId ?: currentId) },
+                                selected = members.any { it.id == (optimisticSelectedId ?: currentId) } ||
+                                    (section == ProfileSection.DNS && selectedDnsGroupId != null),
                                 favorite = section == ProfileSection.FAVORITES,
                                 onClick = { expandedSection = if (expandedSection == section) null else section })
+                                if (expanded && section == ProfileSection.DNS) {
+                                    MasterDnsGroupsBlock(viewModel, showSubscriptions, onDismiss)
+                                }
+                            }
                         }
                         if (expanded && members.isEmpty()) item(key = "section-empty:${section.name}") {
                             Text(stringResource(if (searchQuery.isNotBlank()) R.string.orbit_search_empty else R.string.server_sections_empty_favorites),
@@ -2029,6 +2058,13 @@ private fun ProfileItemRow(
                         DropdownMenuItem(text = { Text(stringResource(if (isFavorite) R.string.profile_favorite_remove else R.string.profile_favorite_add)) },
                             leadingIcon = { Icon(painterResource(R.drawable.profile_star_24px), null, Modifier.size(20.dp)) },
                             onClick = { menuExpanded = false; viewModel.toggleFavoriteProfile(profile) })
+                        if (profile.kernelConfig is com.wireturn.app.data.KernelConfig.MasterDns) {
+                            DropdownMenuItem(text = { Text("DNS-резолверы") }, onClick = {
+                                menuExpanded = false
+                                context.startActivity(Intent(context, com.wireturn.app.ui.activities.MasterDnsResolversActivity::class.java)
+                                    .putExtra("EXTRA_PROFILE_ID", profile.id))
+                            })
+                        }
                         if (com.wireturn.app.domain.CloudflareProfile.tagged(profile.name)) {
                             DropdownMenuItem(text = { Text(stringResource(R.string.cf_find)) }, onClick = {
                                 menuExpanded = false

@@ -2,7 +2,7 @@
 
 ## Что именно воспроизводится
 
-Репозиторий содержит Android/Python-код, локальные native-адаптеры, патчи, закреплённые подмодули и зависимости. Текущий Windows-конвейер **гибридный**: Xray/sing-box/Mieru/MasterDNS/WebDAV собираются из исходников; HEV и qWDTT извлекаются из APK WireTurn 8.3 с проверкой SHA-256. Cronet использует закреплённую upstream static library. Полная побитовая воспроизводимость всех бинарников не заявлена. [Происхождение](cores-and-forks.md).
+Репозиторий содержит Android/Python-код, локальные native-адаптеры, патчи, закреплённые подмодули и зависимости. Текущий Windows-конвейер **гибридный**: Xray/sing-box/Mieru/MasterDNS/WebDAV/qWDTT собираются из закреплённых исходников с overlays; HEV извлекается из APK WireTurn 8.3 с проверкой SHA-256. Memory launcher и JNI memfd bridge собираются локально Android NDK. Cronet использует закреплённую upstream static library. Полная побитовая воспроизводимость всех бинарников не заявлена. [Происхождение](cores-and-forks.md).
 
 ## Клонирование
 

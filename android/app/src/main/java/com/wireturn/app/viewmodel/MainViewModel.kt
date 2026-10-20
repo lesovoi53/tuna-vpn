@@ -154,6 +154,51 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun cancelGroupTest() = groupRunner.release()
     val connectionGroups = prefs.connectionGroupsFlow.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     val activeConnectionGroupId = prefs.activeConnectionGroupFlow.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    val masterDnsGroups = prefs.masterDnsGroupsFlow.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    val activeMasterDnsGroupId = prefs.activeMasterDnsGroupIdFlow.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    fun connectMasterDnsGroup(id: String, onCompletion: () -> Unit = {}, onError: (String) -> Unit = {}) {
+        viewModelScope.launch {
+            try {
+                stopManualProbes()
+                groupRunner.stopAndJoin()
+                prefs.activateMasterDnsGroup(id)
+                startCoreInternal(forceRestart = CoreServiceState.isRunning.value)
+                onCompletion()
+            } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+            catch (e: Exception) { onError(e.message ?: "Не удалось подключить группу DNS") }
+        }
+    }
+
+    fun saveMasterDnsGroup(group: com.wireturn.app.data.MasterDnsGroup,
+        onSaved: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                prefs.saveMasterDnsGroup(group)
+                if (prefs.activeMasterDnsGroupIdFlow.first() == group.id && CoreServiceState.isRunning.value) {
+                    startCoreInternal(forceRestart = true)
+                }
+                onSaved()
+            } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+            catch (e: Exception) { onError(e.message ?: "Не удалось сохранить группу DNS") }
+        }
+    }
+
+    fun deleteMasterDnsGroup(id: String, onDeleted: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                if (prefs.activeMasterDnsGroupIdFlow.first() == id && CoreServiceState.isRunning.value) {
+                    stopCore()
+                    kotlinx.coroutines.withTimeout(15_000) { CoreServiceState.status.first { it == CoreStatus.Idle } }
+                }
+                prefs.deleteMasterDnsGroup(id)
+                onDeleted()
+            } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
+                onError("Подключение ещё останавливается. Повторите удаление после отключения.")
+            } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+            catch (e: Exception) { onError(e.message ?: "Не удалось удалить группу DNS") }
+        }
+    }
     fun selectConnectionGroup(group: com.wireturn.app.data.ConnectionGroup, onCompletion: () -> Unit = {}) {
         if (!com.wireturn.app.domain.ManualGroupPolicy.allows(group)) return
         groupRunner.release()
@@ -396,7 +441,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             // Migration: if ACTIVE keys are empty but we have profiles, activate current
             val currentProfiles = prefs.profilesFlow.first()
             if (currentProfiles.isNotEmpty()) {
-                if (!prefs.hasActiveProfile()) {
+                if (!prefs.hasActiveProfile() && prefs.activeMasterDnsGroupIdFlow.first() == null) {
                     val currentId = currentProfileId.value
                     val toActivate = currentProfiles.find { it.id == currentId } ?: currentProfiles.first()
                     prefs.saveFullProfile(toActivate.id, toActivate)
@@ -545,6 +590,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private suspend fun isUrlReachable(url: String): Boolean {
+        // Legacy HTTP settings do not trigger a misleading automatic VPN restart loop.
+        if (runCatching { com.wireturn.app.domain.ConfigurationUrlPolicy.validate(java.net.URL(url)) }.isFailure) return true
         if (!isNetworkAvailable()) return true
         repeat(3) {
             try {
@@ -554,6 +601,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         conn.connectTimeout = 2500
                         conn.readTimeout = 2500
                         conn.requestMethod = "HEAD"
+                        conn.instanceFollowRedirects = false
                         conn.useCaches = false
                         conn.responseCode
                     } finally { conn.disconnect() }
@@ -699,6 +747,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _proxyPing.value = PingResult.Loading
             var sawProxy = false
             val target = _pingUrl.value.ifBlank { DEFAULT_PING_URL }
+            if (runCatching { com.wireturn.app.domain.ConfigurationUrlPolicy.validate(java.net.URL(target)) }.isFailure) {
+                _proxyPing.value = PingResult.Error
+                return@launch
+            }
             repeat(10) { attempt ->
                 // Re-resolved every attempt: works for Xray or VPN-mode-without-Xray alike, and
                 // naturally follows the active source if it changes mid-sequence (Xray priority).
@@ -928,7 +980,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun selectProfileAndRestart(id: String, profile: Profile? = null, onCompletion: (() -> Unit)? = null) {
         val target = profile ?: profiles.value.find { it.id == id } ?: return
-        val wasAlreadySelected = id == currentProfileId.value
+        val wasAlreadySelected = id == currentProfileId.value && activeMasterDnsGroupId.value == null
 
         viewModelScope.launch {
             // A subscription may commit after the row is tapped. Activate its current

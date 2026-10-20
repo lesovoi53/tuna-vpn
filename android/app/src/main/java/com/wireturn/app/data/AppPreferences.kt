@@ -110,7 +110,12 @@ class AppPreferences(val context: Context) {
     private val activeGroupKey = stringPreferencesKey("active_connection_group_v1")
     val activeConnectionGroupFlow = context.applicationContext.internalDataStore.data.map { it[activeGroupKey] }
     suspend fun setActiveConnectionGroup(id: String?) {
-        appCtx.internalDataStore.edit { if (id == null) it.remove(activeGroupKey) else it[activeGroupKey] = id }
+        appCtx.internalDataStore.edit {
+            if (id == null) it.remove(activeGroupKey) else {
+                it[activeGroupKey] = id
+                it.remove(MasterDnsGroups.activeKey)
+            }
+        }
     }
     val connectionGroupsFlow: Flow<List<ConnectionGroup>> = context.applicationContext.internalDataStore.data.map { p ->
         decodeStoredGroups(p[groupsKey] ?: "[]", readProfiles(p))
@@ -299,6 +304,13 @@ class AppPreferences(val context: Context) {
         appCtx.internalDataStore.edit { preferences ->
             SubscriptionImportCommit.write(preferences, snapshot, profiles, subscriptions, routingSource, gson, routingSubscriptionId)
             appRouting?.let { AppRoutingLists.apply(preferences, it) }
+            // Keep the group's shared proxy chain in the same committed revision as its
+            // refreshed real anchor. Missing members remain an explicit runtime error.
+            if (preferences[MasterDnsGroups.activeKey] != null) {
+                readProfiles(preferences).singleOrNull { it.id == preferences[CURRENT_PROFILE_ID] }?.let { anchor ->
+                    ProfileActivation.write(preferences, anchor.id, anchor, kernelSnapshotOf(anchor.kernelConfig), gson)
+                }
+            }
         }
     }
 
@@ -317,8 +329,81 @@ class AppPreferences(val context: Context) {
 
     val currentProfileIdFlow: Flow<String> = appCtx.internalDataStore.data.mapPref(CURRENT_PROFILE_ID, "default")
 
+    val masterDnsGroupsFlow: Flow<List<MasterDnsGroup>> = appCtx.internalDataStore.data
+        .map { MasterDnsGroups.read(it, gson) }.distinctUntilChanged()
+    val activeMasterDnsGroupIdFlow: Flow<String?> = appCtx.internalDataStore.data
+        .map { it[MasterDnsGroups.activeKey] }.distinctUntilChanged()
+
+    suspend fun saveMasterDnsGroup(group: MasterDnsGroup) {
+        group.validate()
+        appCtx.internalDataStore.edit { p ->
+            val groups = MasterDnsGroups.read(p, gson)
+            val replacement = groups.filterNot { it.id == group.id } + group.copy(name = group.name.trim())
+            val snapshot = runtimeSnapshotForMasterDnsGroup(p, group, replacement)
+            snapshot.runtimeConfig()
+            p[MasterDnsGroups.groupsKey] = gson.toJson(replacement)
+            if (p[MasterDnsGroups.activeKey] == group.id) {
+                val anchor = group.members(readProfiles(p)).first()
+                ProfileActivation.write(p, anchor.id, anchor, kernelSnapshotOf(anchor.kernelConfig), gson)
+            }
+        }
+    }
+
+    suspend fun deleteMasterDnsGroup(id: String) {
+        appCtx.internalDataStore.edit { p ->
+            val groups = MasterDnsGroups.read(p, gson)
+            p[MasterDnsGroups.groupsKey] = gson.toJson(groups.filterNot { it.id == id })
+            if (p[MasterDnsGroups.activeKey] == id) {
+                p.remove(MasterDnsGroups.activeKey)
+                val anchor = readProfiles(p).singleOrNull { it.id == p[CURRENT_PROFILE_ID] }
+                if (anchor != null) {
+                    ProfileActivation.write(p, anchor.id, anchor, kernelSnapshotOf(anchor.kernelConfig), gson)
+                } else {
+                    p.remove(CURRENT_PROFILE_ID)
+                    p.remove(ACTIVE_KERNEL_JSON)
+                    p.remove(ACTIVE_XRAY_CONFIG_TYPE)
+                    p.remove(ACTIVE_XRAY_ENABLED)
+                    p.remove(ACTIVE_WG_JSON)
+                    p.remove(ACTIVE_VLESS_JSON)
+                }
+            }
+        }
+    }
+
+    suspend fun activateMasterDnsGroup(id: String): Profile {
+        var activated: Profile? = null
+        appCtx.internalDataStore.edit { p ->
+            val groups = MasterDnsGroups.read(p, gson)
+            val group = requireNotNull(groups.singleOrNull { it.id == id }) { "Группа DNS удалена или неоднозначна" }
+            runtimeSnapshotForMasterDnsGroup(p, group, groups).runtimeConfig()
+            val anchor = group.members(readProfiles(p)).first()
+            ProfileActivation.write(p, anchor.id, anchor, kernelSnapshotOf(anchor.kernelConfig), gson)
+            p[MasterDnsGroups.activeKey] = group.id
+            p.remove(activeGroupKey)
+            anchor.subscriptionId?.let { SubscriptionEdit.ActiveProfile(it, anchor.id).commit(p) }
+            activated = anchor
+        }
+        return requireNotNull(activated)
+    }
+
+    suspend fun runtimeSnapshotForMasterDnsGroup(id: String): com.wireturn.app.domain.RuntimeClientSnapshot {
+        val p = appCtx.internalDataStore.data.first()
+        val groups = MasterDnsGroups.read(p, gson)
+        val group = requireNotNull(groups.singleOrNull { it.id == id }) { "Группа DNS удалена или неоднозначна" }
+        return runtimeSnapshotForMasterDnsGroup(p, group, groups)
+    }
+
+    private fun runtimeSnapshotForMasterDnsGroup(p: Preferences, group: MasterDnsGroup,
+                                                groups: List<MasterDnsGroup>): com.wireturn.app.domain.RuntimeClientSnapshot =
+        com.wireturn.app.domain.RuntimeClientSnapshot.resolve(
+            readClientConfig(p), group.memberIds.firstOrNull().orEmpty(), readProfiles(p), readSubscriptions(p),
+            NetworkPreferences.read(p), p[defaultFragmentationKey]?.let {
+                Gson().fromJson(it, com.wireturn.app.data.kernel.VpnFragmentation::class.java).also { it.validate() }
+            }, groups, group.id)
+
     suspend fun migrateRoutingOwnership() {
         appCtx.internalDataStore.edit { p ->
+            MasterDnsGroups.migrate(p, readProfiles(p), gson)
             val subscriptions = readSubscriptions(p)
             val original = NetworkPreferences.read(p)
             val common = com.wireturn.app.domain.ProfileRouting.common(original, subscriptions)
@@ -368,9 +453,10 @@ class AppPreferences(val context: Context) {
         }
     }
 
-    val currentProfileNameFlow: Flow<String?> = combine(profilesFlow, currentProfileIdFlow) { profiles, id ->
-        profiles.find { it.id == id }?.name
-    }
+    val currentProfileNameFlow: Flow<String?> = appCtx.internalDataStore.data.map { p ->
+        p[MasterDnsGroups.activeKey]?.let { id -> MasterDnsGroups.read(p, gson).singleOrNull { it.id == id }?.name }
+            ?: readProfiles(p).find { it.id == p[CURRENT_PROFILE_ID] }?.name
+    }.distinctUntilChanged()
 
     val vlessLinkHistoryFlow: Flow<List<String>> = appCtx.internalDataStore.data
         .map { p ->
@@ -381,20 +467,39 @@ class AppPreferences(val context: Context) {
         .map(AutoLaunchPreferences::read).distinctUntilChanged()
 
     val clientConfigFlow: Flow<ClientConfig> = appCtx.internalDataStore.data
-        .map { p ->
-            val kernelConfig = decodeStoredKernelSnapshot(p[ACTIVE_KERNEL_JSON], gson)
-            ClientConfig(
-                listenAddr = p[CLIENT_LISTEN_ADDR] ?: ClientConfig.DEFAULT_LISTEN_ADDR,
-                socksAddr = p[CLIENT_SOCKS_ADDR] ?: p[LEGACY_OLCRTC_SOCKS_ADDR] ?: ClientConfig.DEFAULT_SOCKS_ADDR,
-                isSocksAuthEnabled = p[CLIENT_SOCKS_AUTH_ENABLED] ?: true,
-                socksUser = p[CLIENT_SOCKS_USER] ?: p[LEGACY_OLCRTC_SOCKS_USER] ?: "",
-                socksPass = p[CLIENT_SOCKS_PASS] ?: p[LEGACY_OLCRTC_SOCKS_PASS] ?: "",
-                dns = p[CLIENT_DNS] ?: "",
-                goDnsGo = p[GO_DNS_GO] ?: false,
-                useCustomCerts = p[USE_CUSTOM_CERTS] ?: true,
-                kernelConfig = kernelConfig
+        .map(::readClientConfig).distinctUntilChanged()
+
+    private fun readClientConfig(p: Preferences): ClientConfig {
+        val kernelConfig = decodeStoredKernelSnapshot(p[ACTIVE_KERNEL_JSON], gson)
+        return ClientConfig(
+            listenAddr = p[CLIENT_LISTEN_ADDR] ?: ClientConfig.DEFAULT_LISTEN_ADDR,
+            socksAddr = p[CLIENT_SOCKS_ADDR] ?: p[LEGACY_OLCRTC_SOCKS_ADDR] ?: ClientConfig.DEFAULT_SOCKS_ADDR,
+            isSocksAuthEnabled = p[CLIENT_SOCKS_AUTH_ENABLED] ?: true,
+            socksUser = p[CLIENT_SOCKS_USER] ?: p[LEGACY_OLCRTC_SOCKS_USER] ?: "",
+            socksPass = p[CLIENT_SOCKS_PASS] ?: p[LEGACY_OLCRTC_SOCKS_PASS] ?: "",
+            dns = p[CLIENT_DNS] ?: "",
+            goDnsGo = p[GO_DNS_GO] ?: false,
+            useCustomCerts = p[USE_CUSTOM_CERTS] ?: true,
+            kernelConfig = kernelConfig
+        )
+    }
+
+    /** Membership, credentials, subscription policies and anchor edits share one DataStore revision. */
+    val runtimeClientSnapshotFlow: Flow<com.wireturn.app.domain.RuntimeClientSnapshot> =
+        appCtx.internalDataStore.data.map { p ->
+            com.wireturn.app.domain.RuntimeClientSnapshot.resolve(
+                config = readClientConfig(p),
+                profileId = p[CURRENT_PROFILE_ID] ?: "default",
+                profiles = readProfiles(p),
+                subscriptions = readSubscriptions(p),
+                shared = NetworkPreferences.read(p),
+                fragmentation = p[defaultFragmentationKey]?.let { json ->
+                    Gson().fromJson(json, com.wireturn.app.data.kernel.VpnFragmentation::class.java).also { it.validate() }
+                },
+                masterDnsGroups = MasterDnsGroups.read(p, gson),
+                activeMasterDnsGroupId = p[MasterDnsGroups.activeKey],
             )
-        }.distinctUntilChanged()
+        }.distinctUntilChanged().flowOn(kotlinx.coroutines.Dispatchers.Default)
 
     val sharedNetworkSettingsFlow: Flow<SharedNetworkSettings> = appCtx.internalDataStore.data
         .map { p -> effectiveNetwork(p) }.distinctUntilChanged().flowOn(kotlinx.coroutines.Dispatchers.Default)
@@ -479,6 +584,7 @@ class AppPreferences(val context: Context) {
     suspend fun saveFullProfile(id: String, profile: Profile) {
         appCtx.internalDataStore.edit { p ->
             ProfileActivation.write(p, id, profile, kernelSnapshotOf(profile.kernelConfig), gson)
+            p.remove(MasterDnsGroups.activeKey)
         }
     }
 
@@ -486,6 +592,7 @@ class AppPreferences(val context: Context) {
         activateSelectedProfileState(appCtx.internalDataStore, snapshot, ::readProfiles) { p, profile ->
             ProfileActivation.write(p, profile.id, profile, kernelSnapshotOf(profile.kernelConfig), gson)
             p.remove(activeGroupKey)
+            p.remove(MasterDnsGroups.activeKey)
             profile.subscriptionId?.let { SubscriptionEdit.ActiveProfile(it, profile.id).commit(p) }
         }
 
@@ -501,6 +608,7 @@ class AppPreferences(val context: Context) {
         activateImportedProfileState(appCtx.internalDataStore, expectedCurrentId, id, ::readProfiles) { p, profile ->
             ProfileActivation.write(p, profile.id, profile, kernelSnapshotOf(profile.kernelConfig), gson)
             p.remove(activeGroupKey)
+            p.remove(MasterDnsGroups.activeKey)
             profile.subscriptionId?.let { subscriptionId ->
                 SubscriptionEdit.ActiveProfile(subscriptionId, profile.id).commit(p)
             }
@@ -581,6 +689,14 @@ class AppPreferences(val context: Context) {
         }
     }
 
+    /** Save only this profile's resolver choice, rejecting results from a stale editor/scan. */
+    suspend fun saveMasterDnsResolverSelection(expected: Profile, localResolvers: String?,
+                                              useLocalResolvers: Boolean) {
+        appCtx.internalDataStore.edit { p ->
+            MasterDnsResolverSelection.commit(p, readProfiles(p), expected, localResolvers, useLocalResolvers, gson)
+        }
+    }
+
     suspend fun saveSubscriptions(list: List<Subscription>) {
         appCtx.internalDataStore.edit { it[SUBSCRIPTIONS_JSON] = gson.toJson(list) }
     }
@@ -614,6 +730,7 @@ class AppPreferences(val context: Context) {
     }
 
     suspend fun setPingUrl(url: String) {
+        if (url.isNotBlank()) com.wireturn.app.domain.ConfigurationUrlPolicy.validate(java.net.URL(url))
         appCtx.internalDataStore.edit { it[PING_URL] = url }
     }
 
@@ -856,6 +973,7 @@ class AppPreferences(val context: Context) {
             p.remove(ACTIVE_WG_JSON)
             p.remove(ACTIVE_VLESS_JSON)
             p.remove(CURRENT_PROFILE_ID)
+            p.remove(MasterDnsGroups.activeKey)
         }
     }
 }

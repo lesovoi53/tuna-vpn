@@ -2,13 +2,13 @@
   "goVersion": "go version go1.27.1 windows/amd64",
   "sourceOverlay": "xhttp-explicit-http1-alpn-v1-adaptive-dns-v2-system-emergency",
   "sources": {
-    "native/routing/build.ps1": "9e676a118e46c62893324121b57960685447ae9fbd42228ae459cebe599498a1",
+    "native/routing/build.ps1": "df90da861cdfedcf4ed05b5dd1a8c2f92733f5c247db2528177bf84a22fc62b5",
     "native/routing/bootstrap.go": "89898ccb02ff6708c966e8df45eed4a6ae25b053b25d64ffc5ec205b42d43d3a",
     "native/routing/bootstrap_test.go": "3731edf895d6a9ba1e3b38e07d86648687398dfe231effe1451adb4c0d0f04cb",
     "native/routing/policy.go": "0669950302443efca02a4c1e5f5d42b06811349aa224cdcadab015f5f8498810",
     "native/routing/policy_test.go": "6c8ccc2f6f27574210384636b2a7efead7ab60e3f51d373aa721656c6a8c1ff6",
     "native/routing/socks_resolution_test.go": "6b70a4600689c06b887cca471f1c4561dcd0786b86b70e71ba3586d74c288815",
-    "native/routing/prepare.py": "7ea3ea222f0cb11b2195e69b4a4761a9d9723f230f380566d476e1b219086dcd",
+    "native/routing/prepare.py": "ae8b2677d061739145a2649aae6a322a4cdfb5299d778a77981369611770bc11",
     "native/routing/adaptive_dns.go": "9c9390d74f9d89f6de0123b264929a12aab1c75d26ede94c0dc65681b94d99b6",
     "native/routing/adaptive_dns_test.go": "8e4c5f9be2773257b60ced90e63ab1b70210708d058677c69ce6048c8c4ee391",
     "native/routing/adaptive_policy_test.go": "3134cb154ce19059b1ce909ec777957b43fb0bf24e527151bb06984a9eb5c56a",
@@ -24,10 +24,12 @@
     "external/vless-client/raw_xray_test.go": "7ef6658321e29b94ca0f281f51cef51354b6f89f025adc3ef1903016d62ed8c5",
     "external/vless-client/outbound_patch.go": "554fd7e71dbe643449e70f32966a3b74a4fe83a6beb8fb3f4e573f55aa653f1b",
     "external/vless-client/go.mod": "d8feaf3d69a955a34dfadd697c56c247b1b4c382e46a596fac724e2ccb6c26b3",
-    "external/vless-client/go.sum": "949042e569231113f629872475110827077c42c1299096bfdc430ea082e84c9a"
+    "external/vless-client/go.sum": "949042e569231113f629872475110827077c42c1299096bfdc430ea082e84c9a",
+    "native/routing/args_config.go": "82d9226fa52d3907b8a12fc6cd350a705544ad721a3182d571dad0c60cdd7162",
+    "native/routing/args_config_test.go": "5d3d124672a90b5f233ace9ca4ee0a134ac217ba0341e3c187b501cbb3db4ca7"
   },
   "binaries": {
-    "xray-network-check.exe": "51c2c4de47886a8d30d36c96d842f8b87f985092f0b3f13375f5048670527bd7",
-    "libxray-network.so": "cf336a3bc91153c21cb602caa1be853dcc01ef7920bea140369b2daacecfb41b"
+    "xray-network-check.exe": "221235295737e751d6fb8b8a649e6101899f5d7b05b82076b2a263b4db31664f",
+    "libxray-network.so": "c24c15c1e3dce96b010426baa294e4e24188d92730a4e499a80be9581ea51118"
   }
 }

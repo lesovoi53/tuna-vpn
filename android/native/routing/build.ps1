@@ -43,6 +43,9 @@ try {
     foreach ($name in @('xray-network-check.exe','libxray-network.so')) {
         $provenance.binaries[$name] = (Get-FileHash -LiteralPath (Join-Path $output $name) -Algorithm SHA256).Hash.ToLower()
     }
+    foreach ($name in @('native/routing/args_config.go','native/routing/args_config_test.go')) {
+        $provenance.sources[$name] = (Get-FileHash -LiteralPath (Join-Path $root $name) -Algorithm SHA256).Hash.ToLower()
+    }
     $provenance | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $output 'xray-network-provenance.json') -Encoding utf8
 } finally {
     Pop-Location

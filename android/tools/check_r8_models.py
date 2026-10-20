@@ -11,7 +11,9 @@ models = set(re.findall(r'^-keep class ([\w.$]+) \{ \*; \}', rules, re.M))
 models.update({'com.wireturn.app.domain.SplitDnsSettings',
                'com.wireturn.app.domain.DnsRecoverySettings',
                'com.wireturn.app.domain.SubscriptionPolicyParser$Resolver',
-               'com.wireturn.app.domain.MasterDnsResolverResult'})
+               'com.wireturn.app.domain.MasterDnsResolverResult',
+               'com.wireturn.app.domain.MasterDnsSavedScan',
+               'com.wireturn.app.domain.MasterDnsPoolMeasurement'})
 seen = set()
 errors = []
 active = None

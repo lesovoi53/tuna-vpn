@@ -13,7 +13,8 @@ internal suspend fun activateImportedProfileState(
 ): Profile? {
     var activated: Profile? = null
     store.edit { preferences ->
-        if ((preferences[AppPreferences.CURRENT_PROFILE_ID] ?: "default") == expectedCurrentId) {
+        if (preferences[MasterDnsGroups.activeKey] == null &&
+            (preferences[AppPreferences.CURRENT_PROFILE_ID] ?: "default") == expectedCurrentId) {
             readProfiles(preferences).singleOrNull { it.id == id }?.let { profile ->
                 write(preferences, profile)
                 activated = profile

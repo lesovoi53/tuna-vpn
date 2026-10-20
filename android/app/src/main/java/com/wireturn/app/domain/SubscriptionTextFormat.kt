@@ -6,7 +6,11 @@ internal object SubscriptionTextFormat {
         "qwdtt", "wdtt", "mierus", "snell", "vless", "hy2", "hysteria2", "trojan", "ss", "tuic",
         "anytls", "naive+https", "stormdns", "tuna", "wireturn", "wt", "wg", "awg", "wireguard", "vpn", "tt", "trusttunnel")
 
-    fun recognizes(text: String): Boolean = schemes.any { text.contains("$it://", ignoreCase = true) } ||
+    fun recognizes(text: String): Boolean = recognizesPlain(text) || text.lineSequence().any {
+        recognizesPlain(com.wireturn.app.data.kernel.VpnImportText.normalize(it.trim()))
+    }
+
+    private fun recognizesPlain(text: String): Boolean = schemes.any { text.contains("$it://", ignoreCase = true) } ||
         Regex("(?m)^\\s*[a-zA-Z][a-zA-Z0-9+.-]*://").containsMatchIn(text) ||
         text.contains("qwdtt:config", ignoreCase = true) || text.contains("#name:", ignoreCase = true)
 }

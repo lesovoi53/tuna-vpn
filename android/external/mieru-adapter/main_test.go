@@ -1,10 +1,29 @@
 package main
 
 import (
+	"github.com/enfein/mieru/v3/pkg/appctl"
 	pb "github.com/enfein/mieru/v3/pkg/appctl/appctlpb"
 	"net/url"
 	"testing"
 )
+
+func TestRuntimeMemoryConfiguration(t *testing.T) {
+	config, err := configuration(launch{URI: example, Listen: "127.0.0.1:2081", Username: "local-user", Password: "local-pass"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = appctl.SetTunaMemoryConfig(config); err != nil {
+		t.Fatal(err)
+	}
+	config.Socks5Authentication[0].Password = nil
+	loaded, err := appctl.LoadClientConfig()
+	if err != nil || loaded.Socks5Authentication[0].GetPassword() != "local-pass" {
+		t.Fatal("runtime snapshot lost authentication", err)
+	}
+	if appctl.SetTunaMemoryConfig(loaded) == nil {
+		t.Fatal("runtime snapshot replaced")
+	}
+}
 
 const example = "mierus://test:test-password@192.0.2.1/?profile=Test%20Mieru&port=20715-20735&protocol=TCP&multiplexing=MULTIPLEXING_HIGH"
 

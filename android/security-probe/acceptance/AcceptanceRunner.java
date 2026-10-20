@@ -342,6 +342,13 @@ public final class AcceptanceRunner extends Instrumentation {
     }
 
     @Override public void onStart(){
+        if("memory".equals(args.getString("phase"))){
+            Bundle result=new Bundle();boolean passed=true;
+            try{MemoryAcceptance.run(getTargetContext(),args,result);}
+            catch(Throwable failure){passed=false;result.putString("memoryErrorClass",errorClass(failure));}
+            result.putString("result",passed?"passed":"failed");
+            finish(passed?Activity.RESULT_OK:Activity.RESULT_CANCELED,result);return;
+        }
         if("cleanup-test-files".equals(args.getString("phase"))){cleanupTestFiles();return;}
         if("startup-timings".equals(args.getString("phase"))){startupTimings();return;}
         Bundle status=new Bundle();boolean passed=true;Object bridge=null;String socket=null;

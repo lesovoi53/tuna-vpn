@@ -28,6 +28,14 @@ manifest and is verified before packaging. Only a local path is supported: Xray'
 optional crawler query controls are rejected instead of silently discarded.
 Reality authentication and certificate verification are unchanged.
 
+The AWG keepalive overlay preserves `persistent_keepalive_interval` as either a
+JSON number or a range string such as `"20-35"`, both bounded to 0..65535 seconds.
+The shared strict type rejects malformed/reversed/overflowing input before UAPI;
+the existing pinned `wireguard-go` engine samples the complete interval itself.
+Scalar configuration and WARP's numeric keepalive remain compatible. The native
+build tests JSON round trips and the actual peer UAPI serializer against the
+pinned engine's range parser. No cryptographic implementation is changed.
+
 For application-generated local DNS transports tagged `bootstrap` or ending in
 `-bootstrap`, `TUNA_BOOTSTRAP_DNS=system` selects the Android physical-network
 resolver bridge. `TUNA_SYSTEM_DNS_SOCKET` must name the session's authenticated

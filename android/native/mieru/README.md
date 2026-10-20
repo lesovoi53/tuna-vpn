@@ -9,6 +9,12 @@ required local credentials. `--version` reports the linked upstream version
 without reading a launch file. Both host and Android builds use the same source
 and authentication overlay.
 
+The launch file may be a descriptor path. Its decoded protobuf configuration is
+validated and installed once through the `memory.go` appctl overlay. Repeated
+loads return independent clones; persistent mutation is rejected. No secondary
+`native.json` is written. The non-secret environment presence marker keeps the
+upstream run command's diagnostics on stdout instead of creating a log file.
+
 Mieru 3.38.1 includes the upstream fix preventing authentication downgrade.
 `auth.go` is rebased onto that release and additionally sends SOCKS response
 `05 ff` when a client cannot supply the required credentials. This preserves the

@@ -16,6 +16,19 @@ if($LASTEXITCODE -or $commit -ne $spec.commit) { throw 'Unexpected Mieru revisio
 $dirty=& git -C $source status --porcelain
 if($LASTEXITCODE -or $dirty) { throw 'Mieru source must be clean; use documented overlays' }
 $map=@{}
+$client=[IO.File]::ReadAllText((Join-Path $source 'pkg/appctl/client.go'))
+foreach($function in @('LoadClientConfig() (*pb.ClientConfig, error)', 'StoreClientConfig(config *pb.ClientConfig) error')) {
+ $anchor="func $function {`n`tclientIOLock.Lock()`n`tdefer clientIOLock.Unlock()"
+ if($client.Contains("`r`n")) { $anchor=$anchor.Replace("`n","`r`n") }
+ if(!$client.Contains($anchor)) { throw 'Mieru configuration overlay anchor changed' }
+ $branch=if($function.StartsWith('Load')) { 'if tunaMemoryConfig != nil { return proto.Clone(tunaMemoryConfig).(*pb.ClientConfig), nil }' } else { 'if tunaMemoryConfig != nil { return fmt.Errorf("memory configuration is immutable") }' }
+ $client=$client.Replace($anchor,$anchor+"`n`t"+$branch)
+}
+$clientPath=Join-Path $cache 'mieru-memory-client.go'
+[IO.File]::WriteAllText($clientPath,$client,[Text.UTF8Encoding]::new($false))
+$map[(Join-Path $source 'pkg/appctl/client.go')]=$clientPath
+$map[(Join-Path $source 'pkg/appctl/tuna_memory.go')]=Join-Path $PSScriptRoot 'memory.go'
+$map[(Join-Path $source 'pkg/appctl/tuna_memory_test.go')]=Join-Path $PSScriptRoot 'memory_test.go'
 $map[(Join-Path $source 'pkg/socks5/auth.go')]=Join-Path $PSScriptRoot 'auth.go'
 # Add our regression separately: never replace upstream authentication tests.
 $map[(Join-Path $source 'pkg/socks5/tuna_auth_test.go')]=Join-Path $PSScriptRoot 'auth_test.go'
@@ -37,6 +50,8 @@ try {
  $env:GOOS='windows'; $env:GOARCH='amd64'; $env:CGO_ENABLED='0'
  & $GoExe test -count=1 -timeout=120s -overlay $overlay . github.com/enfein/mieru/v3/pkg/socks5
  if($LASTEXITCODE) { throw 'Mieru adapter/auth regression failed' }
+ & $GoExe test -count=1 -timeout=120s -overlay $overlay github.com/enfein/mieru/v3/pkg/appctl -run '^TestTunaMemoryConfigSnapshot$'
+ if($LASTEXITCODE) { throw 'Mieru memory regression failed' }
  & $GoExe build -overlay $overlay -buildvcs=false -trimpath -ldflags='-s -w' -o (Join-Path $cache 'mieru-check.exe') .
  if($LASTEXITCODE) { throw 'Mieru host build failed' }
  $versionOutput=& (Join-Path $cache 'mieru-check.exe') --version

@@ -65,11 +65,27 @@
   ],
   "option/wireguard.go": [
     {
+      "old": "\"net/netip\"",
+      "new": "\"net/netip\"\n\twgkeepalive \"github.com/sagernet/sing-box/common\""
+    },
+    {
+      "old": "PersistentKeepaliveInterval uint16",
+      "new": "PersistentKeepaliveInterval wgkeepalive.WireGuardKeepalive"
+    },
+    {
       "old": "type WireGuardAmnezia struct {",
       "new": "type WireGuardAmnezia struct {\n\tRandomTrailers bool `json:\"random_trailers,omitempty\"`\n\tDisableCookies bool `json:\"disable_cookies,omitempty\"`"
     }
   ],
   "transport/wireguard/endpoint_options.go": [
+    {
+      "old": "\"context\"",
+      "new": "\"context\"\n\twgkeepalive \"github.com/sagernet/sing-box/common\""
+    },
+    {
+      "old": "PersistentKeepaliveInterval uint16",
+      "new": "PersistentKeepaliveInterval wgkeepalive.WireGuardKeepalive"
+    },
     {
       "old": "type AmneziaOptions struct {",
       "new": "type AmneziaOptions struct {\n\tRandomTrailers bool\n\tDisableCookies bool"
@@ -83,6 +99,18 @@
   ],
   "transport/wireguard/endpoint.go": [
     {
+      "old": "\"context\"",
+      "new": "\"context\"\n\twgkeepalive \"github.com/sagernet/sing-box/common\""
+    },
+    {
+      "old": "keepalive       uint16",
+      "new": "keepalive       wgkeepalive.WireGuardKeepalive"
+    },
+    {
+      "old": "if c.keepalive > 0 {\n\t\tipcLines.WriteString(\"\\npersistent_keepalive_interval=\" + F.ToString(c.keepalive))",
+      "new": "if !c.keepalive.IsZero() {\n\t\tipcLines.WriteString(\"\\npersistent_keepalive_interval=\" + c.keepalive.String())"
+    },
+    {
       "old": "\t\tif e.options.Amnezia.HeaderProtectionKey != \"\" {",
       "new": "\t\tipcConf.WriteString(\"\\nrandom_trailers=\" + strconv.FormatBool(e.options.Amnezia.RandomTrailers))\n\t\tipcConf.WriteString(\"\\ndisable_cookies=\" + strconv.FormatBool(e.options.Amnezia.DisableCookies))\n\t\tif e.options.Amnezia.HeaderProtectionKey != \"\" {"
     },
@@ -93,6 +121,22 @@
     {
       "old": "bind = conn.NewDefaultBind(listenerControl)",
       "new": "// Windows RIO clears bytes 1..3 on receive, corrupting AWG's header nonce.\n        // StdNetBind preserves the encrypted header and uses the same socket protection.\n        if e.options.Amnezia != nil { bind = conn.NewStdNetBind(listenerControl) } else { bind = conn.NewDefaultBind(listenerControl) }"
+    }
+  ],
+  "common/tuna_wireguard_keepalive.go": {
+    "source": "native/singbox/wireguard_keepalive.go"
+  },
+  "transport/wireguard/tuna_keepalive_test.go": {
+    "source": "native/singbox/wireguard_keepalive_test.go"
+  },
+  "protocol/warp/endpoint.go": [
+    {
+      "old": "\"github.com/sagernet/sing-box/common/cloudflare\"",
+      "new": "\"github.com/sagernet/sing-box/common/cloudflare\"\n\twgkeepalive \"github.com/sagernet/sing-box/common\""
+    },
+    {
+      "old": "PersistentKeepaliveInterval: options.PersistentKeepaliveInterval,",
+      "new": "PersistentKeepaliveInterval: wgkeepalive.WireGuardKeepaliveFromSeconds(options.PersistentKeepaliveInterval),"
     }
   ],
   "option/trusttunnel.go": [

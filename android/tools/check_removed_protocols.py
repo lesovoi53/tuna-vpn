@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 COMPONENTS = {'Xray': 'libxray.so', 'sing-box-extended': 'libsingbox.so',
               'Mieru': 'libmieru.so', 'WebDAV': 'libwebdav.so',
               'MasterDNS / StormDNS': 'libmasterdns.so', 'qWDTT': 'libqwdtt.so',
+              'TUNA memory runtime': 'libtuna-runtime.so', 'TUNA memory JNI': 'libtuna-memory.so',
               'HEV': 'libhevsocks5.so'}
 # Bundled AndroidX/CameraX/DataStore/ML Kit helpers, not VPN engines.
 AUXILIARY = {'libandroidx.graphics.path.so', 'libbarhopper_v3.so',

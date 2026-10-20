@@ -31,23 +31,29 @@ class ProxyHttpTextTest {
                         input.readFully(ByteArray(when(type) { 1 -> 4; 4 -> 16; 3 -> input.readUnsignedByte(); else -> error("SOCKS type") }))
                         input.readUnsignedShort()
                         socket.getOutputStream().write(byteArrayOf(5, 0, 0, 1, 127, 0, 0, 1, 0, 1))
-                        val reader = input.bufferedReader()
+                        val tls = SyntheticHttps.context.socketFactory.createSocket(socket, "localhost", socket.port, false) as javax.net.ssl.SSLSocket
+                        tls.useClientMode = false
+                        tls.startHandshake()
+                        val reader = tls.getInputStream().bufferedReader()
                         while (!reader.readLine().isNullOrEmpty()) { }
                         readingBody.complete(Unit)
-                        socket.getOutputStream().write(response.toByteArray(Charsets.UTF_8))
+                        tls.getOutputStream().write(response.toByteArray(Charsets.UTF_8))
                         if (slowChunks) {
                             repeat(6) {
-                                socket.getOutputStream().write("1\r\nx\r\n".toByteArray())
-                                socket.getOutputStream().flush()
+                                tls.getOutputStream().write("1\r\nx\r\n".toByteArray())
+                                tls.getOutputStream().flush()
                                 Thread.sleep(350)
                             }
-                            socket.getOutputStream().write("0\r\n\r\n".toByteArray())
+                            tls.getOutputStream().write("0\r\n\r\n".toByteArray())
                         }
                     }
                 }
                 runBlocking {
-                    val request = async { ProxyHttpText.fetch("http://127.0.0.1:80/fixture", Proxy(Proxy.Type.SOCKS,
-                        InetSocketAddress("127.0.0.1", listener.localPort)), maxChars = maxChars, totalTimeoutMs = if (cancel) 5000 else 1000) }
+                    val request = async { ProxyHttpText.fetch("https://127.0.0.1:443/fixture", Proxy(Proxy.Type.SOCKS,
+                        InetSocketAddress("127.0.0.1", listener.localPort)), maxChars = maxChars, totalTimeoutMs = if (cancel) 5000 else 1500,
+                        factory = { address, route -> (address.openConnection(route) as javax.net.ssl.HttpsURLConnection).apply {
+                            sslSocketFactory = SyntheticHttps.context.socketFactory
+                        } }) }
                     if (cancel) {
                         withTimeout(3000) { readingBody.await() }
                         delay(100)
@@ -86,7 +92,7 @@ class ProxyHttpTextTest {
         assertThrows(TimeoutCancellationException::class.java) {
             fetch("HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n", slowChunks = true)
         }
-        assertTrue("Timed-out HTTP read kept its coroutine blocked", (System.nanoTime() - started) / 1_000_000 < 1900)
+        assertTrue("Timed-out HTTPS read kept its coroutine blocked", (System.nanoTime() - started) / 1_000_000 < 2400)
     }
     @Test fun leavingHomeCancelsAnInFlightDiagnosticBeforeItsTimeout() {
         assertEquals("cancelled", fetch("HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n", slowChunks = true, cancel = true))

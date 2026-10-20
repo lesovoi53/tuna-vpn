@@ -442,7 +442,7 @@
     <string name="settings_auto_launch_url">URL для проверки</string>
     <string name="settings_auto_launch_interval">Интервал проверки (мин)</string>
     <string name="diagnostics_settings_title">Диагностика</string>
-    <string name="settings_ping_url">Адрес для пинга</string>
+    <string name="settings_ping_url">Адрес для пинга (HTTPS)</string>
     <string name="settings_country_detection_title">Определение страны выхода</string>
     <string name="country_detection_auto">Автоматически (перебор)</string>
     <string name="country_detection_cloudflare">Cloudflare</string>

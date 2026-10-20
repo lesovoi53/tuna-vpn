@@ -42,7 +42,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -151,32 +150,33 @@ class CoreService : Service() {
                 if (vpnSupervisorJob?.isActive != true) startVpnSupervisor()
                 CoreServiceState.setStatus(CoreStatus.Starting)
             }
-            val prefs = AppPreferences(applicationContext)
-            val cfg = prefs.clientConfigFlow.first()
-            val profileName = prefs.currentProfileNameFlow.first().orEmpty()
-            val vlessConfig = prefs.vlessConfigFlow.first()
-            val xrayConfig = prefs.xrayConfigFlow.first()
-
-            // Сразу фиксируем работающий конфиг для UI (с заполненными дефолтами)
-            val filledCfg = cfg.fillDefaults()
-            
-            if (!filledCfg.isValid) {
-                val errorRes = filledCfg.getValidationErrorResId() ?: R.string.error_settings_empty
-                CoreServiceState.setStatus(CoreStatus.Error(getString(errorRes)))
-                delay(3_000.milliseconds)
-                finishFailedRun()
-                return@start
-            }
-
-            prefs.saveClientConfig(filledCfg)
-            val runtimeCfg = com.wireturn.app.data.kernel.VpnFragmentation.applyDefault(filledCfg, prefs.defaultFragmentationFlow.first())
-
-            CoreServiceState.setSession(CoreServiceState.RunningSession(runtimeCfg, profileName, profileId = prefs.currentProfileIdFlow.first()))
-            currentRunningCfg.set(runtimeCfg)
-
             try {
+                val prefs = AppPreferences(applicationContext)
+                val snapshot = prefs.runtimeClientSnapshotFlow.first()
+                // Validation and pool resolution belong inside this failure boundary.
+                val runtimeCfg = snapshot.runtimeConfig()
+                val profileName = snapshot.profileName
+                val vlessConfig = prefs.vlessConfigFlow.first()
+                val xrayConfig = prefs.xrayConfigFlow.first()
+                if (!runtimeCfg.isValid) {
+                    val errorRes = runtimeCfg.getValidationErrorResId() ?: R.string.error_settings_empty
+                    throw IllegalArgumentException(getString(errorRes))
+                }
+                // Persist generated listener credentials, never the runtime plan or inherited fragmentation.
+                prefs.saveClientConfig(snapshot.config.fillDefaults().copy(
+                    socksUser = runtimeCfg.socksUser, socksPass = runtimeCfg.socksPass))
+                CoreServiceState.setSession(CoreServiceState.RunningSession(runtimeCfg, profileName, profileId = snapshot.profileId))
+                currentRunningCfg.set(runtimeCfg)
                 initStartup(vlessConfig, xrayConfig, profileName)
                 mainSupervisor()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: Exception) {
+                currentRunningCfg.set(null)
+                plannedRestart.set(false)
+                CoreServiceState.setStatus(CoreStatus.Error(failure.message ?: getString(R.string.error_kernel_or_settings)))
+                stopBinaryProcessGracefully()
+                delay(3_000.milliseconds)
             } finally {
                 currentRunningCfg.set(null)
                 if (!userStopped.get() && isActive) {
@@ -350,16 +350,14 @@ class CoreService : Service() {
 
         // Hot-reload: следим за изменениями конфига туннельного бинарника
         launch {
-            combine(prefs.clientConfigFlow, prefs.defaultFragmentationFlow) { config, defaults ->
-                com.wireturn.app.data.kernel.VpnFragmentation.applyDefault(config.fillDefaults(), defaults)
-            }.distinctUntilChanged()
-                .drop(1) // пропускаем начальное значение — уже обработано в onStartCommand
-                .collect { newCfgRaw ->
+            prefs.runtimeClientSnapshotFlow.collect { snapshot ->
                     // A deliberate stop clears the active config right around when
                     // handleStopAction() runs - without this guard that races the real stop.
                     if (userStopped.get()) return@collect
                     val runningCfg = currentRunningCfg.get() ?: return@collect
-                    val newCfg = newCfgRaw
+                    // Do not drop the first revision: a refresh may land between startup and
+                    // attaching this observer. Invalid membership terminates this supervisor.
+                    val newCfg = snapshot.runtimeConfig()
 
                     if (!newCfg.isValid) {
                         val errorRes = newCfg.getValidationErrorResId() ?: R.string.error_settings_empty
@@ -373,9 +371,12 @@ class CoreService : Service() {
                         return@collect
                     }
 
+                    val runningSession = CoreServiceState.session.value
+                    if (newCfg == runningCfg && runningSession != null && runningSession.profileId == snapshot.profileId &&
+                        runningSession.profileName == snapshot.profileName) return@collect
                     val binaryChanged = requiresBinaryRestart(runningCfg, newCfg)
                     currentRunningCfg.set(newCfg)
-                    CoreServiceState.setSession(CoreServiceState.RunningSession(newCfg, prefs.currentProfileNameFlow.first().orEmpty(), profileId = prefs.currentProfileIdFlow.first()))
+                    CoreServiceState.setSession(CoreServiceState.RunningSession(newCfg, snapshot.profileName, profileId = snapshot.profileId))
                     if (binaryChanged) {
                         // A config/profile switch is a deliberate new attempt, not the watchdog
                         // retrying a failure - drop any restart counter left over from before.
@@ -523,7 +524,7 @@ class CoreService : Service() {
                 AppLogsState.addLog(getString(R.string.snell_tfo_log))
             }
             state.workerRun = CoreServiceState.beginWorkers(preparedCfg.kernelConfig)
-            AppLogsState.addLog(getString(R.string.log_core_command, redactedCommandLog(cmdArgs, cfg)))
+            AppLogsState.addLog(getString(R.string.log_core_command, preparedCfg.kernelVariant.name))
 
             val proc = withContext(Dispatchers.IO) {
                 val builder = ProcessBuilder(cmdArgs)
@@ -565,7 +566,7 @@ class CoreService : Service() {
 
                 // Same non-suspending stretch as start() - a suspension point in between risks
                 // cancellation orphaning the freshly-spawned process with no reference to clean it up.
-                builder.start().also {
+                com.wireturn.app.kernel.MemoryConfigs.start(builder).also {
                     startedProc = it
                     process.set(it)
                 }
@@ -682,15 +683,6 @@ class CoreService : Service() {
         startActivity(intent)
     }
 
-    // FreeTurn/Qwdtt have no file-based config option upstream (unlike the other
-    // kernels), so their sensitive values ride the process command line directly - mask those
-    // specific flags for the app's own log, which the user may end up sharing for support.
-    private fun redactedCommandLog(cmdArgs: List<String>, cfg: ClientConfig): String {
-        val sensitiveFlags = KernelRegistry.get(cfg.kernelVariant).sensitiveCommandFlags
-        if (sensitiveFlags.isEmpty()) return cmdArgs.joinToString(" ")
-        return CommandLogRedactor.redact(cmdArgs, sensitiveFlags)
-    }
-
     private fun buildCommandArgs(cfg: ClientConfig, bootstrap: String, runtimeDirectory: java.io.File): List<String> {
         val snapshotContext = object : KernelCommandContext by commandContext {
             override val bootstrapDns = bootstrap
@@ -702,6 +694,7 @@ class CoreService : Service() {
 
     private fun requiresBinaryRestart(old: ClientConfig, new: ClientConfig): Boolean {
         if (old.kernelConfig != new.kernelConfig) return true
+        if (old.masterDnsPoolPlan != new.masterDnsPoolPlan) return true
         if (old.goDnsGo != new.goDnsGo) return true
         if (old.useCustomCerts != new.useCustomCerts) return true
         return when (new.kernelConfig) {

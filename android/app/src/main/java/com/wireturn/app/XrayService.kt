@@ -53,13 +53,6 @@ class XrayService : Service() {
         caBundlePath = CaBundleUtil.ensure(this)
     }
 
-    // Masks credentials/keys for the app's own log, which the user may end up sharing for
-    // support - the actual cmdArgs passed to the process are untouched.
-    private fun redactedCommandLog(cmdArgs: List<String>): String {
-        val sensitiveFlags = setOf("-proxy-user", "-proxy-pass", "-local-socks5", "-link", "-wg-private-key")
-        return CommandLogRedactor.redact(cmdArgs, sensitiveFlags)
-    }
-
     // VPN mode (HevVpnService) is supervised centrally from CoreService.startVpnSupervisor() -
     // CoreService's lifecycle spans the whole "any core running" duration, whereas XrayService is
     // only alive while Xray itself is enabled, so it can't be the sole authority once VPN mode also
@@ -233,9 +226,8 @@ class XrayService : Service() {
                 require(com.wireturn.app.domain.GeoAssetsManager.filesExist(this@XrayService)) { "Скачайте базы категорий в настройках маршрутизации" }
                 require(routingPolicy.geoSource.isBlank() || routingPolicy.geoSource == xraySettings.geoVariant) { "Для этих правил нужна база ${routingPolicy.geoSource}" }
             }
-            val policyFile = java.io.File(runtime.directory, "routing-policy.json").apply {
-                writeText(compiled.policyJson)
-            }
+            val policyFile = com.wireturn.app.kernel.MemoryConfigs.write(
+                java.io.File(runtime.directory, "routing-policy.json"), compiled.policyJson)
             if (compiled.fakeDnsOwner == com.wireturn.app.kernel.FakeDnsOwner.XRAY) {
                 cmdArgs.add("-fakedns")
             }
@@ -318,9 +310,11 @@ class XrayService : Service() {
                 )
             }
 
-            AppLogsState.addLog(getString(R.string.log_xray_starting, redactedCommandLog(cmdArgs)))
+            val argumentsFile = com.wireturn.app.kernel.MemoryConfigs.write(
+                java.io.File(runtime.directory, "xray-arguments.json"), com.google.gson.Gson().toJson(cmdArgs.drop(1)))
+            AppLogsState.addLog(getString(R.string.log_xray_starting, "Xray"))
             val proc = withContext(Dispatchers.IO) {
-                val builder = ProcessBuilder(cmdArgs).redirectErrorStream(true)
+                val builder = ProcessBuilder(executable, "-args-config", argumentsFile.absolutePath).redirectErrorStream(true)
                 dnsBridge.applyTo(builder.environment())
                 builder.environment().remove("TUNA_ROUTING_FILE")
                 builder.environment().remove("TUNA_BOOTSTRAP_DNS")
@@ -339,7 +333,7 @@ class XrayService : Service() {
                     caBundlePath?.let { builder.environment()["SSL_CERT_FILE"] = it }
                 }
                 currentCoroutineContext().ensureActive()
-                builder.start().also { ownedProcess = it }
+                com.wireturn.app.kernel.MemoryConfigs.start(builder).also { ownedProcess = it }
             }
             ownedProcess = proc
             process.set(proc)
@@ -450,32 +444,27 @@ class XrayService : Service() {
             snapshot.client.socksAddr.replace("0.0.0.0:", "127.0.0.1:"), snapshot.client.socksUser, snapshot.client.socksPass)
         val config = com.wireturn.app.kernel.SingBoxNetworkCompiler.compile(network, listener, upstream, categories, snapshot.hevEnabled)
         val work = runtimeDirectory
-        val configFile = java.io.File(work, "extended.json")
-        val temporary = java.io.File.createTempFile("extended-", ".json", work)
+        val configFile = com.wireturn.app.kernel.MemoryConfigs.write(java.io.File(work, "extended.json"), config.toString())
         try {
-            temporary.writeText(config.toString())
             val native = "${applicationInfo.nativeLibraryDir}/libsingbox.so"
-            val checkLog = java.io.File(work, "validation.log")
-            val checker = ProcessBuilder(native, "check", "-c", temporary.absolutePath)
-                .redirectErrorStream(true).redirectOutput(checkLog).start()
+            val checker = com.wireturn.app.kernel.MemoryConfigs.start(ProcessBuilder(native, "check", "-c", configFile.absolutePath)
+                .redirectErrorStream(true).redirectOutput(java.io.File("/dev/null")))
             try {
                 require(checker.waitFor(15, java.util.concurrent.TimeUnit.SECONDS)) { "Истёк таймаут проверки extended" }
                 require(checker.exitValue() == 0) { "Ядро extended отклонило общую конфигурацию; выберите Xray и проверьте правила" }
             } finally {
                 if (checker.isAlive) { checker.destroyForcibly(); checker.waitFor(1500, java.util.concurrent.TimeUnit.MILLISECONDS) }
             }
-            java.nio.file.Files.move(temporary.toPath(), configFile.toPath(),
-                java.nio.file.StandardCopyOption.ATOMIC_MOVE, java.nio.file.StandardCopyOption.REPLACE_EXISTING)
             XrayServiceState.setSession(XrayServiceState.RunningSession(null, snapshot.xray, null, settings))
             XrayServiceState.updateStatsSocketName(null)
             currentCoroutineContext().ensureActive()
-            val proc = ProcessBuilder(native, "run", "-c", configFile.absolutePath).redirectErrorStream(true).apply {
+            val proc = com.wireturn.app.kernel.MemoryConfigs.start(ProcessBuilder(native, "run", "-c", configFile.absolutePath).redirectErrorStream(true).apply {
                 dnsBridge.applyTo(environment())
                 environment().remove("TUNA_BOOTSTRAP_DNS")
                 com.wireturn.app.data.BootstrapDns.parse(com.wireturn.app.kernel.EffectiveDnsBootstrap.resolve(network))?.let { environment()["TUNA_BOOTSTRAP_DNS"] = it.xrayAddress() }
                 environment().remove("TUNA_ROUTING_FILE")
                 if (snapshot.client.useCustomCerts) caBundlePath?.let { environment()["SSL_CERT_FILE"] = it }
-            }.start()
+            })
             onProcess(proc)
             process.set(proc)
             val ready = java.util.concurrent.atomic.AtomicBoolean(false)
@@ -493,7 +482,7 @@ class XrayService : Service() {
             }
             } finally { startupTimeout.cancel() }
             require(ready.get()) { "Общий extended не открыл авторизованный SOCKS-вход" }
-        } finally { temporary.delete() }
+        } finally { com.wireturn.app.kernel.MemoryConfigs.remove(configFile) }
     }
 
     private fun handleDualRouteLog(line: String, socketName: String) {

@@ -23,7 +23,7 @@ class RestartingProcessGroup(
     private val startProcess: (Command) -> Process = { command ->
         ProcessBuilder(command.args).directory(command.directory).redirectErrorStream(true).apply {
             environment().putAll(command.environment)
-        }.start()
+        }.let { com.wireturn.app.kernel.MemoryConfigs.start(it) }
     }
 ) {
     data class Command(val id: Int, val args: List<String>, val directory: File,

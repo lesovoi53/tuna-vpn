@@ -482,7 +482,7 @@
     <string name="settings_auto_launch_url">Check URL</string>
     <string name="settings_auto_launch_interval">Check interval (min)</string>
     <string name="diagnostics_settings_title">Diagnostics</string>
-    <string name="settings_ping_url">Ping address</string>
+    <string name="settings_ping_url">Ping address (HTTPS)</string>
     <string name="settings_country_detection_title">Exit country detection</string>
     <string name="country_detection_auto">Auto (try all)</string>
     <string name="country_detection_cloudflare">Cloudflare</string>

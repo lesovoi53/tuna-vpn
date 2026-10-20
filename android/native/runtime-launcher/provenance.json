@@ -1,0 +1,19 @@
+{
+  "component": "TUNA memory runtime launcher",
+  "protocol": "TUNAMEM1",
+  "ndk": "28.2.13676358",
+  "api": 26,
+  "abi": "arm64-v8a",
+  "compiler": "Android (13624864, based on r530567e) clang version 19.0.1 (https://android.googlesource.com/toolchain/llvm-project 97a699bf4812a18fb657c2779f5296a4ab2694d2)",
+  "sources": {
+    "native/runtime-launcher/build.ps1": "28371bc5c7e8992ed26eb2f768cb21756e9b210b77505e5eb74a6b890bdeecb8",
+    "native/runtime-launcher/launcher.c": "0efa719fcb96c16b12c2f797beb79ca2ef5e738e5ae64f184e23265e40b1070b",
+    "native/runtime-launcher/memory_file.h": "887492a9a06ff53b14b6a4104099ba8bd8017ee1e937ac1c2e8d2e140fb07515",
+    "native/runtime-launcher/memory_jni.c": "480c359b90b6ccb0edebf4cd02a3d284c6a2d6c0845d7501c93a9be4ec0d0b11",
+    "native/runtime-launcher/tests/jni_host_test.c": "fa3fd746c0cf78b106416fca1d7d2ce2e1d6adf8aa31eae66dab5df54c057490",
+    "native/runtime-launcher/tests/receiver.c": "46d6933bcbd28f32d34798a2ca863011370a4949f8f41606148c99f6a4c81172",
+    "native/runtime-launcher/tests/test_launcher.py": "9980385818ac918126da6e5b9eb9005cd71d6348c5164c038fc7e7bb40b77476"
+  },
+  "binarySha256": "af3258e55be147b4167b0bf14b29c52bde693520537d3df611d4b8ba78120365",
+  "jniBinarySha256": "59eff7367de184c4c42c8ab60b481f73f0e76ef29d1296ddaf38b66bfe6867ad"
+}

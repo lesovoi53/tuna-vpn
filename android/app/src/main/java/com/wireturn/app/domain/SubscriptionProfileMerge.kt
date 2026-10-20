@@ -45,6 +45,15 @@ object SubscriptionProfileMerge {
             fragmentation = local.fragmentation ?: remote.fragmentation)
     }
     fun kernel(existing: Profile, incoming: Profile): KernelConfig {
+        val source = when (val kernel = incoming.kernelConfig) {
+            is KernelConfig.MasterDns -> incoming.copy(kernelConfig = KernelConfig.MasterDns(
+                kernel.config.copy(localPool = null)))
+            else -> incoming
+        }
+        return mergeKernel(existing, source)
+    }
+
+    private fun mergeKernel(existing: Profile, incoming: Profile): KernelConfig {
         require(existing.category == incoming.category) { "Подписка изменила категорию профиля; обновление отменено" }
         val local = snapshot(existing.kernelConfig)
         val remote = snapshot(incoming.kernelConfig)
@@ -76,12 +85,26 @@ object SubscriptionProfileMerge {
                 return KernelConfig.Vpn(config)
             }
             val merged = gson.fromJson<KernelConfig>(mergeJson(baseline, local, remote), KernelConfig::class.java)
-            val prepared = ClientConfig(kernelConfig = merged).fillDefaults()
+            val selected = if (merged is KernelConfig.MasterDns && existing.kernelConfig is KernelConfig.MasterDns) {
+                KernelConfig.MasterDns(merged.config.copy(
+                    localResolvers = existing.kernelConfig.config.localResolvers,
+                    useLocalResolvers = existing.kernelConfig.config.useLocalResolvers,
+                    localPerformanceMode = existing.kernelConfig.config.localPerformanceMode,
+                    localPool = existing.kernelConfig.config.localPool))
+            } else merged
+            val prepared = ClientConfig(kernelConfig = selected).fillDefaults()
             require(prepared.isValid) { "Новые параметры подписки несовместимы с локальными настройками" }
             return prepared.kernelConfig
         }
         // Before baseline tracking, preserve explicitly non-default local tuning; refresh endpoint credentials.
         return when {
+            existing.kernelConfig is KernelConfig.MasterDns && incoming.kernelConfig is KernelConfig.MasterDns ->
+                KernelConfig.MasterDns(incoming.kernelConfig.config.copy(
+                    localResolvers = existing.kernelConfig.config.localResolvers,
+                    useLocalResolvers = existing.kernelConfig.config.useLocalResolvers,
+                    localPerformanceMode = existing.kernelConfig.config.localPerformanceMode,
+                    localPool = existing.kernelConfig.config.localPool
+                )).also { it.config.validate() }
             existing.kernelConfig is KernelConfig.Vpn && incoming.kernelConfig is KernelConfig.Vpn -> {
                 val old = existing.kernelConfig.config
                 val next = incoming.kernelConfig.config

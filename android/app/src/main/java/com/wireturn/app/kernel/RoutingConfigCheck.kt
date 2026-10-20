@@ -24,20 +24,19 @@ object RoutingConfigCheck {
     }
 
     suspend fun policy(context: Context, json: String, assets: File, dns: String = XraySettings.DEFAULT_DNS) = withContext(Dispatchers.IO) {
-        val input = File.createTempFile("route-check-", ".json", context.cacheDir)
-        val output = File.createTempFile("route-check-", ".log", context.cacheDir)
+        val input = File(context.cacheDir, "route-check-${java.util.UUID.randomUUID()}.json")
         var process: Process? = null
         try {
-            input.writeText(json)
+            MemoryConfigs.write(input, json)
             currentCoroutineContext().ensureActive()
             process = ProcessBuilder(
                 "${context.applicationInfo.nativeLibraryDir}/libxray.so", "-check-config",
                 "-local-socks5", "127.0.0.1:1", "-listen", "127.0.0.1:1",
                 "-dns", dns, "-assets-path", assets.absolutePath,
-            ).redirectErrorStream(true).redirectOutput(output).apply {
+            ).redirectErrorStream(true).redirectOutput(File("/dev/null")).apply {
                 environment()["TUNA_ROUTING_FILE"] = input.absolutePath
                 environment()["GODEBUG"] = "netdns=cgo"
-            }.start()
+            }.let { MemoryConfigs.start(it) }
             val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15)
             while (!process.waitFor(100, TimeUnit.MILLISECONDS)) {
                 currentCoroutineContext().ensureActive()
@@ -51,7 +50,7 @@ object RoutingConfigCheck {
             try {
                 process?.let { terminateCoreProcess(it, { child -> signalAndroidProcess(child, 15) },
                     graceMillis = 1_000, forceTerminate = { child -> signalAndroidProcess(child, 9) }) }
-            } finally { input.delete(); output.delete() }
+            } finally { MemoryConfigs.remove(input) }
         }
     }
 }

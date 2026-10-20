@@ -374,6 +374,7 @@ class ProfileManager internal constructor(
         scope.launch {
             val newList = prefs.editProfiles(ProfileListEdit.Remove(ids.toSet()))
             prefs.removeProfileCountries(ids)
+            if (prefs.activeMasterDnsGroupIdFlow.first() != null) return@launch
             if (isCurrentDeleted && newList.isNotEmpty()) {
                 findBestFallbackProfile(newList, subscriptions.value, preferredSubId)?.let { onFallback(it) }
             }
@@ -505,7 +506,7 @@ class ProfileManager internal constructor(
     private data class PreparedProfileImport(
         val result: Triple<ImportResult, List<Profile>, String?>,
         val profilesToSave: List<Profile>,
-        val onCommitted: () -> Unit
+        val onCommitted: suspend () -> Unit
     )
 
     private fun prepareProfileImport(
@@ -616,7 +617,10 @@ class ProfileManager internal constructor(
             currentProfiles + importedList
         }
 
-        val onCommitted = committed@{
+        val onCommitted: suspend () -> Unit = committed@{
+            // Independent DNS groups resolve their current members directly from storage.
+            // Refreshing a subscription must not turn the selected group into its anchor.
+            if (prefs.activeMasterDnsGroupIdFlow.first() != null) return@committed
             if (!SubscriptionProfileContinuity.mayActivateAfterRefresh(subscriptionId,
                     com.wireturn.app.CoreServiceState.status.value !is com.wireturn.app.CoreStatus.Idle)) return@committed
             // A refresh must not restore a profile the user switched away from.
@@ -676,12 +680,12 @@ class ProfileManager internal constructor(
         subIdToMark?.let { id -> _updatingSubIds.update { it + id } }
         val startTime = System.currentTimeMillis()
 
-        // Defense in depth: the network security config permits cleartext app-wide (it has to, for
-        // arbitrary LAN subscription servers), so enforce HTTPS for non-local hosts here instead.
-        if (url.startsWith("http://") && !isLocalNetworkHost(url)) {
-            com.wireturn.app.AppLogsState.addLog("Subscription Error: refusing cleartext HTTP to non-local host")
+        // Reject before opening a connection or mutating saved profiles, including LAN URLs.
+        try {
+            ConfigurationUrlPolicy.validate(URL(url))
+        } catch (e: Exception) {
             subIdToMark?.let { id -> _updatingSubIds.update { it - id } }
-            return@withContext ImportStatus.NetworkError
+            return@withContext if (e is ConfigurationUrlRejected) ConfigurationUrlPolicy.rejectedStatus() else ImportStatus.InvalidFormat
         }
 
         // A loopback/LAN subscription belongs to this device/network, not the VPN server's loopback.
@@ -693,8 +697,9 @@ class ProfileManager internal constructor(
             if (e is kotlinx.coroutines.CancellationException) throw e
             // Covers both "no proxy, direct attempt failed" and "proxy failed, direct fallback also failed" -
             // previously these could throw past this point uncaught, permanently killing the auto-update loop.
-            com.wireturn.app.AppLogsState.addLog("Subscription Error: ${e.javaClass.simpleName} - ${e.message}")
+            com.wireturn.app.AppLogsState.addLog("Subscription Error: ${e.javaClass.simpleName}; previous settings preserved")
             subIdToMark?.let { id -> _updatingSubIds.update { it - id } }
+            if (e is ConfigurationUrlRejected) return@withContext ConfigurationUrlPolicy.rejectedStatus()
             return@withContext if (e is IllegalArgumentException || e is IllegalStateException) ImportStatus.InvalidFormat else ImportStatus.NetworkError
         }
 
@@ -922,6 +927,7 @@ class ProfileManager internal constructor(
             if (e is kotlinx.coroutines.CancellationException) throw e
             // Parser errors can embed the rejected URI or its credentials.
             com.wireturn.app.AppLogsState.addLog("Subscription Error: ${e.javaClass.simpleName}; previous settings preserved")
+            if (e is ConfigurationUrlRejected) return@withContext ConfigurationUrlPolicy.rejectedStatus()
             if (e is IllegalArgumentException || e is IllegalStateException) ImportStatus.InvalidFormat else ImportStatus.NetworkError
         } finally {
             subIdToMark?.let { id -> _updatingSubIds.update { it - id } }
@@ -931,6 +937,7 @@ class ProfileManager internal constructor(
     fun deleteSubscription(id: String, onFallback: (Profile) -> Unit = {}) {
         scope.launch {
             val removed = prefs.deleteSubscription(id)
+            if (prefs.activeMasterDnsGroupIdFlow.first() != null) return@launch
             if (removed.removedSelectedId != null) {
                 val current = prefs.readSubscriptionImportSnapshot()
                 if (current.currentProfileId == removed.removedSelectedId) {

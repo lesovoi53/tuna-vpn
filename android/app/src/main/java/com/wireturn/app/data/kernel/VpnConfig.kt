@@ -222,13 +222,13 @@ data class VpnConfig(val uri: String = "", val engine: String = "auto", val opti
             Regex("^[^=\\r\\n]+=[ \\t]*snell[ \\t]*,", RegexOption.IGNORE_CASE).containsMatchIn(text.trim())
 
         fun parse(text: String): VpnConfig? = runCatching {
-            val trimmed = text.trim()
+            val trimmed = VpnImportText.normalize(text.trim())
             // Names copied from clients often contain literal spaces after #.
             // Only normalize the display fragment, never credentials/query data.
             val input = if (AwgUri.isIni(trimmed)) AwgUri.normalizeAll(trimmed).single()
             else if ('#' in trimmed) trimmed.substringBefore('#') + "#" +
                 trimmed.substringAfter('#').replace(" ", "%20") else trimmed
-            var candidate = if (isSnellConfigLine(input)) snellLineToUri(input) else normalizeMarkdownSnell(input)
+            var candidate = if (isSnellConfigLine(input)) snellLineToUri(input) else input
             if (AwgUri.recognizes(candidate)) candidate = AwgUri.normalizeAll(candidate).single()
             candidate = TrustTunnelUri.normalize(candidate)
             if (candidate.startsWith("vless://", true)) candidate = normalizeXhttpPadding(candidate)
@@ -238,16 +238,6 @@ data class VpnConfig(val uri: String = "", val engine: String = "auto", val opti
             // Preserve the server's Snell link version; outbound() selects compatible v4.
             VpnConfig(candidate).sanitize()
         }.getOrNull()
-
-        private fun normalizeMarkdownSnell(value: String): String {
-            if (!value.startsWith("snell://", true)) return value
-            val start = value.indexOf("://") + 3
-            val end = value.indexOfAny(charArrayOf('/', '?', '#'), start).takeIf { it >= 0 } ?: value.length
-            // Repair only invalid literal Markdown escapes in authority. Percent-encoded
-            // backslashes remain credentials, and all other invalid escapes still fail.
-            val authority = value.substring(start, end).replace("\\_", "_").replace("\\@", "@")
-            return value.substring(0, start) + authority + value.substring(end)
-        }
 
         private fun normalizeXhttpPadding(value: String): String {
             val link = URI(value)

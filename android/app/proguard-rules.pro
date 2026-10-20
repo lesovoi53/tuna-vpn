@@ -52,6 +52,7 @@
 # Persisted/subscription models added after the original keep list. Gson field
 # names are part of the backup and subscription contract, including nested pools.
 -keep class com.wireturn.app.data.ConnectionGroup { *; }
+-keep class com.wireturn.app.data.MasterDnsGroup { *; }
 -keep class com.wireturn.app.data.Subscription { *; }
 -keep class com.wireturn.app.data.SubscriptionImportReport { *; }
 -keep class com.wireturn.app.data.SubscriptionImportIssue { *; }
@@ -64,11 +65,14 @@
 -keep class com.wireturn.app.data.kernel.VpnConfig { *; }
 -keep class com.wireturn.app.data.kernel.VpnOptions { *; }
 -keep class com.wireturn.app.data.kernel.MasterDnsConfig { *; }
+-keep class com.wireturn.app.data.kernel.MasterDnsPoolSelection { *; }
 -keep class com.wireturn.app.domain.SplitDnsSettings { *; }
 -keep class com.wireturn.app.domain.DnsRecoverySettings { *; }
 -keep class com.wireturn.app.domain.SubscriptionRuleOverrides { *; }
 -keep class com.wireturn.app.domain.SubscriptionPolicyParser$Resolver { *; }
 -keep class com.wireturn.app.domain.MasterDnsResolverResult { *; }
+-keep class com.wireturn.app.domain.MasterDnsSavedScan { *; }
+-keep class com.wireturn.app.domain.MasterDnsPoolMeasurement { *; }
 -keep class com.wireturn.app.domain.CfSavedAddresses { *; }
 -keep class com.wireturn.app.domain.CfResult { *; }
 # JSch chooses cryptographic implementations by their class names.
@@ -104,3 +108,7 @@
 -dontwarn com.google.errorprone.annotations.RestrictedApi
 -dontwarn javax.annotation.Nullable
 -dontwarn javax.annotation.concurrent.GuardedBy
+
+# JNI memfd bridge remains addressable by its native symbol names.
+-keep class com.wireturn.app.kernel.MemoryFileDescriptor { *; }
+-keep class com.wireturn.app.kernel.MemoryFileDescriptor$Companion { *; }

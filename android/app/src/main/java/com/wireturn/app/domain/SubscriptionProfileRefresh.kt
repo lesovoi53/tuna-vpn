@@ -21,7 +21,15 @@ internal object SubscriptionProfileRefresh {
         val previous = existing?.let { old -> old.copy(kernelConfig = old.subscriptionKernelBaseline?.let {
             gson.fromJson(it, KernelConfig::class.java)
         } ?: old.kernelConfig) }
-        val normalized = VlessFingerprintImport.profile(incoming.sanitize(), previous)
+        // Subscription payloads own the source pool; only an existing local profile
+        // owns the personal selection. Never import another profile's local choice.
+        val source = when (val kernel = incoming.kernelConfig) {
+            is KernelConfig.MasterDns -> incoming.copy(kernelConfig = KernelConfig.MasterDns(
+                kernel.config.copy(localResolvers = null, useLocalResolvers = null, localPerformanceMode = null,
+                    localPool = null)))
+            else -> incoming
+        }
+        val normalized = VlessFingerprintImport.profile(source.sanitize(), previous)
         val remoteKernel = normalized.kernelConfig
         // Keep local edits separately from the unmodified remote baseline. This also lets
         // a later refresh adopt remote fields that the user has not customized.

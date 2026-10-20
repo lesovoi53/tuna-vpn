@@ -313,7 +313,9 @@ fun SettingsScreen(
 
             // 2.2 Диагностика (пинг и определение страны выхода)
             var localPingUrl by rememberSaveable { mutableStateOf(pingUrl) }
-            val isPingUrlValid = localPingUrl.isBlank() || localPingUrl.startsWith("http://") || localPingUrl.startsWith("https://")
+            val isPingUrlValid = localPingUrl.isBlank() || runCatching {
+                com.wireturn.app.domain.ConfigurationUrlPolicy.validate(java.net.URL(localPingUrl))
+            }.isSuccess
 
             LaunchedEffect(pingUrl) {
                 if (localPingUrl.isEmpty()) localPingUrl = pingUrl

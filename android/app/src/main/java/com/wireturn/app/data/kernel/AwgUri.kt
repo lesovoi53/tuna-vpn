@@ -130,7 +130,10 @@ object AwgUri {
         addProperty("address", address); addProperty("port", port); addProperty("public_key", key(requireNotNull(q["public_key"])))
         q["pre_shared_key"]?.takeIf(String::isNotEmpty)?.let { addProperty("pre_shared_key", key(it)) }
         add("allowed_ips", array(list(q["allowed_ips"] ?: "0.0.0.0/0,::/0").map(::cidr).distinct().sorted().also { require(it.isNotEmpty()) }))
-        addProperty("persistent_keepalive_interval", (q["persistent_keepalive_interval"]?.toInt() ?: 0).also { require(it in 0..65535) })
+        val keepalive = range(q["persistent_keepalive_interval"] ?: "0", 65535)
+        // The pinned AWG engine samples ranges itself; keep scalar JSON compatible with WG.
+        if ('-' in keepalive) addProperty("persistent_keepalive_interval", keepalive)
+        else addProperty("persistent_keepalive_interval", keepalive.toInt())
     }
     private fun validatePeer(o: JsonObject): JsonObject {
         require(o.keySet().all { it in setOf("address", "port", "public_key", "pre_shared_key", "allowed_ips", "persistent_keepalive_interval") })

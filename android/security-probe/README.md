@@ -233,3 +233,52 @@ in `finally`. No saved user profiles, VPN settings or network settings are chang
 Host compilation, signature verification and parser fixtures are local evidence.
 Device acceptance requires actual owner-run installation/execution and recording
 its results; an unsigned artifact cannot establish device success.
+
+### In-memory configuration acceptance
+
+`-e phase memory` runs an independent, read-only storage check and installed JNI
+fixture. It reflects the retained `MemoryFileDescriptor` API, creates a random
+synthetic canary in a memfd, opens that `/proc/self/fd` path twice using Android's
+native `Os.open/read`, and requires exact bytes and EOF. Closing the descriptor
+must make the path unavailable; a second close must succeed. No fixture file is
+written, and no saved profile or setting is changed.
+
+While that memfd is open, the runner scans regular files under the target's
+files, cache and noBackup directories for only the exact synthetic bytes. It
+does not decode or report stored contents or paths. It also counts known
+generated runtime configuration filenames, including configs beneath
+`noBackup/native-runtime`. Symlinks are skipped and counted. The scanner streams
+64 KiB chunks and keeps the full regular-file scope, including large routing
+databases. A limit of 20,000 files, 32 directory levels, 1 GiB or 120 seconds fails
+acceptance rather than reporting an incomplete scan as clean. Partial counters,
+elapsed time, configured limits and `memoryDiskScanStatus` are emitted even if
+the scan fails. Status is `complete` or a fixed reason such as `byte_limit`,
+`time_limit`, `file_limit`, `depth_limit`, `entry_missing`,
+`directory_unreadable` or `filesystem_error`; it never contains a path or stored
+content. Partial file counts include a file whose read was interrupted.
+Existing continuity snapshots are neither changed nor removed.
+
+Expected fields: `memoryNativeReopenMatches=true`, `memoryDescriptorClosed=true`,
+`memoryRepeatedCloseSucceeded=true`, `memoryDiskScanComplete=true`,
+`memoryDiskCanaryMatches=0`, `memoryForbiddenRuntimeFiles=0`, and `result=passed`.
+The mode records VPN presence before and after; optional `-e requireVpn true`
+requires a stable VPN network. Instrumentation launch can restart the target
+process, so the default does not require VPN and a stopped-VPN result is not
+evidence of storage behavior during a live tunnel. Run normal VPN connectivity
+acceptance separately. This fixture does not start HEV or validate its full
+asynchronous native lifetime; the application lifecycle tests cover ownership.
+
+Host scanner regression tests compile the actual nested scanner using an
+existing JDK, without building an APK or using a device:
+
+```powershell
+python android/security-probe/tests/test_memory_scan.py --java-home C:\path\to\jdk-21
+```
+
+The harness creates and removes only its own temporary synthetic files. A
+257 MiB fixture proves the previous 256 MiB bound fails and the current bound
+completes. Other cases cover chunk boundaries, partial counters, deadline/depth/
+file limits, missing entries, forbidden filenames and overlapping matches.
+This proves the scanner's bound handling, not the cause of a historical device
+failure that did not report a scan reason. A fresh device acceptance result is
+required; increasing limits alone is not a passing storage check.

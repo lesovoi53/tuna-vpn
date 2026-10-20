@@ -1,7 +1,6 @@
 package com.wireturn.app.domain
 
 import java.net.InetAddress
-import java.net.ServerSocket
 import java.net.Proxy
 import java.net.SocketTimeoutException
 import java.util.concurrent.Executors
@@ -14,7 +13,7 @@ class SubscriptionDownloadTest {
     private fun fixture(slowBody: Boolean = false, delayedHeaders: Boolean = false, cancel: Boolean = false): SubscriptionResponse? {
         val executor = Executors.newSingleThreadExecutor()
         val receivedRequest = CompletableDeferred<Unit>()
-        return ServerSocket(0, 1, InetAddress.getByName("127.0.0.1")).use { listener ->
+        return SyntheticHttps.context.serverSocketFactory.createServerSocket(0, 1, InetAddress.getByName("127.0.0.1")).use { listener ->
             listener.soTimeout = 4000
             try {
                 executor.submit {
@@ -33,7 +32,12 @@ class SubscriptionDownloadTest {
                     }
                 }
                 runBlocking {
-                    val request = async { SubscriptionDownload.fetch("http://127.0.0.1:${listener.localPort}/", Proxy.NO_PROXY, false, "fixture", totalTimeoutMs = if (cancel) 5000 else 600) }
+                    val url = java.net.URL("https://127.0.0.1:${listener.localPort}/")
+                    val request = async { SubscriptionDownload.fetch(url.toString(), Proxy.NO_PROXY, false, "fixture",
+                        totalTimeoutMs = if (cancel) 5000 else if (slowBody) 1000 else 3000,
+                        factory = { route -> (url.openConnection(route) as javax.net.ssl.HttpsURLConnection).apply {
+                            sslSocketFactory = SyntheticHttps.context.socketFactory
+                        } }) }
                     if (cancel) {
                         withTimeout(3000) { receivedRequest.await() }
                         val start = System.nanoTime(); request.cancelAndJoin()

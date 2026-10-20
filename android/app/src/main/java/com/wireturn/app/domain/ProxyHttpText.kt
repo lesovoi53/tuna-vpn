@@ -7,13 +7,15 @@ import kotlinx.coroutines.*
 
 /** Small text responses used only for diagnostics through the active tunnel. */
 internal object ProxyHttpText {
-    suspend fun fetch(url: String, proxy: Proxy, timeoutMs: Int = 3000, maxChars: Int = 8192, totalTimeoutMs: Long = timeoutMs * 2L): String {
+    suspend fun fetch(url: String, proxy: Proxy, timeoutMs: Int = 3000, maxChars: Int = 8192, totalTimeoutMs: Long = timeoutMs * 2L,
+        factory: (URL, Proxy) -> HttpURLConnection = { address, route -> address.openConnection(route) as HttpURLConnection }): String {
         require(proxy.type() == Proxy.Type.SOCKS) { "Active tunnel required" }
         require(timeoutMs > 0 && maxChars in 1..65536 && totalTimeoutMs > 0)
+        val address = URL(url).also(ConfigurationUrlPolicy::validate)
         return withTimeout(totalTimeoutMs) {
             withContext(Dispatchers.IO) {
                 coroutineScope {
-                    val connection = URL(url).openConnection(proxy) as HttpURLConnection
+                    val connection = factory(address, proxy)
                     val closer = launch(Dispatchers.Default, start = CoroutineStart.UNDISPATCHED) {
                         try { awaitCancellation() } finally { connection.disconnect() }
                     }

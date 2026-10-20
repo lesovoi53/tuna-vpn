@@ -79,7 +79,16 @@ object QwdttKernel : Kernel {
             cmdArgs.addAll(listOf("-socks-user", cfg.socksUser))
             cmdArgs.addAll(listOf("-socks-pass", cfg.socksPass))
         }
-        return cmdArgs
+        val secrets = linkedMapOf<String, String>()
+        val safeArgs = mutableListOf<String>()
+        var index = 0
+        while (index < cmdArgs.size) {
+            val argument = cmdArgs[index++]
+            if (argument in sensitiveCommandFlags) secrets[argument.removePrefix("-")] = cmdArgs[index++]
+            else safeArgs.add(argument)
+        }
+        val config = MemoryConfigs.write(java.io.File(ctx.filesDir, "qwdtt.json"), com.google.gson.Gson().toJson(secrets))
+        return safeArgs + listOf("-config", config.absolutePath)
     }
 
     override suspend fun parseLogLine(line: String, lower: String, state: BinaryOutputState, ctx: KernelLogContext, cfg: ClientConfig): Boolean {

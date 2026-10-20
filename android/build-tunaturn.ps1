@@ -3,6 +3,7 @@ param(
     [Parameter(Mandatory=$true)][string]$AndroidSdk,
     [Parameter(Mandatory=$true)][string]$GoExe,
     [string]$OriginalApk,
+    [string]$QwdttArchive,
     [string]$PythonExe = 'python',
     [string]$NdkVersion = '28.2.13676358'
 )
@@ -39,7 +40,7 @@ try {
     $env:PATH = "$env:JAVA_HOME\bin;$(Split-Path -Parent $GoExe);$env:PATH"
     $nativeDir = Join-Path $root 'app/src/main/jniLibs/arm64-v8a'
     New-Item -ItemType Directory -Path $nativeDir -Force | Out-Null
-    $allowed = @('libhevsocks5.so','libqwdtt.so','libxray.so','libsingbox.so','libmieru.so','libmasterdns.so','libwebdav.so')
+    $allowed = @('libhevsocks5.so','libqwdtt.so','libxray.so','libsingbox.so','libmieru.so','libmasterdns.so','libwebdav.so','libtuna-runtime.so','libtuna-memory.so')
     foreach ($existing in Get-ChildItem -LiteralPath $nativeDir -Filter '*.so') {
         if ($existing.Name -notin $allowed) { throw "Unexpected native library: $($existing.Name). Remove it before building." }
     }
@@ -54,7 +55,17 @@ try {
             }
         } finally { $archive.Dispose() }
     }
-    Extract-Native $OriginalApk @{'libhevsocks5.so'='libhevsocks5.so';'libqwdtt.so'='libqwdtt.so'}
+    Extract-Native $OriginalApk @{'libhevsocks5.so'='libhevsocks5.so'}
+    if (!$QwdttArchive) {
+        $QwdttArchive=Join-Path $cache 'qwdtt-a296c57eaba69bb9479a24f9157856490890e47d.tar.gz'
+        if (!(Test-Path -LiteralPath $QwdttArchive)) {
+            Invoke-WebRequest -UseBasicParsing -Uri 'https://github.com/SpaceNeuroX/proxy-turn-vk-android/archive/a296c57eaba69bb9479a24f9157856490890e47d.tar.gz' -OutFile $QwdttArchive
+        }
+    }
+    & (Join-Path $root 'native/qwdtt/build.ps1') -GoExe $GoExe -PythonExe $PythonExe -Archive $QwdttArchive -AndroidSdk $env:ANDROID_HOME
+    Copy-Item -LiteralPath (Join-Path $cache 'libqwdtt.so') -Destination (Join-Path $nativeDir 'libqwdtt.so') -Force
+    Copy-Item -LiteralPath (Join-Path $cache 'qwdtt-provenance.json') -Destination (Join-Path $root 'native/qwdtt/provenance.json') -Force
+    & (Join-Path $root 'native/runtime-launcher/build.ps1') -AndroidSdk $env:ANDROID_HOME
     $compiler = Join-Path $env:ANDROID_HOME "ndk/$NdkVersion/toolchains/llvm/prebuilt/windows-x86_64/bin/aarch64-linux-android26-clang.cmd"
     if (!(Test-Path -LiteralPath $compiler)) { throw "NDK compiler not found: $compiler" }
     $env:CGO_ENABLED='1'; $env:GOOS='android'; $env:GOARCH='arm64'

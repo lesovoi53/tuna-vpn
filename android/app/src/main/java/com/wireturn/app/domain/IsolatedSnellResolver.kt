@@ -30,14 +30,14 @@ internal object IsolatedSnellResolver {
             val directory = File(context.cacheDir, "snell-health-${java.util.UUID.randomUUID()}")
             check(directory.mkdirs()) { "Cannot prepare Snell health probe" }
             try { withResolver(context, directory, config, network, block) }
-            finally { directory.deleteRecursively() }
+            finally { com.wireturn.app.kernel.MemoryConfigs.removeDirectory(directory); directory.deleteRecursively() }
         }
     }
 
     suspend fun <T> withResolver(context: Context, directory: File, config: ClientConfig,
         network: SharedNetworkSettings, block: suspend (ClientConfig) -> T): T = coroutineScope {
         val policy = File(directory, "snell-dns-policy.json").apply {
-            writeText(SnellDestinationResolver.probePolicy(network))
+            com.wireturn.app.kernel.MemoryConfigs.write(this, SnellDestinationResolver.probePolicy(network))
         }
         val reservation = ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))
         val address = "127.0.0.1:${reservation.localPort}"
@@ -64,7 +64,10 @@ internal object IsolatedSnellResolver {
             }
             ensureActive()
             reservation.close()
-            val process = builder.start().also { child = it }
+            val arguments = com.wireturn.app.kernel.MemoryConfigs.write(File(directory, "snell-args.json"),
+                com.google.gson.Gson().toJson(builder.command().drop(1)))
+            builder.command(builder.command().first(), "-args-config", arguments.absolutePath)
+            val process = com.wireturn.app.kernel.MemoryConfigs.start(builder).also { child = it }
             killer = launch(Dispatchers.IO, start = CoroutineStart.UNDISPATCHED) {
                 try { awaitCancellation() } finally { signalAndroidProcess(process, 15) }
             }

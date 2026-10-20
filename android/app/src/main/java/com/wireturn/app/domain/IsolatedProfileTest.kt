@@ -95,7 +95,7 @@ class IsolatedProfileTest(private val context: Context) {
                     else if (prepared.kernelVariant == KernelVariant.WEBDAV) environment()["GODEBUG"] = "netdns=cgo"
                     else if (prepared.goDnsGo) environment()["GODEBUG"] = "netdns=go"
                     if (ca != null) environment()["SSL_CERT_FILE"] = ca
-                }.start().also { child = it }
+                }.let { com.wireturn.app.kernel.MemoryConfigs.start(it) }.also { child = it }
             }
             killer = launch(Dispatchers.IO, start = CoroutineStart.UNDISPATCHED) {
                 try { awaitCancellation() } finally { signalAndroidProcess(process, 15) }
@@ -142,6 +142,7 @@ class IsolatedProfileTest(private val context: Context) {
                 }
                 reader?.cancelAndJoin()
                 killer?.cancelAndJoin()
+                com.wireturn.app.kernel.MemoryConfigs.removeDirectory(directory)
                 directory.deleteRecursively()
             }
         }

@@ -7,8 +7,8 @@
   "sources": {
     "external/mieru-adapter/go.mod": "57fc46e1e9d48ade83c745f83d7f176cb1f5535e554c2e32fcf9f46dd85d5296",
     "external/mieru-adapter/go.sum": "dc3793c733cfcb5c28b7f42f2d41834564b8f695cfa30133544d0967f574843a",
-    "external/mieru-adapter/main_test.go": "ad91231886384ee7061822d183b40750b04bdff996ab34f96e9cfef77389da27",
-    "external/mieru-adapter/main.go": "a8cb97d662ac4f3756f8d44f93c8973a0e90be79460b42ca3420a5ec3e57761b",
+    "external/mieru-adapter/main_test.go": "d1780d1fdd9bd76a48146e834c7e9eeac0e594834277fc1b2780dddaca98ac60",
+    "external/mieru-adapter/main.go": "172c86ec0aba41a02a79d07ec69e796d3e3d42b6c8c756544ce83ce47d08425b",
     "external/mieru/go.mod": "713fdc6a53530134005d864d036251614fa56c7ad0115b58f18eb793f9c5cf20",
     "external/mieru/go.sum": "ec660d7ba26ea89a3bad3e9c4834ef486afb92a34912a6781628fbf5d97b0634",
     "external/mieru/apis/client/client_test.go": "be2b69ef46ec5b18b057366727df0759004f799b6e6c5a087df7059b1c67c653",
@@ -236,7 +236,9 @@
     "external/mieru/test/cmd/udpserver/udpserver.go": "5281d31dac8a9c806c6f960e7a87acd730e1de07da4be0b2b09f338d64e367a6",
     "native/mieru/auth_test.go": "d62406e771368989fcf70379bdf3464ba84e1c99c7eedd8e0ac7f000c52d931c",
     "native/mieru/auth.go": "a77021564d8585a45ce80c38e36103778fa15ee13df9757e9aa11336f183e539",
-    "native/mieru/build.ps1": "67614e44927bc1d1492d536749ae2965d133792327944f77a354cfd0e9913ed7"
+    "native/mieru/build.ps1": "721b6763776f87374740866a7922b6846c72f8edf7abf4343e2547671125b44b",
+    "native/mieru/memory_test.go": "93f266a0afbd357b18c10a85c159508ad35a3a9188d9e31b76c0a2d89e58b12a",
+    "native/mieru/memory.go": "ecbd5bc2d4151f33f2346fdc2fcb9523b5ee597dd810d699aeb6ab7d9d016347"
   },
-  "binarySha256": "5159abecda488a38dc61d271167f25e9a4cfe6359352e3d2fdeac9b673484f29"
+  "binarySha256": "5bbbef2301709072bfad671f72fd701bb9b9d196be77e9db22d278cead5eaba0"
 }

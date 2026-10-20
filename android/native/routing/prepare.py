@@ -7,6 +7,8 @@ from pathlib import Path
 r=Path(__file__).resolve().parents[2]
 src=r/'external/vless-client'; out=r/'build/routing-overlay';out.mkdir(parents=True,exist_ok=True)
 p=src/'main.go';s=p.read_text(encoding="utf-8")
+assert s.count('\tflag.Parse()') == 1
+s=s.replace('\tflag.Parse()', '\tif err := tunaParseArgs(flag.CommandLine, os.Args[1:]); err != nil { log.Fatal("Private launch configuration rejected") }')
 anchor='\t// Load config using serial.LoadJSONConfig (requires io.Reader)'
 assert s.count(anchor)==1
 s=s.replace(anchor,'\tif fileCfg == nil || fileCfg.RawXray == nil {\n\tif err = configureTunaPolicyBootstrap(os.Getenv("TUNA_ROUTING_FILE")); err != nil { log.Fatal("Bootstrap policy: ", err) }\n\tjsonConfig, err = applyTunaPolicy(jsonConfig, os.Getenv("TUNA_ROUTING_FILE"))\n\tif err != nil { log.Fatal("Routing policy: ", err) }\n\t}\n'+anchor)
@@ -14,7 +16,7 @@ s=s.replace(anchor,'\tif fileCfg == nil || fileCfg.RawXray == nil {\n\tjsonConfi
 s=s.replace('"tcp://"+d','tunaDNSAddress(d)')
 (out/'main.go').write_text(s, encoding='utf-8')
 mapping={str(p):str(out/'main.go')}
-for name in ('policy.go','policy_test.go','adaptive_policy_test.go','emergency_policy_test.go','bootstrap.go','bootstrap_test.go','socks_resolution_test.go'):
+for name in ('policy.go','policy_test.go','adaptive_policy_test.go','emergency_policy_test.go','bootstrap.go','bootstrap_test.go','socks_resolution_test.go','args_config.go','args_config_test.go'):
  mapping[str(src/('tuna_'+name))]=str(r/'native/routing'/name)
 # Patch only the pinned dependency through a Go overlay, never the module cache.
 version = re.search(r'github.com/xtls/xray-core\s+(\S+)', (src/'go.mod').read_text()).group(1)

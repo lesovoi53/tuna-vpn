@@ -45,4 +45,11 @@ class ImportedProfileActivationTest {
         assertNull(activate(store))
         assertEquals("old", store.data.value[AppPreferences.CURRENT_PROFILE_ID])
     }
+    @Test fun groupChosenWhileImportWasCompletingIsNotTurnedIntoItsAnchor() = runBlocking {
+        val concurrent = state().apply { this[MasterDnsGroups.activeKey] = "dns-group" }
+        val store = Store(state(), concurrent)
+        assertNull(activate(store))
+        assertEquals("dns-group", store.data.value[MasterDnsGroups.activeKey])
+        assertEquals("old", store.data.value[AppPreferences.CURRENT_PROFILE_ID])
+    }
 }

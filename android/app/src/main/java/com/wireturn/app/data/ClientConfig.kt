@@ -92,7 +92,7 @@ sealed class KernelConfig {
         // The link's own scheme already identifies the kernel, so a single quick-input
         // field can dispatch to the right parser instead of one field per kernel type.
         fun parseUri(uri: String): KernelConfig? {
-            val trimmed = uri.trim()
+            val trimmed = com.wireturn.app.data.kernel.VpnImportText.normalize(uri.trim())
             return when {
                 trimmed.startsWith("webdav://", true) || trimmed.startsWith("webdavs://", true) -> WebdavConfig.parse(trimmed)?.let { Webdav(it) }
                 trimmed.startsWith("stormdns://", true) -> MasterDnsConfig.parse(trimmed)?.let { MasterDns(it) }
@@ -147,8 +147,10 @@ data class ClientConfig(
     @SerializedName("turnableUrl") val turnableUrl: String = "",
     @SerializedName("olcrtcUrl") val olcrtcUrl: String = "",
     @SerializedName("webdavUrl") val webdavUrl: String = "",
-    @SerializedName("freeturnUrl") val freeturnUrl: String = ""
+    @SerializedName("freeturnUrl") val freeturnUrl: String = "",
     // --- END LEGACY ---
+    // Resolved from a single preferences snapshot immediately before running; never export credentials.
+    @Transient val masterDnsPoolPlan: com.wireturn.app.domain.MasterDnsPoolPlan? = null,
 ) {
     val kernelVariant: KernelVariant get() = kernelConfig.variant
 

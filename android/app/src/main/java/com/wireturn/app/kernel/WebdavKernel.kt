@@ -45,10 +45,8 @@ object WebdavKernel : Kernel {
     override fun buildCommand(ctx: KernelCommandContext, cfg: ClientConfig): List<String> {
         val config = (cfg.kernelConfig as KernelConfig.Webdav).config
         val file = File(ctx.filesDir, "webdav.json")
-        file.writeText(WebdavRuntimeConfig.build(config, cfg.socksAddr.ifBlank { ClientConfig.DEFAULT_SOCKS_ADDR },
+        MemoryConfigs.write(file, WebdavRuntimeConfig.build(config, cfg.socksAddr.ifBlank { ClientConfig.DEFAULT_SOCKS_ADDR },
             if (cfg.isSocksAuthEnabled) cfg.socksUser else "", if (cfg.isSocksAuthEnabled) cfg.socksPass else "", ctx.bootstrapDns))
-        file.setReadable(false, false); file.setReadable(true, true)
-        file.setWritable(false, false); file.setWritable(true, true)
         return listOf("${ctx.nativeLibraryDir}/libwebdav.so", "-config", file.absolutePath)
     }
 

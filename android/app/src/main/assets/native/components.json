@@ -3,19 +3,19 @@
     "name": "Xray",
     "version": "26.9.9",
     "tunaFork": true,
-    "sha256": "cf336a3bc91153c21cb602caa1be853dcc01ef7920bea140369b2daacecfb41b"
+    "sha256": "c24c15c1e3dce96b010426baa294e4e24188d92730a4e499a80be9581ea51118"
   },
   {
     "name": "sing-box-extended",
     "version": "1.14.1-extended-2.7.2",
     "tunaFork": true,
-    "sha256": "3ac21026166690b5b0872355ddf9786bbe0eb7f88d2eed8f190ec50fdfbfe4ba"
+    "sha256": "7529aca6c05c1917cc50e6acc68bc09ec766c1c6091580f85e501feba82014c5"
   },
   {
     "name": "Mieru",
     "version": "3.38.1",
     "tunaFork": true,
-    "sha256": "5159abecda488a38dc61d271167f25e9a4cfe6359352e3d2fdeac9b673484f29"
+    "sha256": "5bbbef2301709072bfad671f72fd701bb9b9d196be77e9db22d278cead5eaba0"
   },
   {
     "name": "WebDAV",
@@ -27,13 +27,25 @@
     "name": "MasterDNS / StormDNS",
     "version": "2026.06.13 / 7de2476",
     "tunaFork": true,
-    "sha256": "a1f54c6d93fb119e6b071a7007921fd1a330997f4c743be8bb4dd376a34a8de4"
+    "sha256": "a0787e7135a173584c0b79ea928004b0d81fc019ba4e2ab89f45b06751408647"
   },
   {
     "name": "qWDTT",
-    "version": "build acd118888912",
-    "tunaFork": false,
-    "sha256": "acd118888912cd5640d942632f8fe3347a909aa41f22e40ecc6f9124b3655fe2"
+    "version": "a296c57eaba6",
+    "tunaFork": true,
+    "sha256": "0a31e1522d2252921161b2b50b5798a9e6905012e1d9080090683a56be60906d"
+  },
+  {
+    "name": "TUNA memory runtime",
+    "version": "TUNAMEM1",
+    "tunaFork": true,
+    "sha256": "af3258e55be147b4167b0bf14b29c52bde693520537d3df611d4b8ba78120365"
+  },
+  {
+    "name": "TUNA memory JNI",
+    "version": "TUNAMEM1",
+    "tunaFork": true,
+    "sha256": "59eff7367de184c4c42c8ab60b481f73f0e76ef29d1296ddaf38b66bfe6867ad"
   },
   {
     "name": "HEV",

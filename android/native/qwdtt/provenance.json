@@ -1,0 +1,15 @@
+{
+  "commit": "a296c57eaba69bb9479a24f9157856490890e47d",
+  "archiveSha256": "3db2ecb5873bc080fc2805bcef1ed09bdfb9151fa6f9d9deed805fd4c622c715",
+  "goVersion": "go version go1.26.3 windows/amd64",
+  "ndk": "28.2.13676358",
+  "sources": {
+    "native/qwdtt/build.ps1": "ef37c4ec82971a46c2da35b5b12b685d3324f01e94fac0d1d712167b28696359",
+    "native/qwdtt/config_test.go": "f4d45fc7abba8876e4f4fab252729cd9f180f9e0f1af89dd7565e94cae559934",
+    "native/qwdtt/config.go": "f208897a1b8d011f3ff544275de99130f3d972c73af388fb4a68eab597fe3d16",
+    "native/qwdtt/go.mod": "b23d8c0350dbe4e05dec740668b6a02e72360661a0197105b44c7c59a75b3601",
+    "native/qwdtt/go.sum": "a5cc56652784a5f367b55d304e9381d20dbdf3b33dd192237c756396db300d3c",
+    "native/qwdtt/prepare.py": "75ba75ab51efc86db5966b70967ba1c7a860bfd0edb944c068177fb877308e1e"
+  },
+  "binarySha256": "0a31e1522d2252921161b2b50b5798a9e6905012e1d9080090683a56be60906d"
+}

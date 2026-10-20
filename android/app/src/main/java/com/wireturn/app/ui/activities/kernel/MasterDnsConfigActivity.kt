@@ -4,11 +4,10 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -23,12 +22,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.gson.Gson
 import com.wireturn.app.data.*
 import com.wireturn.app.data.kernel.*
-import com.wireturn.app.domain.MasterDnsResolverCheck
-import com.wireturn.app.domain.MasterDnsResolverResult
 import com.wireturn.app.ui.activities.MainActivity
 import com.wireturn.app.ui.theme.WireturnTheme
 import com.wireturn.app.viewmodel.MainViewModel
-import kotlinx.coroutines.*
 
 class MasterDnsConfigActivity : ComponentActivity() {
     private val vm: MainViewModel by viewModels()
@@ -60,97 +56,141 @@ class MasterDnsConfigActivity : ComponentActivity() {
             var text by remember { mutableStateOf("") }
             var encryption by remember { mutableStateOf(false) }
             var filter by remember { mutableStateOf("") }
-            val results = remember { mutableStateListOf<MasterDnsResolverResult>() }
-            var selectedResolvers by remember { mutableStateOf(setOf<String>()) }
-            var scanJob by remember { mutableStateOf<Job?>(null) }
-            var scanning by remember { mutableStateOf(false) }
-            var scannedConfig by remember { mutableStateOf<MasterDnsConfig?>(null) }
-            var progress by remember { mutableStateOf("") }
-            val scope = rememberCoroutineScope()
-            val importResolvers = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-                if(uri!=null) scope.launch {
-                    try {
-                        val text=withContext(Dispatchers.IO) {
-                            contentResolver.openInputStream(uri)?.use { input ->
-                                val out=java.io.ByteArrayOutputStream();val buffer=ByteArray(4096)
-                                while(true) { val n=input.read(buffer);if(n<0) break;require(out.size()+n<=65536){"Список слишком большой"};out.write(buffer,0,n) }
-                                out.toString("UTF-8")
-                            } ?: error("Не удалось прочитать файл")
-                        }
-                        config=config.copy(resolvers=text);results.clear()
-                    } catch(e:Exception) { error=e.message ?: "Ошибка чтения списка" }
-                }
+            var showOriginalResolvers by remember { mutableStateOf(false) }
+            val save: () -> Unit = {
+                try {
+                    val candidate = config.copy(name = name.ifBlank { "MasterDnsVPN" }, localPool = null)
+                    candidate.validate()
+                    val kc = KernelConfig.MasterDns(candidate)
+                    if (editing) {
+                        if (id != null) vm.updateProfileById(id) { it.copy(name = candidate.name, kernelConfig = kc) }
+                        if (id == null || id == vm.currentProfileId.value)
+                            vm.saveClientConfig(client.copy(kernelConfig = kc).fillDefaults())
+                    } else vm.addFullProfile(candidate.name, ClientConfig(kernelConfig = kc).fillDefaults(),
+                        xray.copy(enabled = false), WgConfig(), VlessConfig())
+                    startActivity(Intent(this@MasterDnsConfigActivity, MainActivity::class.java)
+                        .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP))
+                    finish()
+                } catch (e: Exception) { error = e.message }
             }
             WireturnTheme(themeMode = theme, dynamicColor = dynamic) {
-                Scaffold(topBar = { TopAppBar(title = { Text("MasterDnsVPN") }, navigationIcon = { TextButton(onClick = { finish() }) { Text("Назад") } }) }) { padding ->
+                Scaffold(topBar = { TopAppBar(title = { Text("MasterDnsVPN") },
+                    navigationIcon = { TextButton(onClick = { finish() }) { Text("Назад") } },
+                    actions = { TextButton(onClick = save) { Text("Сохранить") } }) }) { padding ->
                     LazyColumn(Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                         item { OutlinedTextField(name, { name=it }, label={Text("Имя профиля")}, modifier=Modifier.fillMaxWidth()) }
-                        item { Text("Самостоятельное подключение · Обход БС. Добавление в группы недоступно.", style=MaterialTheme.typography.bodySmall) }
+                        item { Text("DNS-туннель · Обход БС", style=MaterialTheme.typography.bodySmall) }
                         item { TextButton(onClick={importing=!importing}) { Text("Импорт stormdns://") } }
                         if(importing) item {
                             OutlinedTextField(uri,{uri=it},label={Text("Ссылка профиля")},modifier=Modifier.fillMaxWidth(),visualTransformation=PasswordVisualTransformation())
                             TextButton(onClick={
                                 val parsed=MasterDnsConfig.parse(uri)
-                                if(parsed==null) error="Не удалось импортировать профиль MasterDnsVPN" else { config=parsed; name=parsed.name; importing=false; results.clear(); error=null }
+                                if(parsed==null) error="Не удалось импортировать профиль MasterDnsVPN" else { config=parsed; name=parsed.name; importing=false; error=null }
                             }) { Text("Импортировать все параметры") }
                         }
-                        item { OutlinedTextField(config.domains.joinToString("\n"),{config=config.copy(domains=it.lines().map(String::trim).filter(String::isNotEmpty));results.clear()}, label={Text("Домены — каждый на своей строке")},modifier=Modifier.fillMaxWidth()) }
+                        item { OutlinedTextField(config.domains.joinToString("\n"),{config=config.copy(domains=it.lines().map(String::trim).filter(String::isNotEmpty))}, label={Text("Домены — каждый на своей строке")},modifier=Modifier.fillMaxWidth()) }
                         item {
-                            OutlinedTextField(config.key,{config=config.copy(key=it);results.clear()},label={Text("Ключ шифрования")},modifier=Modifier.fillMaxWidth(),visualTransformation=if(reveal) VisualTransformation.None else PasswordVisualTransformation())
+                            OutlinedTextField(config.key,{config=config.copy(key=it)},label={Text("Ключ шифрования")},modifier=Modifier.fillMaxWidth(),visualTransformation=if(reveal) VisualTransformation.None else PasswordVisualTransformation())
                             TextButton(onClick={reveal=!reveal}) { Text(if(reveal) "Скрыть ключ" else "Показать ключ") }
                         }
                         item { TextButton(onClick={encryption=true}) { Text("Шифрование: ${encryptionNames.getOrNull(config.encryption) ?: config.encryption}") } }
-                        item { OutlinedTextField(config.resolvers,{config=config.copy(resolvers=it);results.clear()},label={Text("DNS-резолверы / вставить список IP")},supportingText={Text("Один адрес на строку. Допустим IP:порт.")},modifier=Modifier.fillMaxWidth(),minLines=3) }
-                        item { TextButton(enabled=!scanning,onClick={importResolvers.launch("text/*")}) { Text("Импорт DNS-резолверов из файла") } }
                         item {
-                            Button(enabled=!scanning, onClick={
-                                error=null
-                                val snapshot=config
-                                scannedConfig=snapshot
-                                scanJob=scope.launch {
-                                    scanning=true;results.clear();selectedResolvers=emptySet();progress="Проверка резолверов и MTU…"
-                                    try { MasterDnsResolverCheck.scan(this@MasterDnsConfigActivity,snapshot,{progress=it},{results.add(it);if(it.valid) selectedResolvers=selectedResolvers+it.resolver});progress="Проверка завершена" }
-                                    catch(e:CancellationException){progress="Проверка отменена";throw e}
-                                    catch(e:Exception){error=e.message ?: "Ошибка проверки"}
-                                    finally { scanning=false }
+                            val local = config.useLocalResolvers == true
+                            val activeResolvers = config.resolverList()
+                            Card(Modifier.fillMaxWidth()) {
+                                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text("DNS-серверы подключения", style = MaterialTheme.typography.titleMedium)
+                                    Text(if (local) "Используется: мой выбранный набор"
+                                        else "Используется: список профиля / подписки",
+                                        style = MaterialTheme.typography.bodyMedium)
+                                    Text("Адресов: ${activeResolvers.size}", style = MaterialTheme.typography.bodySmall)
+                                    SelectionContainer {
+                                        Text(activeResolvers.joinToString("\n").ifEmpty { "Адреса не заданы" },
+                                            style = MaterialTheme.typography.bodyMedium)
+                                    }
+                                    if (local) Text("Эти адреса выбраны для подключения и сохраняются при обновлении подписки.",
+                                        style = MaterialTheme.typography.bodySmall)
                                 }
-                            }) { Text("Проверить резолверы") }
-                            if(scanning) { LinearProgressIndicator(Modifier.fillMaxWidth());TextButton(onClick={scanJob?.cancel()}){Text("Отменить проверку")} }
-                            if(progress.isNotEmpty()) Text(progress)
-                            Text("Проверяется DNS-туннель до вашего сервера и доступный MTU (до 3 минут). Текущий VPN не переключается.",style=MaterialTheme.typography.bodySmall)
-                        }
-                        items(results.toList()) { result ->
-                            Row(verticalAlignment=Alignment.CenterVertically) {
-                                Checkbox(result.resolver in selectedResolvers,{checked -> selectedResolvers=if(checked) selectedResolvers+result.resolver else selectedResolvers-result.resolver},enabled=result.valid && !scanning)
-                                Text("${result.resolver} · ${result.domain}\n${if(result.valid) "${result.latencyMs} мс · MTU ↑${result.upload} ↓${result.download}" else "Не прошёл проверку"}")
                             }
+                            if (local) TextButton(onClick = { showOriginalResolvers = !showOriginalResolvers }) {
+                                Text(if (showOriginalResolvers) "Скрыть исходный список"
+                                    else "Показать исходный список — сейчас не используется")
+                            }
+                            if (!local || showOriginalResolvers) OutlinedTextField(
+                                config.resolvers, {config=config.copy(resolvers=it)},
+                                label={Text("Исходные DNS-резолверы профиля")},
+                                supportingText={Text(if (local) "Сейчас подключение использует выбранный набор выше. Изменение этого поля его не заменит."
+                                    else "Один адрес на строку. Допустим IP:порт.")},
+                                modifier=Modifier.fillMaxWidth(), minLines=3)
                         }
-                        if(results.any { it.valid } && !scanning) item { OutlinedButton(enabled=config==scannedConfig && selectedResolvers.isNotEmpty(),onClick={config=config.copy(resolvers=selectedResolvers.joinToString("\n"))}){Text("Использовать выбранные резолверы")} }
+                        item {
+                            if (editing && profile != null) {
+                                val saved = (profile.kernelConfig as? KernelConfig.MasterDns)?.config
+                                OutlinedButton(enabled = config == saved, onClick = {
+                                    startActivity(Intent(this@MasterDnsConfigActivity,
+                                        com.wireturn.app.ui.activities.MasterDnsResolversActivity::class.java)
+                                        .putExtra("EXTRA_PROFILE_ID", profile.id))
+                                    finish()
+                                }) { Text("DNS-резолверы: база и сканирование") }
+                                if (config != saved) Text("Сначала сохраните изменения профиля.", style = MaterialTheme.typography.bodySmall)
+                            } else Text("После сохранения откройте DNS-резолверы в меню профиля: там доступны база и сканирование.",
+                                style = MaterialTheme.typography.bodySmall)
+                        }
+                        item {
+                            Text("Режим работы", style = MaterialTheme.typography.titleLarge)
+                            val selectedMode = config.performanceMode()
+                            val choices = listOf<MasterDnsPerformanceMode?>(null) + MasterDnsPerformanceMode.entries
+                            choices.forEach { mode ->
+                                Row(Modifier.fillMaxWidth().clickable {
+                                    config = config.copy(localPerformanceMode = mode?.wireValue)
+                                }, verticalAlignment = Alignment.CenterVertically) {
+                                    RadioButton(selected = selectedMode == mode, onClick = {
+                                        config = config.copy(localPerformanceMode = mode?.wireValue)
+                                    })
+                                    Column(Modifier.weight(1f)) {
+                                        Text(mode?.title ?: "Из профиля")
+                                        Text(when (mode) {
+                                            null -> "Исходные параметры, включая ручные настройки"
+                                            MasterDnsPerformanceMode.SPEED -> "Меньше копий пакетов и служебного трафика"
+                                            MasterDnsPerformanceMode.BALANCED -> "Умеренное дублирование пакетов"
+                                            MasterDnsPerformanceMode.STABLE -> "Больше копий при потерях; выше расход трафика"
+                                        }, style = MaterialTheme.typography.bodySmall)
+                                    }
+                                }
+                            }
+                            fun requested(key: String) = config.effectiveValue(MasterDnsFields.byKey.getValue(key))
+                            Text("Запрашивается: балансировка ${requested("RESOLVER_BALANCING_STRATEGY")}; " +
+                                "копий обычного пакета ${requested("PACKET_DUPLICATION_COUNT")}; " +
+                                "setup ${requested("SETUP_PACKET_DUPLICATION_COUNT")}. " +
+                                "Сервер может ограничить дублирование при согласовании сессии.",
+                                style = MaterialTheme.typography.bodySmall)
+                            Text("Режим сохраняется локально. Для уже работающего подключения потребуется переподключение.",
+                                style = MaterialTheme.typography.bodySmall)
+                        }
                         item { Text("Настройки MasterDnsVPN",style=MaterialTheme.typography.titleLarge); OutlinedTextField(filter,{filter=it},label={Text("Поиск настройки")},modifier=Modifier.fillMaxWidth()) }
                         items(MasterDnsFields.all.filter { filter.isBlank() || it.title.contains(filter,true) || it.key.contains(filter,true) },key={it.key}) { f ->
                             val v=config.value(f)
-                            Row(Modifier.fillMaxWidth().heightIn(min=64.dp).clickable {
+                            val mode = config.performanceMode()
+                            val controlledByMode = mode?.overrides?.containsKey(f.key) == true
+                            Row(Modifier.fillMaxWidth().heightIn(min=64.dp).clickable(enabled = !controlledByMode) {
                                 if(f.type=="bool") config=config.copy(settings=config.settings+(f.key to (v!="true").toString()))
                                 else { field=f;text=v }
                             }.padding(vertical=8.dp),verticalAlignment=Alignment.CenterVertically) {
-                                Column(Modifier.weight(1f)) { Text(f.title); Text(if(f.type=="bool") if(v=="true") "Включено" else "Выключено" else v,style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant) }
+                                Column(Modifier.weight(1f)) {
+                                    Text(f.title)
+                                    Text(if (controlledByMode) "Запрашивается: ${config.effectiveValue(f)} · В профиле: $v"
+                                        else if(f.type=="bool") if(v=="true") "Включено" else "Выключено" else v,
+                                        style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                                    if (controlledByMode) Text("Задано режимом «${mode!!.title}». Для ручного изменения выберите «Из профиля».",
+                                        style = MaterialTheme.typography.bodySmall)
+                                }
                                 if(f.type=="bool") Switch(v=="true",{config=config.copy(settings=config.settings+(f.key to it.toString()))})
                             }
                             HorizontalDivider()
                         }
                         item {
                             if(error!=null) Text(error!!,color=MaterialTheme.colorScheme.error)
-                            Button(enabled=!scanning,onClick={
-                                try {
-                                    val candidate=config.copy(name=name.ifBlank { "MasterDnsVPN" });candidate.validate()
-                                    val kc=KernelConfig.MasterDns(candidate)
-                                    if(editing) {
-                                        if(id!=null) vm.updateProfileById(id){it.copy(name=candidate.name,kernelConfig=kc)}
-                                        if(id==null || id==vm.currentProfileId.value) vm.saveClientConfig(client.copy(kernelConfig=kc).fillDefaults())
-                                    } else vm.addFullProfile(candidate.name,ClientConfig(kernelConfig=kc).fillDefaults(),xray.copy(enabled=false),WgConfig(),VlessConfig())
-                                    startActivity(Intent(this@MasterDnsConfigActivity,MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP));finish()
-                                } catch(e:Exception){error=e.message}
-                            },modifier=Modifier.fillMaxWidth()){Text("Сохранить подключение")}
+                            Button(onClick=save,modifier=Modifier.fillMaxWidth()){Text("Сохранить подключение")}
                             Spacer(Modifier.height(24.dp))
                         }
                     }
@@ -168,7 +208,7 @@ class MasterDnsConfigActivity : ComponentActivity() {
                 if(encryption) AlertDialog(
                     onDismissRequest={encryption=false}, title={Text("Метод шифрования")},
                     text={ Column { encryptionNames.forEachIndexed { i,label ->
-                        TextButton(onClick={config=config.copy(encryption=i);encryption=false;results.clear()}) { Text("$i · $label") }
+                        TextButton(onClick={config=config.copy(encryption=i);encryption=false}) { Text("$i · $label") }
                     } } },
                     confirmButton={TextButton(onClick={encryption=false}) { Text("Закрыть") }}
                 )

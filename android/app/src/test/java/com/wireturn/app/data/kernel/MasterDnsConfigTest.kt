@@ -67,4 +67,40 @@ class MasterDnsConfigTest {
         assertFalse(restored.settings.containsKey("MIN_UPLOAD_MTU"))
         assertEquals("38",restored.value(MasterDnsFields.byKey.getValue("MIN_UPLOAD_MTU")))
     }
+
+    @Test fun personalSelectionSurvivesStorageExportAndSwitchBack() {
+        val selected = example.copy(localResolvers = "192.0.2.53\n192.0.2.54\n192.0.2.53", useLocalResolvers = true)
+        val restored = Gson().fromJson(Gson().toJson(selected), MasterDnsConfig::class.java)
+        assertEquals(listOf("192.0.2.53", "192.0.2.54"), restored.resolverList())
+        assertEquals(example.resolverList(), restored.profileResolverList())
+        val imported = MasterDnsConfig.parse(restored.toUri())!!
+        assertEquals(selected.localResolvers, imported.localResolvers)
+        assertEquals(selected.resolverList(), imported.resolverList())
+        val source = MasterDnsConfig.parse(imported.copy(useLocalResolvers = false).toUri())!!
+        assertEquals(example.resolverList(), source.resolverList())
+        assertEquals(selected.localResolvers, source.localResolvers)
+        assertEquals(selected.resolverList(), source.copy(useLocalResolvers = true).resolverList())
+    }
+
+    @Test fun legacyGsonAndUriUseTheOriginalPool() {
+        val old = Gson().toJsonTree(example).asJsonObject.apply {
+            remove("localResolvers"); remove("useLocalResolvers")
+        }
+        val restored = Gson().fromJson(old, MasterDnsConfig::class.java)
+        assertNull(restored.localResolvers)
+        assertNull(restored.useLocalResolvers)
+        assertEquals(example.resolverList(), restored.resolverList())
+        assertEquals(example.resolverList(), MasterDnsConfig.parse(example.toUri())!!.resolverList())
+    }
+
+    @Test fun invalidSelectionCannotHideAnInvalidSourceOrRunAnEmptyPool() {
+        assertFalse(example.copy(localResolvers = "", useLocalResolvers = true).isValid())
+        assertFalse(example.copy(localResolvers = "https://example.invalid", useLocalResolvers = false).isValid())
+        assertFalse(example.copy(resolvers = "", localResolvers = "192.0.2.53", useLocalResolvers = true).isValid())
+        val selected = MasterDnsConfig.parse(example.copy(localResolvers = "192.0.2.53", useLocalResolvers = true).toUri())!!
+        val cleared = MasterDnsConfig.parse(selected.copy(localResolvers = null, useLocalResolvers = null).toUri())!!
+        assertNull(cleared.localResolvers)
+        assertNull(cleared.useLocalResolvers)
+        assertEquals(example.resolverList(), cleared.resolverList())
+    }
 }

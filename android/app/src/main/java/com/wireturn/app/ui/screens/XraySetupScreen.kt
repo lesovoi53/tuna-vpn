@@ -887,7 +887,7 @@ private fun VlessSettingsBlock(
                             label = stringResource(R.string.xray_uri_hc_destination),
                             value = vlessHcDestination,
                             onValueChange = onVlessHcDestinationChange,
-                            placeholder = "http://connectivitycheck.gstatic.com/generate_204",
+                            placeholder = "https://www.google.com/generate_204",
                             isModified = isEditMode && vlessHcDestination != initialVlessConfig.hcDestination,
                             supportingText = stringResource(R.string.xray_uri_hc_destination_desc)
                         )

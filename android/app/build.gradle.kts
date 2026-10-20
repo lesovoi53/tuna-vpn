@@ -56,6 +56,8 @@ android {
             keepDebugSymbols += "**/libwebdav.so"
             keepDebugSymbols += "**/libfreeturn.so"
             keepDebugSymbols += "**/libqwdtt.so"
+            keepDebugSymbols += "**/libtuna-runtime.so"
+            keepDebugSymbols += "**/libtuna-memory.so"
         }
     }
 
@@ -215,12 +217,22 @@ val verifyPrebuiltNative = tasks.register("verifyPrebuiltNative") {
         }
         val webdavHash = MessageDigest.getInstance("SHA-256").digest(file("src/main/jniLibs/arm64-v8a/libwebdav.so").readBytes()).joinToString("") { "%02x".format(it) }
         check(webdavHash == (webdav["binaries"] as Map<*, *>)["libwebdav.so"]) { "WebDAV binary differs from provenance" }
-        val names = listOf("hevsocks5", "xray", "qwdtt", "singbox", "mieru", "masterdns", "webdav")
+        val names = listOf("hevsocks5", "xray", "qwdtt", "singbox", "mieru", "masterdns", "webdav", "tuna-runtime", "tuna-memory")
         fun hash(path: String) = MessageDigest.getInstance("SHA-256").digest(rootProject.file(path).readBytes()).joinToString("") { "%02x".format(it) }
         fun provenance(path: String) = groovy.json.JsonSlurper().parse(rootProject.file(path)) as Map<*, *>
         val mieru = provenance("native/mieru/provenance.json")
         check(hash("app/src/main/jniLibs/arm64-v8a/libmieru.so") == mieru["binarySha256"])
         (mieru["sources"] as Map<*, *>).forEach { (path, expected) -> check(hash(path as String) == expected) { "Mieru source changed: $path" } }
+        val qwdtt = provenance("native/qwdtt/provenance.json")
+        check(qwdtt["commit"] == "a296c57eaba69bb9479a24f9157856490890e47d") { "qWDTT source pin changed" }
+        check(hash("app/src/main/jniLibs/arm64-v8a/libqwdtt.so") == qwdtt["binarySha256"]) { "qWDTT binary differs from provenance" }
+        val runtime = provenance("native/runtime-launcher/provenance.json")
+        check(runtime["protocol"] == "TUNAMEM1" && runtime["api"] == 26 && runtime["abi"] == "arm64-v8a") { "Memory runtime contract changed" }
+        check(hash("app/src/main/jniLibs/arm64-v8a/libtuna-runtime.so") == runtime["binarySha256"]) { "Memory launcher binary differs from provenance" }
+        check(hash("app/src/main/jniLibs/arm64-v8a/libtuna-memory.so") == runtime["jniBinarySha256"]) { "Memory JNI binary differs from provenance" }
+        listOf("qWDTT" to qwdtt, "Memory runtime" to runtime).forEach { (component, record) ->
+            (record["sources"] as Map<*, *>).forEach { (path, expected) -> check(hash(path as String) == expected) { "$component source changed: $path" } }
+        }
         val prebuilt = provenance("native/prebuilt-provenance.json")
         check(prebuilt["source"] == provenance("native-lock.json")["WireTurnApk"])
         (prebuilt["binaries"] as Map<*, *>).forEach { (name, expected) -> check(hash("app/src/main/jniLibs/arm64-v8a/$name") == expected) { "Prebuilt changed: $name" } }
@@ -228,6 +240,15 @@ val verifyPrebuiltNative = tasks.register("verifyPrebuiltNative") {
         check(hash("app/src/main/jniLibs/arm64-v8a/libmasterdns.so").equals(master["binarySha256"] as String, true))
         check(hash("native/masterdns/main.go").equals(master["adapterSha256"] as String, true))
         check(hash("native/masterdns/prepare.py").equals(master["overlayScriptSha256"] as String, true))
+        check(hash("native/masterdns/scan.go.inc").equals(master["scanOverlaySha256"] as String, true))
+        check(hash("native/masterdns/scan_test.go").equals(master["scanTestsSha256"] as String, true))
+        check(hash("native/masterdns/diagnostic.go").equals(master["diagnosticOverlaySha256"] as String, true))
+        check(hash("native/masterdns/adapter_test.go").equals(master["adapterTestsSha256"] as String, true))
+        val poolSources = rootProject.file("native/masterdns").listFiles().orEmpty()
+            .filter { it.isFile && it.name.startsWith("pool") }.associate { it.name to hash("native/masterdns/${it.name}") }
+        val poolExpected = (master["poolSourcesSha256"] as Map<*, *>)
+            .entries.associate { it.key.toString() to it.value.toString().lowercase() }
+        check(poolSources == poolExpected) { "MasterDNS pool source changed: rebuild native/masterdns/build.ps1" }
         targetAbis.forEach { abi -> names.forEach { name ->
             check(file("src/main/jniLibs/$abi/lib$name.so").isFile) { "Missing native library: $abi/lib$name.so" }
         } }

@@ -35,19 +35,19 @@ object SingBoxKernel : Kernel {
                 RawXrayConfig.validateAssets(profile, ctx.xrayAssetsDir)
                 ctx.xrayAssetsDir?.let { generated.addProperty("assets_path", it.absolutePath) }
             }
-            file.writeText(generated.toString())
+            MemoryConfigs.write(file, generated.toString())
             return listOf("${ctx.nativeLibraryDir}/libxray.so", "-config", file.absolutePath)
         }
         if (profile.protocol == "mieru") {
             require(profile.isValid())
             val directory = File(ctx.filesDir, "mieru").apply { mkdirs() }
             val file = File(directory, "launch.json")
-            file.writeText(com.google.gson.Gson().toJson(mapOf("uri" to profile.uri, "listen" to cfg.socksAddr, "username" to cfg.socksUser, "password" to cfg.socksPass, "allowNoAuth" to !cfg.isSocksAuthEnabled)))
+            MemoryConfigs.write(file, com.google.gson.Gson().toJson(mapOf("uri" to profile.uri, "listen" to cfg.socksAddr, "username" to cfg.socksUser, "password" to cfg.socksPass, "allowNoAuth" to !cfg.isSocksAuthEnabled)))
             return listOf("${ctx.nativeLibraryDir}/libmieru.so", file.absolutePath)
         }
         val directory = File(ctx.filesDir, "singbox").apply { mkdirs() }
         val file = File(directory, "config.json")
-        file.writeText(SingBoxConfig.generate(profile, cfg.socksAddr, cfg.socksUser, cfg.socksPass, !cfg.isSocksAuthEnabled, ctx.bootstrapDns).toString())
+        MemoryConfigs.write(file, SingBoxConfig.generate(profile, cfg.socksAddr, cfg.socksUser, cfg.socksPass, !cfg.isSocksAuthEnabled, ctx.bootstrapDns).toString())
         return listOf("${ctx.nativeLibraryDir}/libsingbox.so", "run", "-c", file.absolutePath)
     }
     override suspend fun parseLogLine(line: String, lower: String, state: BinaryOutputState, ctx: KernelLogContext, cfg: ClientConfig): Boolean {

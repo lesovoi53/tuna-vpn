@@ -75,6 +75,13 @@ object TrustTunnelUri {
             require('=' in it)
             require(q.put(VpnConfig.decode(it.substringBefore('=')), VpnConfig.decode(it.substringAfter('='))) == null)
         }
+        // Panel spelling of the same prefix/mask option; never drop either conflicting value.
+        q.remove("client_random")?.let { alias ->
+            require(q["client_random_prefix"] == null || q["client_random_prefix"] == alias) {
+                "TrustTunnel: конфликт префиксов client random"
+            }
+            q["client_random_prefix"] = alias
+        }
         val allowed = setOf("security", "sni", "alpn", "insecure", "allowInsecure", "allow_insecure", "fp", "network", "health_check", "quic", "congestion_control", "congestion_controller", "cwnd", "certificate", "certificate_public_key_sha256", "client_random_prefix", "has_ipv6", "anti_dpi", "dns", "use_cronet_https", "use_cronet_quic", "force_quic", "quic_congestion_control")
         require(q.keys.all { it in allowed }) { "TrustTunnel: неподдерживаемый параметр" }
         require(q["security"] in listOf(null,"tls")) { "TrustTunnel требует TLS" }

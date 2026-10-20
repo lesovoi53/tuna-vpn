@@ -17,6 +17,7 @@ class PrivateRuntimeDirectory(context: Context, prefix: String) : Closeable {
             directory.setExecutable(false, false) && directory.setExecutable(true, true)) { "Cannot protect private runtime" }
     }
     override fun close() {
+        MemoryConfigs.removeDirectory(directory)
         check(!directory.exists() || directory.deleteRecursively()) { "Cannot remove private runtime" }
     }
     companion object {
@@ -25,7 +26,7 @@ class PrivateRuntimeDirectory(context: Context, prefix: String) : Closeable {
             val root = File(context.noBackupFilesDir, "native-runtime")
             root.listFiles()?.forEach { check(it.deleteRecursively()) { "Cannot remove abandoned runtime" } }
             // Exact historical generated files only; do not remove assets or user documents.
-            for (path in listOf("hev-socks5-tunnel.yaml", "xray-vpn/config.json", "mieru/launch.json",
+            for (path in listOf("hev-socks5-tunnel.yaml", "xray-vpn/config.json", "mieru/launch.json", "mieru/native.json",
                 "singbox/config.json", "webdav.json", "masterdns/client.toml", "masterdns/client_resolvers.txt",
                 "routing-policy.json", "network-router/extended.json")) {
                 val file = File(context.filesDir, path)

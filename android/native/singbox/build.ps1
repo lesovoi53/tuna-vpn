@@ -58,6 +58,8 @@ try {
     & $GoExe test @modArgs -count=1 -timeout=60s (Join-Path $PSScriptRoot 'snell_roundtrip_test.go') (Join-Path $PSScriptRoot 'snell_v6_regression_test.go')
     if ($LASTEXITCODE) { throw 'Snell local transport regression tests failed' }
     $hostTags = $spec.buildTags
+    & $GoExe test @modArgs -count=1 -timeout=45s -tags $hostTags ./transport/wireguard -run TestTunaKeepalive
+    if ($LASTEXITCODE) { throw 'WireGuard keepalive range regression tests failed' }
     & $GoExe test @modArgs -count=1 -timeout=45s ./route -run TestTunaNetworkStartup
     if ($LASTEXITCODE) { throw 'Network startup readiness regression tests failed' }
     & $GoExe test @modArgs -count=1 -timeout=45s ./dns/transport/fallback -run TestTuna
