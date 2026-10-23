@@ -88,7 +88,8 @@ import kotlin.time.Duration.Companion.milliseconds
 fun SettingsScreen(
     viewModel: MainViewModel,
     modifier: Modifier = Modifier,
-    onBack: (() -> Unit)? = null
+    onBack: (() -> Unit)? = null,
+    appearanceOnly: Boolean = false
 ) {
     val context = LocalContext.current
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
@@ -135,7 +136,7 @@ fun SettingsScreen(
         modifier = modifier,
         topBar = {
             AppTopAppBar(
-                title = stringResource(R.string.app_settings_title),
+                title = stringResource(if (appearanceOnly) R.string.orbit_appearance else R.string.app_settings_title),
                 onBack = onBack,
                 actions = {
                     IconButton(onClick = {
@@ -168,9 +169,10 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(19.dp)
         ) {
             // 1. Оформление
-            InterfaceStyleChoice(viewModel)
-            DefaultFragmentationSection()
-            TunMtuSection()
+            if (!appearanceOnly) {
+                DefaultFragmentationSection()
+                TunMtuSection()
+            }
             val themeModes = remember(supportsSystemTheme) {
                 if (supportsSystemTheme) {
                     ThemeMode.entries
@@ -263,6 +265,7 @@ fun SettingsScreen(
                 }
             }
 
+            if (!appearanceOnly) {
             // 2.1 Сеть
             val waitForNetwork by viewModel.waitForNetwork.collectAsStateWithLifecycle()
             val restartOnNetworkChange by viewModel.restartOnNetworkChange.collectAsStateWithLifecycle()
@@ -403,6 +406,7 @@ fun SettingsScreen(
                 }
             }
 
+            }
             // Язык
             val appLanguage by viewModel.appLanguage.collectAsStateWithLifecycle()
             val languages = listOf("system", "en", "ru")
@@ -433,6 +437,7 @@ fun SettingsScreen(
                 Text(languageLabels.getValue(language), Modifier.padding(16.dp))
             }
 
+            if (!appearanceOnly) {
             // 4. Сброс настроек
             Surface(
                 onClick = {
@@ -461,6 +466,7 @@ fun SettingsScreen(
                 }
             }
 
+            }
             // Версия
             Text(
                 text = appVersion,

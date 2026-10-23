@@ -2,7 +2,7 @@
 
 An Android VPN client built around Xray, sing-box-extended and Mieru, with a standalone Windows routing editor. [Russian documentation](README.md) is the primary maintained guide.
 
-[Download release 1.65](https://github.com/lesovoi53/tuna-vpn/releases/tag/v1.65) · [Build](docs/development/build.md) · [Licenses](docs/licenses.md)
+[Download release 1.65.2](https://github.com/lesovoi53/tuna-vpn/releases/tag/v1.65.2) · [Build](docs/development/build.md) · [Licenses](docs/licenses.md)
 
 ## Supported protocols
 
@@ -24,7 +24,7 @@ These labels do not change the protocol or turn an ordinary endpoint into a CDN/
 
 ## Included
 
-- Android 8.0+ ARM64 APK, version 1.65.
+- Android 8.0+ ARM64 APK, version 1.65.2.
 - TUNA Routing Builder 2.4, a single-file Windows EXE and Python source.
 - Per-app/domain/IP routing, subscription rules, URL-test groups and separate direct/VPN DNS pools (up to eight each).
 - Source, native patch overlays, pinned dependencies, tests and developer documentation.

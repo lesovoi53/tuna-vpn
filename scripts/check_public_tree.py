@@ -45,7 +45,7 @@ def check():
                 if local and not (path.parent / local).exists():
                     errors.append(f'Broken documentation link: {rel} -> {link}')
     props = (ROOT / 'android/gradle.properties').read_text()
-    if 'project.versionName=1.65.2-rc1' not in props or 'project.versionCode=26102010' not in props:
+    if 'project.versionName=1.65.2' not in props or 'project.versionCode=26102302' not in props:
         errors.append('Unexpected Android release metadata')
     if (ROOT / 'android/NOTICE.md').read_bytes() != (ROOT / 'android/app/src/main/assets/licenses/NOTICE.txt').read_bytes():
         errors.append('Packaged NOTICE differs')

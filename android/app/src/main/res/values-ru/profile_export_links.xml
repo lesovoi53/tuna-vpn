@@ -1,0 +1,14 @@
+<resources>
+    <string name="profile_link_original">Исходная ссылка протокола</string>
+    <string name="profile_link_scope">Ссылка протокола содержит подключение. TUNA сохраняет полный профиль с его настройками.</string>
+    <string name="profile_link_copy_original">Копировать исходную ссылку</string>
+    <string name="profile_link_share_original">Поделиться исходной ссылкой</string>
+    <string name="profile_link_copy_tuna">Копировать ссылку TUNA</string>
+    <string name="profile_link_share_tuna">Поделиться профилем TUNA</string>
+    <string name="profile_link_copied">Ссылка скопирована</string>
+    <string name="profile_link_too_large">Профиль слишком большой для ссылки. Сохраните или отправьте его файлом.</string>
+    <string name="profile_link_unavailable">Для этой конфигурации нет поддерживаемой ссылки протокола. Используйте экспорт TUNA.</string>
+    <string name="profile_link_custom">Ссылка протокола не передаёт дополнительные настройки. Используйте экспорт TUNA.</string>
+    <string name="profile_link_pool">Пул Master DNS использует локальные профили и не поддерживает экспорт ссылкой протокола.</string>
+    <string name="profile_link_invalid">Не удалось создать ссылку протокола. Проверьте настройки профиля.</string>
+</resources>

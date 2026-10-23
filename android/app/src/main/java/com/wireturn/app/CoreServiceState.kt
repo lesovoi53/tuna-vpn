@@ -48,7 +48,8 @@ object CoreServiceState {
         // new session when restarting, otherwise group activation waits forever for that run.
         val generation: Long = nextGeneration.incrementAndGet(),
         val startedAtElapsed: Long = android.os.SystemClock.elapsedRealtime(),
-        val profileId: String = ""
+        val profileId: String = "",
+        val masterDnsGroupId: String? = null
     ) {
         companion object {
             private val nextGeneration = AtomicLong()

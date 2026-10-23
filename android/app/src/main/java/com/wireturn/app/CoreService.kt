@@ -165,7 +165,8 @@ class CoreService : Service() {
                 // Persist generated listener credentials, never the runtime plan or inherited fragmentation.
                 prefs.saveClientConfig(snapshot.config.fillDefaults().copy(
                     socksUser = runtimeCfg.socksUser, socksPass = runtimeCfg.socksPass))
-                CoreServiceState.setSession(CoreServiceState.RunningSession(runtimeCfg, profileName, profileId = snapshot.profileId))
+                CoreServiceState.setSession(CoreServiceState.RunningSession(runtimeCfg, profileName, profileId = snapshot.profileId,
+                    masterDnsGroupId = snapshot.masterDnsGroupId))
                 currentRunningCfg.set(runtimeCfg)
                 initStartup(vlessConfig, xrayConfig, profileName)
                 mainSupervisor()
@@ -376,7 +377,8 @@ class CoreService : Service() {
                         runningSession.profileName == snapshot.profileName) return@collect
                     val binaryChanged = requiresBinaryRestart(runningCfg, newCfg)
                     currentRunningCfg.set(newCfg)
-                    CoreServiceState.setSession(CoreServiceState.RunningSession(newCfg, snapshot.profileName, profileId = snapshot.profileId))
+                    CoreServiceState.setSession(CoreServiceState.RunningSession(newCfg, snapshot.profileName, profileId = snapshot.profileId,
+                        masterDnsGroupId = snapshot.masterDnsGroupId))
                     if (binaryChanged) {
                         // A config/profile switch is a deliberate new attempt, not the watchdog
                         // retrying a failure - drop any restart counter left over from before.

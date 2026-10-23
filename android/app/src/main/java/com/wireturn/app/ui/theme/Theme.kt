@@ -114,7 +114,7 @@ fun WireturnTheme(
     val appContext = LocalContext.current.applicationContext
     val preferences = remember(appContext) { AppPreferences(appContext) }
     val interfaceStyle by preferences.interfaceStyleFlow.collectAsStateWithLifecycle(InterfaceStyle.ORBIT)
-    val orbit = interfaceStyle == InterfaceStyle.ORBIT
+    val orbit = true // The stored legacy preference is retained for backup compatibility only.
     val systemDarkTheme = isSystemInDarkTheme()
     val darkTheme = when (themeMode) {
         ThemeMode.DARK -> true

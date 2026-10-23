@@ -1173,7 +1173,10 @@ class ProfileManager internal constructor(
                     }
                 }
                 skippedEntries += decodedBundle?.skippedEntries ?: 1
-                if (decodedBundle == null) importIssues += com.wireturn.app.data.SubscriptionImportIssue.uri(trimmed)
+                if (decodedBundle == null) importIssues += com.wireturn.app.data.SubscriptionImportIssue.uri(trimmed, index = lineIndex).let {
+                    if (decodedJson == null) it.copy(reason = "Повреждённая или неполная ссылка экспорта: не удалось распаковать данные. Скопируйте исходную ссылку заново.")
+                    else it
+                }
                 else importIssues += decodedBundle.importIssues.orEmpty()
                 val decodedProfiles = decodedBundle?.profiles
                 if (decodedProfiles.isNullOrEmpty()) continue

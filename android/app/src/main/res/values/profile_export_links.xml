@@ -1,0 +1,14 @@
+<resources>
+    <string name="profile_link_original">Original protocol link</string>
+    <string name="profile_link_scope">The protocol link contains the endpoint. TUNA preserves the complete profile and its settings.</string>
+    <string name="profile_link_copy_original">Copy original link</string>
+    <string name="profile_link_share_original">Share original link</string>
+    <string name="profile_link_copy_tuna">Copy TUNA link</string>
+    <string name="profile_link_share_tuna">Share TUNA profile</string>
+    <string name="profile_link_copied">Link copied</string>
+    <string name="profile_link_too_large">The profile is too large for a link. Save or share it as a file.</string>
+    <string name="profile_link_unavailable">This configuration has no supported protocol link. Use the TUNA export.</string>
+    <string name="profile_link_custom">The protocol link cannot include the additional settings. Use the TUNA export.</string>
+    <string name="profile_link_pool">The Master DNS pool uses local profiles and cannot be exported as a protocol link.</string>
+    <string name="profile_link_invalid">Could not create a protocol link. Check the profile settings.</string>
+</resources>

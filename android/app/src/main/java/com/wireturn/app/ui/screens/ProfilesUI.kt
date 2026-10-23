@@ -341,7 +341,10 @@ fun ProfilesBlock(
     val groupState by viewModel.groupRunState.collectAsStateWithLifecycle()
     val group = groups.find { it.id == groupId && it.type == com.wireturn.app.data.GroupTestType.URL_TEST && com.wireturn.app.domain.ManualGroupPolicy.allows(it) }
     val coreStatus by com.wireturn.app.CoreServiceState.status.collectAsStateWithLifecycle()
-    val dnsGroup = dnsGroups.find { it.id == dnsGroupId }
+    val runningSession by com.wireturn.app.CoreServiceState.session.collectAsStateWithLifecycle()
+    val displayedDnsGroupId = if (coreStatus == com.wireturn.app.CoreStatus.Connected ||
+        coreStatus == com.wireturn.app.CoreStatus.Suppressed) runningSession?.masterDnsGroupId else dnsGroupId
+    val dnsGroup = dnsGroups.find { it.id == displayedDnsGroupId }
     if (dnsGroup != null) {
         SectionItem(position = ItemPosition.Single, onClick = onClick, modifier = modifier) {
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -354,7 +357,7 @@ fun ProfilesBlock(
         return
     }
     if (group != null) {
-        val member = com.wireturn.app.domain.HomeSelection.member(group, currentProfile,
+        val member = com.wireturn.app.domain.HomeSelection.member(group, profiles.find { it.id == runningSession?.profileId },
             coreStatus == com.wireturn.app.CoreStatus.Connected || coreStatus == com.wireturn.app.CoreStatus.Suppressed)
         SectionItem(position = ItemPosition.Single, onClick = onClick, modifier = modifier) {
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -2100,15 +2103,6 @@ private fun ProfileItemRow(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text(stringResource(R.string.profile_proxy_chain)) },
-                            leadingIcon = { Icon(painterResource(R.drawable.ic_xray_24px), null, modifier = Modifier.size(20.dp)) },
-                            onClick = {
-                                menuExpanded = false
-                                context.startActivity(Intent(context, com.wireturn.app.ui.activities.XrayEditActivity::class.java)
-                                    .putExtra("EXTRA_PROFILE_ID", profile.id))
-                            }
-                        )
-                        DropdownMenuItem(
                             text = { Text(stringResource(R.string.profile_rename)) },
                             leadingIcon = { Icon(painterResource(R.drawable.edit_24px), null, modifier = Modifier.size(20.dp)) },
                             onClick = {
@@ -2183,16 +2177,23 @@ private fun ProfileItemRow(
                             }
                         )
                     }
-                    ExportDropdownMenus(
-                        expandedFormat = false,
-                        onDismissFormat = { },
-                        expandedAction = itemExportActionMenuExpanded,
-                        onDismissAction = { itemExportActionMenuExpanded = false },
-                        onFormatSelected = { },
-                        onActionSelected = { save ->
+                    ProfileLinkExportMenu(
+                        profile = profile,
+                        expanded = itemExportActionMenuExpanded,
+                        onDismiss = { itemExportActionMenuExpanded = false },
+                        profileJson = { viewModel.getProfilesJson(listOf(profile.id)) },
+                        onSave = {
                             itemExportActionMenuExpanded = false
                             onExportClick(listOf(profile.id), false)
-                            onExportActionSelected(save)
+                            onExportActionSelected(true)
+                        },
+                        onShareTuna = {
+                            itemExportActionMenuExpanded = false
+                            onExportClick(listOf(profile.id), false)
+                            onExportActionSelected(false)
+                        },
+                        onShareOriginal = { uri ->
+                            shareText(context, uri, context.getString(R.string.profile_link_original))
                         }
                     )
                 }

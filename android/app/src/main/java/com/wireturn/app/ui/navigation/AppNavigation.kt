@@ -46,7 +46,7 @@ fun AppNavigation(
     val style by viewModel.interfaceStyle.collectAsStateWithLifecycle()
     val privacy by viewModel.privacyMode.collectAsStateWithLifecycle()
     val screenStates = rememberSaveableStateHolder()
-    val orbit = style == InterfaceStyle.ORBIT
+    val orbit = true
     var tab by rememberSaveable { mutableIntStateOf(0) }
     val linkRequest by com.wireturn.app.ui.DeepLinkBus.navigationRequest.collectAsStateWithLifecycle()
     LaunchedEffect(linkRequest) { if (com.wireturn.app.ui.DeepLinkBus.consumeNavigation(linkRequest)) tab = 0 }

@@ -30,7 +30,8 @@ class SettingsActivity : ComponentActivity() {
             WireturnTheme(themeMode = themeMode, dynamicColor = dynamicTheme) {
                 if (initialized) SettingsScreen(
                     viewModel = viewModel,
-                    onBack = { finish() }
+                    onBack = { finish() },
+                    appearanceOnly = intent.getBooleanExtra("APPEARANCE_ONLY", false)
                 )
             }
         }

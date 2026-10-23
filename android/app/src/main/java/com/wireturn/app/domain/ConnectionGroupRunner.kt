@@ -247,7 +247,7 @@ class ConnectionGroupRunner(
                         if (activated) selected = winner
                         state.value = GroupRunState(group.id, false, group.automatic, selected,
                             if (!activated) "Не удалось восстановить туннель: нужна повторная проверка"
-                            else if (changed) "Выбран лучший доступный сервер" else "Текущий сервер сохранён: порог переключения не достигнут", results, testType = group.type)
+                            else selection.decisionMessage, results, testType = group.type)
                     }
                     if (!group.automatic) break
                     delay(group.intervalSeconds * 1000L)

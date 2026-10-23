@@ -87,42 +87,6 @@ fun OrbitPowerControl(state: String, status: String, locked: Boolean, onClick: (
 }
 
 @Composable
-fun InterfaceStyleChoice(viewModel: MainViewModel) {
-    val style by viewModel.interfaceStyle.collectAsStateWithLifecycle()
-    OutlinedCard(Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp), colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(stringResource(R.string.orbit_interface), style = MaterialTheme.typography.titleMedium)
-            Text(stringResource(R.string.orbit_interface_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            BoxWithConstraints(Modifier.fillMaxWidth()) {
-                val stacked = maxWidth < 300.dp && LocalDensity.current.fontScale > 1.2f
-                val background = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.surfaceContainerHigh).padding(4.dp)
-                if (stacked) Column(background, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    InterfaceStyle.entries.forEach { option ->
-                        InterfaceStyleOption(style, option, Modifier.fillMaxWidth()) { viewModel.setInterfaceStyle(option) }
-                    }
-                } else Row(background, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    InterfaceStyle.entries.forEach { option ->
-                        InterfaceStyleOption(style, option, Modifier.weight(1f)) { viewModel.setInterfaceStyle(option) }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun InterfaceStyleOption(style: InterfaceStyle, option: InterfaceStyle, modifier: Modifier, onClick: () -> Unit) {
-    Surface(onClick = onClick, modifier = modifier.semantics { selected = style == option }, shape = RoundedCornerShape(11.dp),
-        color = if(style == option) MaterialTheme.colorScheme.primary else Color.Transparent,
-        contentColor = if(style == option) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant) {
-        Box(Modifier.heightIn(min = 48.dp).padding(horizontal = 6.dp, vertical = 12.dp), contentAlignment = Alignment.Center) {
-            Text(stringResource(if(option == InterfaceStyle.ORBIT) R.string.orbit_new else R.string.orbit_classic),
-                style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
-        }
-    }
-}
-
-@Composable
 fun OrbitBottomBar(selected: Int, onSelect: (Int) -> Unit) {
     Box(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).navigationBarsPadding().padding(horizontal = 14.dp, vertical = 8.dp), contentAlignment = Alignment.Center) {
         Surface(Modifier.widthIn(max = 600.dp).fillMaxWidth(), shape = RoundedCornerShape(24.dp),
@@ -154,7 +118,6 @@ fun OrbitSettingsScreen(viewModel: MainViewModel, onServers: () -> Unit, onAllSe
         contentWindowInsets = WindowInsets(0,0,0,0)) { padding ->
         Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
             Column(Modifier.widthIn(max = 600.dp).fillMaxWidth().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                InterfaceStyleChoice(viewModel)
                 OrbitSectionTitle(R.string.orbit_connection)
                 OrbitSettingsGroup {
                     OrbitSettingsRow(R.drawable.route_24px, R.string.orbit_routing) {
@@ -166,7 +129,9 @@ fun OrbitSettingsScreen(viewModel: MainViewModel, onServers: () -> Unit, onAllSe
                 }
                 OrbitSectionTitle(R.string.orbit_application)
                 OrbitSettingsGroup {
-                    OrbitSettingsRow(R.drawable.settings_24px, R.string.orbit_appearance, onClick = onAllSettings)
+                    OrbitSettingsRow(R.drawable.settings_24px, R.string.orbit_appearance) {
+                        context.startActivity(Intent(context, SettingsActivity::class.java).putExtra("APPEARANCE_ONLY", true))
+                    }
                     OrbitSettingsRow(R.drawable.terminal_24px, R.string.logs_title) { open(LogsActivity::class.java) }
                     OrbitSettingsRow(R.drawable.info_24px, R.string.orbit_components) { components = true }
                     OrbitSettingsRow(R.drawable.more_vert_24px, R.string.orbit_more, onClick = onAllSettings)

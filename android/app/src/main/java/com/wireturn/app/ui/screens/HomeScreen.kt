@@ -204,10 +204,17 @@ fun HomeScreen(
     val selectedGroupId by viewModel.activeConnectionGroupId.collectAsStateWithLifecycle()
     val connectionGroups by viewModel.connectionGroups.collectAsStateWithLifecycle()
     val selectedGroup = connectionGroups.find { it.id == selectedGroupId && com.wireturn.app.domain.ManualGroupPolicy.allows(it) }
+    val dnsGroupId by viewModel.activeMasterDnsGroupId.collectAsStateWithLifecycle()
+    val dnsGroups by viewModel.masterDnsGroups.collectAsStateWithLifecycle()
+    val selectedDnsGroup = dnsGroups.find { it.id == (if (connectionActive) proxySession?.masterDnsGroupId else dnsGroupId) }
+    val showProfilesDialog = rememberSaveable { mutableStateOf(false) }
     if (showSavedTests) {
         val shownProfile = profiles.find { it.id == (if (connectionActive) proxySession?.profileId else currentProfileId) }
             ?: profiles.find { it.id == currentProfileId }
-        if (selectedGroup != null) GroupSavedResultsDialog(selectedGroup, profiles, viewModel, { showSavedTests = false })
+        if (selectedDnsGroup != null) MasterDnsGroupDetailsDialog(selectedDnsGroup, viewModel,
+            onDismiss = { showSavedTests = false },
+            onSettings = { showSavedTests = false; onOpenProfiles?.invoke() ?: run { showProfilesDialog.value = true } })
+        else if (selectedGroup != null) GroupSavedResultsDialog(selectedGroup, profiles, viewModel, { showSavedTests = false })
         else if (shownProfile != null) ProfileProbeDetailsDialog(shownProfile, viewModel, { showSavedTests = false })
     }
     val displayedConfig = com.wireturn.app.domain.HomeSelection.config(
@@ -283,7 +290,7 @@ fun HomeScreen(
     val proxyTransfer by viewModel.proxyTransfer.collectAsStateWithLifecycle()
     val profilesGestureEnabled by viewModel.profilesGestureEnabled.collectAsStateWithLifecycle()
     val homeScrollState = rememberScrollState()
-    val showProfilesDialog = rememberSaveable { mutableStateOf(false) }
+
 
     // --- Swipe-up-to-open profiles shade ---
     // The real ModalBottomSheet lives in its own Android Window, so a single continuous touch

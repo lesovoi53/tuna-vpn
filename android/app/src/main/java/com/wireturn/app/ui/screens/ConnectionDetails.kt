@@ -138,11 +138,13 @@ fun ConnectionDetailsDialog(session: CoreServiceState.RunningSession?, config: C
                     ConnectionFact(R.string.cd_profile, session?.profileName ?: stringResource(R.string.cd_connection), sensitive = true),
                     ConnectionFact(R.string.cd_protocol, facts.protocol),
                     ConnectionFact(R.string.cd_duration, "%02d:%02d:%02d".format(elapsed/3600, elapsed/60%60, elapsed%60))), privacy)
-                FactCard(stringResource(R.string.cd_server), listOf(ConnectionFact(R.string.cd_address, facts.server,
+                val dnsPlan = config.masterDnsPoolPlan
+                if (dnsPlan != null) MasterDnsPlanDetails(dnsPlan, privacy)
+                else FactCard(stringResource(R.string.cd_server), listOf(ConnectionFact(R.string.cd_address, facts.server,
                     sensitive = true)), privacy)
                 ExitAddressCard(exit, privacy, refreshExit)
                 Text(stringResource(R.string.cd_trace_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                FactCard(stringResource(R.string.cd_parameters), facts.rows, privacy)
+                if (dnsPlan == null) FactCard(stringResource(R.string.cd_parameters), facts.rows, privacy)
                 val engine = (config.kernelConfig as? KernelConfig.Vpn)?.config?.engineLabel ?: facts.protocol
                 versions[engine]?.let { FactCard(stringResource(R.string.cd_connection_core), listOf(ConnectionFact(R.string.cd_core, it, labelText = engine))) }
                 when(val kernel = config.kernelConfig) {

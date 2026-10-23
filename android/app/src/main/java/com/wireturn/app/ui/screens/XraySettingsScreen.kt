@@ -334,7 +334,9 @@ fun XraySettingsScreen(
             if (profileName != null) Text("Профиль: $profileName", style = MaterialTheme.typography.bodyMedium)
             RoutingControlSection(routingEnabled, onEnableRouting, onDisableRouting)
             SubscriptionRouteChoice(activeSubscription, !privacyMode)
-            AppliedRoutingSummary(privacyMode)
+            RoutingSettingsGroup("Применённые настройки и DNS", "Состояние текущего подключения") {
+                AppliedRoutingSummary(privacyMode)
+            }
             Text("Движок правил и DNS: Xray", color = MaterialTheme.colorScheme.primary)
             if (usingSubscription) {
                 Text("Правила подписки: ${activeSubscription?.name}", style = MaterialTheme.typography.titleMedium)

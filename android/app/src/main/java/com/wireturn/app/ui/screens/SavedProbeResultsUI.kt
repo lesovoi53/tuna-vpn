@@ -161,6 +161,8 @@ fun GroupSavedResultsDialog(group: ConnectionGroup, profiles: List<Profile>, vie
     val history by viewModel.probeHistory.collectAsStateWithLifecycle()
     val run by viewModel.groupRunState.collectAsStateWithLifecycle()
     val urls by viewModel.profileUrlTestState.collectAsStateWithLifecycle()
+    val session by com.wireturn.app.CoreServiceState.session.collectAsStateWithLifecycle()
+    val coreStatus by com.wireturn.app.CoreServiceState.status.collectAsStateWithLifecycle()
     var testType by remember(group.id) { mutableStateOf<GroupTestType?>(null) }
     var chooseServer by remember { mutableStateOf(false) }
     val idle = !group.repairRequired && !run.busy && !run.automatic && !urls.busy
@@ -169,6 +171,15 @@ fun GroupSavedResultsDialog(group: ConnectionGroup, profiles: List<Profile>, vie
         Surface(shape = MaterialTheme.shapes.large) {
             Column(Modifier.padding(20.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(group.name, style = MaterialTheme.typography.titleLarge)
+                val actual = session?.takeIf { it.profileId in group.memberIds &&
+                    (coreStatus == com.wireturn.app.CoreStatus.Connected || coreStatus == com.wireturn.app.CoreStatus.Suppressed) }
+                Text(actual?.let { "Подключён: ${it.profileName}" } ?: "Нет подтверждённого подключения участника группы",
+                    style = MaterialTheme.typography.titleSmall)
+                if (run.groupId == group.id && !run.busy && run.message.isNotBlank()) {
+                    Text(run.message, style = MaterialTheme.typography.bodySmall)
+                    Text("Проверка каждые ${group.intervalSeconds} с · подтверждений: ${group.confirmations} · удержание: ${group.holdSeconds} с",
+                        style = MaterialTheme.typography.bodySmall)
+                }
                 if (group.repairRequired) Text("Состав группы изменился после обновления. Проверьте участников и маршрутизацию в редакторе, затем сохраните группу.", color = MaterialTheme.colorScheme.error)
                 Text("Сохранённые результаты URL-test. Просмотр не запускает проверку.", style = MaterialTheme.typography.bodySmall)
                 group.memberIds.forEach { id ->
