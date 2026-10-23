@@ -8,6 +8,26 @@ import org.junit.Test
 import java.util.Base64
 
 class MasterDnsConfigTest {
+    @Test fun duplicateDomainsAreRejectedBeforeImportAndNativeConfig() {
+        for (domains in listOf(listOf("a.test", "a.test"), listOf("a.test", "A.test"))) {
+            val duplicate = example.copy(domains = domains)
+            assertFalse(duplicate.isValid())
+            assertThrows(IllegalArgumentException::class.java) { duplicate.toml("127.0.0.1:1080", "u", "p", true) }
+            val raw = JsonParser.parseString(String(Base64.getDecoder().decode(example.toUri().substringAfter("://")))).asJsonObject
+            raw.getAsJsonObject("profile").add("domains", Gson().toJsonTree(domains))
+            assertNull(MasterDnsConfig.parse("stormdns://" + Base64.getEncoder().encodeToString(raw.toString().toByteArray())))
+        }
+        assertTrue(example.copy(domains = listOf("A.test", "b.test")).isValid())
+    }
+
+    @Test fun runtimeResolversCanonicalizeIpv6AndKeepDifferentPorts() {
+        val values = example.copy(resolvers = "[2001:db8::53]\n2001:db8::53\n192.0.2.53:53\n192.0.2.53:5353")
+        values.validate()
+        assertEquals(listOf("[2001:db8:0:0:0:0:0:53]:53", "192.0.2.53:53", "192.0.2.53:5353"), values.runtimeResolverList())
+        assertEquals(values.resolvers, MasterDnsConfig.parse(values.toUri())!!.resolvers)
+        assertEquals(listOf("[2001:db8:0:0:0:0:0:53]:53"), values.copy(localResolvers = "[2001:db8::53]", useLocalResolvers = true).runtimeResolverList())
+    }
+
     @Test fun domainSelectionsRoundTripAndNeverCrossProductOrFallback() {
         val config = example.copy(domains = listOf("a.example.net", "b.example.net", "off.example.net"),
             localResolvers = "9.9.9.9", useLocalResolvers = true,

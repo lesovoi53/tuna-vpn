@@ -843,7 +843,7 @@ class CoreService : Service() {
             val supervisorScope = this
             val prefs = AppPreferences(applicationContext)
             var lastVpnSettings: VpnSettings? = null
-            var lastTarget: VpnTarget? = null
+            val targetState = com.wireturn.app.kernel.VpnTargetState<VpnTarget>()
             // Upstream loss retains the established VPN route until explicit Stop.
 
             // Retries a failed establish() (e.g. another app still held VPN ownership) on a
@@ -910,9 +910,8 @@ class CoreService : Service() {
                 withContext(Dispatchers.Main) {
                     val target = bundle.signal.target
                     val settingsChanged = lastVpnSettings != null && lastVpnSettings != bundle.vpnSettings
-                    val targetChanged = lastTarget != null && lastTarget != target
+                    val targetChanged = target != null && targetState.needsUpdate(target)
                     lastVpnSettings = bundle.vpnSettings
-                    lastTarget = target
 
                     if (!bundle.vpnSettings.enabled) {
                         // Explicit user opt-out - stop immediately, no grace period.
@@ -941,14 +940,18 @@ class CoreService : Service() {
                             // a kill switch should be up before it's needed.
                             if (VpnServiceState.state.value != VpnState.Starting) {
                                 startService(startIntent(target))
+                                targetState.markRequested(target)
                             }
                         }
                         vpnError && (settingsChanged || targetChanged) -> {
+                            pendingVpnRetryJob?.cancel()
+                            pendingVpnRetryJob = null
                             AppLogsState.addLog(getString(R.string.log_vpn_restarting_config))
                             if (settingsChanged) {
                                 startService(stopIntent())
                                 startService(startIntent(target))
                             } else startService(retryIntent(target))
+                            targetState.markRequested(target)
                         }
                         vpnError && pendingVpnRetryJob == null -> {
                             // Nothing about the target/settings changed, so nothing else here
@@ -959,6 +962,7 @@ class CoreService : Service() {
                                 withContext(Dispatchers.Main) {
                                     if (VpnServiceState.state.value is VpnState.Error) {
                                         startService(retryIntent(target))
+                                        targetState.markRequested(target)
                                     }
                                 }
                             }
@@ -969,12 +973,14 @@ class CoreService : Service() {
                             AppLogsState.addLog(getString(R.string.log_vpn_restarting_config))
                             startService(stopIntent())
                             startService(startIntent(target))
+                            targetState.markRequested(target)
                         }
                         vpnRunning && targetChanged -> {
                             // Only the upstream SOCKS5 hop moved (e.g. switched profiles) - hot-
                             // swap the relay's target without a fresh establish(), so the tun
                             // interface (and the device's default network) never blips.
                             startService(retargetIntent(target))
+                            targetState.markRequested(target)
                         }
                     }
                 }

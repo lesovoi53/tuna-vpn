@@ -36,6 +36,10 @@ data class MasterDnsConfig(
     fun localResolverList() = domains.flatMap(::localResolverList).distinct()
     fun resolverList(domain: String) = if (useLocalResolvers == true) localResolverList(domain) else profileResolverList()
     fun resolverList() = domains.flatMap(::resolverList).distinct()
+    /** Native resolver files require canonical IP:port, including bracketed IPv6. */
+    fun runtimeResolverList() = resolverList().map {
+        requireNotNull(MasterDnsEndpoint.parse(it)) { "Некорректный резолвер" }.canonical
+    }.distinct()
     fun effectiveDomainResolvers(): Map<String, List<String>> = domains.associateWith(::resolverList)
     fun validate() {
         localPool?.validate()
@@ -43,6 +47,9 @@ data class MasterDnsConfig(
         require(domains.isNotEmpty() && domains.size <= 16 && domains.all {
             it.length in 1..253 && it.split('.').all { label -> label.length in 1..63 && label.matches(Regex("[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?")) }
         }) { "Проверьте домены туннеля" }
+        require(domains.map { it.lowercase(Locale.ROOT) }.distinct().size == domains.size) {
+            "Домены туннеля не должны повторяться (регистр не учитывается)"
+        }
         require(key.isNotBlank() && key.length <= 4096 && encryption in 0..5) { "Проверьте ключ и метод шифрования" }
         validateResolvers(profileResolverList())
         if (localResolvers != null && localResolvers.isNotBlank()) validateResolvers(parseResolvers(localResolvers))

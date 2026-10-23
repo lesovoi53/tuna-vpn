@@ -14,19 +14,20 @@
 
 ## Скачать
 
-Предварительная версия: [1.65.3-rc1 — исправление экрана DNS-резолверов и отдельные наборы для доменов](https://github.com/lesovoi53/tuna-vpn/releases/tag/v1.65.3-rc1).
-Внутреннее имя проверенного APK — `1.65.3-dns-test3`. [Проверки и ограничения](docs/releases/1.65.3-rc1.md).
+Стабильный выпуск [1.65.3](https://github.com/lesovoi53/tuna-vpn/releases/tag/v1.65.3).
+Отдельные резолверы для доменов MasterDnsVPN и исправления подключения, импорта и подписок.
+[Изменения, проверки и границы совместимости](docs/releases/1.65.3.md).
 
 | Продукт | Готовый файл | Для чего |
 | --- | --- | --- |
-| **TUNA VPN 1.65.2** | [Android APK, arm64-v8a](https://github.com/lesovoi53/tuna-vpn/releases/download/v1.65.2/TUNA-VPN-1.65.2-arm64-v8a.apk) | Подключения, подписки, URL-test, маршрутизация и DNS |
-| **TUNA Routing Builder 2.4** | [Windows EXE, один файл](https://github.com/lesovoi53/tuna-vpn/releases/download/v1.65.2/TunaRoutingBuilder-v2.4.exe) | Редактор правил, приложений и DNS; экспорт `tuna://` |
-| Проверка файлов | [SHA256SUMS.txt](https://github.com/lesovoi53/tuna-vpn/releases/download/v1.65.2/SHA256SUMS.txt) | Контроль целостности скачивания |
-| Исходники выпуска | [TUNA-VPN-1.65.2-sources.zip](https://github.com/lesovoi53/tuna-vpn/releases/download/v1.65.2/TUNA-VPN-1.65.2-sources.zip) | Публичное дерево и закреплённые upstream-архивы |
+| **TUNA VPN 1.65.3** | [Android APK, arm64-v8a](https://github.com/lesovoi53/tuna-vpn/releases/download/v1.65.3/TUNA-VPN-1.65.3-arm64-v8a.apk) | Подключения, подписки, URL-test, маршрутизация и DNS |
+| **TUNA Routing Builder 2.4** | [Windows EXE, один файл](https://github.com/lesovoi53/tuna-vpn/releases/download/v1.65.3/TunaRoutingBuilder-v2.4.exe) | Редактор правил, приложений и DNS; экспорт `tuna://` |
+| Проверка файлов | [SHA256SUMS.txt](https://github.com/lesovoi53/tuna-vpn/releases/download/v1.65.3/SHA256SUMS.txt) | Контроль целостности скачивания |
+| Исходники выпуска | [TUNA-VPN-1.65.3-sources.zip](https://github.com/lesovoi53/tuna-vpn/releases/download/v1.65.3/TUNA-VPN-1.65.3-sources.zip) | Публичное дерево и закреплённые upstream-архивы |
 
 Клиент не продаёт доступ и не содержит личных VPN-серверов. Нужны свои профили или доверенная подписка. EXE — **редактор правил**, а не Windows VPN-клиент.
 
-> APK 1.65.2 — release-сборка без отладки, package `app.tunaturn.android.debug` сохранён для обновления. На Android 13+ применяется новый production-сертификат с проверяемой ротацией; Android 8–12 сохраняют прежнюю подпись. [Подпись и обновление](docs/development/release.md). Автообновление пока отключено: скачайте APK вручную и установите поверх существующего приложения. EXE не имеет Authenticode-подписи. Не удаляйте данные ради обхода ошибки подписи.
+> APK 1.65.3 — release-сборка без отладки, package `app.tunaturn.android.debug` сохранён для обновления. На Android 13+ применяется новый production-сертификат с проверяемой ротацией; Android 8–12 сохраняют прежнюю подпись. [Подпись и обновление](docs/development/release.md). Автообновление пока отключено: скачайте APK вручную и установите поверх существующего приложения. EXE не имеет Authenticode-подписи. Не удаляйте данные ради обхода ошибки подписи.
 
 ## Поддерживаемые протоколы
 

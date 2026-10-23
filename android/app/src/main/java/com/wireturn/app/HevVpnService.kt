@@ -18,9 +18,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -334,15 +336,17 @@ misc:
                 stopSelf()
                 return
             }
-            // Take ownership before memory allocation or a suspension can fail. stopVpn/onDestroy
-            // must always be able to close an established descriptor exactly once.
-            synchronized(this@HevVpnService) {
-                tunInterface = established
+            // establish() is synchronous: cancellation cannot stop it returning a new FD
+            // after Stop/onDestroy have already completed their descriptor cleanup.
+            val startupContext = currentCoroutineContext()
+            if (!com.wireturn.app.kernel.adoptTunDescriptor(this@HevVpnService, established,
+                    isCurrent = { startupContext.isActive && !isStopping.get() }) { descriptor ->
+                tunInterface = descriptor
                 activeTunMtu = tunMtu
                 VpnServiceState.tunEstablished = true
-            }
-            vpnEstablished = true
-            activeTunAddresses = addresses
+                vpnEstablished = true
+                activeTunAddresses = addresses
+            }) return
 
             val tunFd = established.fd
             trace("establish success fd=$tunFd")
@@ -386,9 +390,11 @@ misc:
 
     private fun stopVpn() {
         trace("stopVpn startJobActive=${startJob?.isActive} hevRunning=${nativeRuntime.isRunning} fd=${runCatching { tunInterface?.fd }.getOrNull()}")
-        isStopping.set(true)
+        synchronized(this@HevVpnService) {
+            isStopping.set(true)
+            vpnEstablished = false
+        }
         startJob?.cancel()
-        vpnEstablished = false
 
         serviceScope.launch {
             nativeLock.withLock {
@@ -427,9 +433,11 @@ misc:
         super.onDestroy()
         // Do the Idle reset and final notification refresh inline (not via stopVpn(), whose
         // cleanup coroutine cancelling the scope right after would kill before it runs).
-        isStopping.set(true)
+        synchronized(this@HevVpnService) {
+            isStopping.set(true)
+            vpnEstablished = false
+        }
         startJob?.cancel()
-        vpnEstablished = false
         unregisterUnderlyingNetworkTracking()
 
         serviceScope.launch {

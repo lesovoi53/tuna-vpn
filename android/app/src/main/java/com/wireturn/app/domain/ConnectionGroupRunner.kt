@@ -127,7 +127,16 @@ class ConnectionGroupRunner(
         if (!ManualGroupPolicy.allows(group)) return
         val cleanup = stoppingJob
         if (job?.isActive == true) {
-            if (!state.value.busy) scope.launch { job?.cancelAndJoin(); run(group, forceTest, connectAfterTest) }
+            if (!state.value.busy) {
+                val previous = job
+                val replacementGeneration = ++generation
+                scope.launch {
+                    previous?.cancelAndJoin()
+                    // Stop or a newer selection may arrive while retirement is suspended.
+                    // A queued replacement must not regain authority after either command.
+                    if (generation == replacementGeneration) run(group, forceTest, connectAfterTest)
+                }
+            }
             return
         }
         val previous = state.value.takeIf { it.groupId == group.id }?.selectedId?.takeIf { it in group.memberIds }

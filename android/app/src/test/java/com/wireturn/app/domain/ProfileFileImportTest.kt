@@ -78,4 +78,37 @@ class ProfileFileImportTest {
         assertEquals(2, parsed.profiles.size)
         assertEquals(parseWgProfileImport(wg)!!.profiles.single(), parsed.profiles.first())
     }
+
+    @Test fun exportedTunaEnvelopeAndLegacyAliasesImportFromTextFiles() {
+        val original = LegacyProfileImport.parse("""{"id":"shared-id","name":"Shared title","uri":"${profileUri()}","keepSubscriptionAddress":true}""", gson).profiles.single()
+        // The share UI encodes getProfilesJson(), which is an array of complete profiles.
+        val exported = gson.toJson(listOf(original))
+        val encoded = ProfileEncoder.encodeForSharing(exported)!!
+        for (scheme in listOf("tuna", "wireturn", "wt", "TUNA")) {
+            val imported = ProfileFileImport.parse("$scheme://$encoded", gson)
+            assertEquals(listOf(original), imported.profiles)
+            assertEquals(0, imported.skippedEntries)
+        }
+    }
+
+    @Test fun malformedOrUnsupportedEnvelopesDoNotHideValidFileNeighbors() {
+        val valid = "tuna://" + ProfileEncoder.encode("""{"name":"Shared","uri":"${profileUri()}"}""")
+        val versioned = "tuna://" + ProfileEncoder.encode("""{"schema":"future.schema","profiles":[]}""")
+        val result = ProfileFileImport.parse("tuna://invalid\n$valid\n$versioned\n${profileUri()}", gson)
+        assertEquals(2, result.profiles.size)
+        assertEquals(2, result.skippedEntries)
+        assertEquals(2, result.importIssues.orEmpty().size)
+    }
+
+    @Test fun compressedFileEnvelopeCannotBypassTheExpandedSizeLimit() {
+        val bytes = java.io.ByteArrayOutputStream()
+        java.util.zip.DeflaterOutputStream(bytes).use { output ->
+            val chunk = ByteArray(8192) { ' '.code.toByte() }
+            repeat(ProfileEncoder.MAX_DECODED_BYTES / chunk.size + 1) { output.write(chunk) }
+        }
+        val link = "wt://" + Base64.getUrlEncoder().withoutPadding().encodeToString(bytes.toByteArray())
+        val parsed = ProfileFileImport.parse(link, gson)
+        assertTrue(parsed.profiles.isEmpty())
+        assertEquals(1, parsed.skippedEntries)
+    }
 }

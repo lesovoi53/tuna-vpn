@@ -51,6 +51,28 @@ class AdditionalVpnProtocolsTest {
         assertNull(VpnConfig.parse(p.uri + "&security=none"))
     }
 
+    @Test fun trojanGrpcAuthorityImportsAndSurvivesEditingAndXrayGeneration() {
+        val uri = "trojan://fixture%2Bpassword@vpn.example:443?security=tls&type=grpc&serviceName=tunnel&authority=grpc.example#Fixture"
+        val parsed = (KernelConfig.parseUri(uri) as? KernelConfig.Vpn)?.config
+        assertNotNull(parsed)
+        val profile = requireNotNull(parsed)
+        assertEquals("xray", profile.engine)
+        val generated = XrayVpnConfig.generate(profile, "127.0.0.1:22001", "u", "p", false)
+        assertEquals(uri, generated["link"].asString)
+        val edited = VpnEditorDraft.from(uri).change("port", "8443").toUri()
+        assertTrue(edited.contains("authority=grpc.example"))
+        assertNotNull(KernelConfig.parseUri(edited))
+        assertFalse(profile.copy(engine = "sing-box").isValid())
+        assertTrue(runCatching { profile.outbound() }.isFailure)
+    }
+
+    @Test fun trojanAuthorityRequiresGrpcAndCannotBeSilentlyIgnored() {
+        for (transport in listOf("tcp", "ws", "httpupgrade")) {
+            assertNull(VpnConfig.parse("trojan://fixture@vpn.example:443?security=tls&type=$transport&authority=grpc.example"))
+        }
+        assertNull(VpnConfig.parse("trojan://fixture@vpn.example:443?type=grpc&authority=%0A"))
+    }
+
     @Test fun tuicValidatesQuicOptionsAndSeparateCredentialFields() {
         val p = VpnConfig.parse("tuic://$uuid:p%3A%2B@vpn.example:443?congestion_control=bbr&udp_relay_mode=native&allow_insecure=0&alpn=h3%2Cspdy%2F3.1")!!
         assertEquals("p:+", p.outbound()["password"].asString)

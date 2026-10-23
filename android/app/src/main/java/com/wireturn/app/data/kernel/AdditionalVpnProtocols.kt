@@ -30,7 +30,7 @@ object AdditionalVpnProtocols {
         return "ss://${enc(plain.substringBefore(':'))}:${enc(plain.substringAfter(':'))}@${expanded.substringAfterLast('@')}$suffix"
     }
 
-    fun outbound(profile: VpnConfig): JsonObject {
+    fun outbound(profile: VpnConfig, forXrayValidation: Boolean = false): JsonObject {
         val u = URI(normalize(profile.uri))
         val protocol = profile.protocol
         require(protocol in protocols && profile.uri.length in 1..32768)
@@ -43,7 +43,7 @@ object AdditionalVpnProtocols {
         }
         val tlsKeys = setOf("security", "sni", "alpn", "fp", "allowInsecure", "allow_insecure", "insecure")
         val allowed = when (protocol) {
-            "trojan" -> tlsKeys + setOf("type", "path", "host", "serviceName")
+            "trojan" -> tlsKeys + setOf("type", "path", "host", "serviceName", "authority")
             "tuic" -> tlsKeys + setOf("congestion_control", "udp_relay_mode", "zero_rtt_handshake", "heartbeat", "udp_over_stream")
             "anytls" -> tlsKeys + setOf("idle_session_check_interval", "idle_session_timeout", "min_idle_session")
             else -> setOf("type")
@@ -94,6 +94,13 @@ object AdditionalVpnProtocols {
             "trojan" -> {
                 val transport = q["type"] ?: "tcp"
                 require(transport in setOf("tcp", "ws", "grpc", "httpupgrade")) { "Неподдерживаемый транспорт Trojan" }
+                q["authority"]?.let { authority ->
+                    require(transport == "grpc") { "authority требует транспорта gRPC" }
+                    require(authority.length <= 1024 && authority.none { it.isWhitespace() || it.isISOControl() }) { "Некорректный gRPC authority" }
+                    // Xray receives the original URI, including authority. The pinned
+                    // sing-box transport has no independent authority option: never drop it.
+                    require(forXrayValidation) { "Trojan gRPC authority требует Xray" }
+                }
                 require(transport != "tcp" || q.keys.none { it in setOf("path", "host", "serviceName") }) { "Поля транспорта требуют WS/gRPC/HTTPUpgrade" }
                 if (transport != "tcp") out.add("transport", JsonObject().apply {
                     addProperty("type", transport)

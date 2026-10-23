@@ -28,7 +28,12 @@ internal object ProfileFileImport {
             val line = rawLine.trim()
             if (line.isEmpty()) return@forEachIndexed
             val bundle = LegacyProfileImport.itemOrNull {
-                parseWgProfileImport(line) ?: run {
+                if (line.substringBefore("://").lowercase() in setOf("tuna", "wireturn", "wt") && "://" in line) {
+                    val decoded = requireNotNull(ProfileEncoder.decode(line.substringAfter("://"))) {
+                        "Invalid or oversized profile envelope"
+                    }
+                    LegacyProfileImport.parse(decoded, gson, defaultName)
+                } else parseWgProfileImport(line) ?: run {
                     // Match JSON's supported URI boundary; file import never fetches a URL.
                     val config = requireNotNull(KernelConfig.parseUri(line)) { "Unsupported or invalid profile URI" }
                     val kernel = KernelRegistry.get(config.variant)

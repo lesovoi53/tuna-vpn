@@ -41,7 +41,7 @@ object XrayVpnConfig {
     fun validate(profile: VpnConfig) {
         if (profile.isRawXray) { RawXrayConfig.validate(profile); return }
         if (profile.protocol == "trojan") {
-            val base = com.wireturn.app.data.kernel.AdditionalVpnProtocols.outbound(profile)
+            val base = com.wireturn.app.data.kernel.AdditionalVpnProtocols.outbound(profile, forXrayValidation = true)
             require(base.getAsJsonObject("tls")["insecure"]?.asBoolean != true) { "Xray: отключение проверки TLS не поддержано адаптером" }
             require(parameters(profile.uri).keys.none { it in setOf("insecure", "allow_insecure") }) { "Для Xray используйте allowInsecure=0" }
             return

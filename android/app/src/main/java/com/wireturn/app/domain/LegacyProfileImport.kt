@@ -56,8 +56,13 @@ internal object LegacyProfileImport {
                 }) { "Unsupported legacy kernel" }
                 val profile = gson.fromJson(entry, Profile::class.java)
                 val sanitized = sanitize(profile, defaultName)
-                if ((profile.id as String?).isNullOrBlank() && missingId != null) {
-                    sanitized.copy(id = missingId(index, entries.size))
+                if ((profile.id as String?).isNullOrBlank()) {
+                    // A locally generated ID is not an authoritative server identity.
+                    // Stable content IDs handle unchanged JSON; the derived marker lets
+                    // unique endpoints retain local edits after a rename or retuning.
+                    val derivedId = missingId?.invoke(index, entries.size) ?: java.util.UUID.nameUUIDFromBytes(
+                        entry.toString().toByteArray(Charsets.UTF_8)).toString()
+                    sanitized.copy(id = derivedId, subscriptionUriIdentity = true)
                 } else sanitized
             }.also { if (it == null) {
                 skipped++

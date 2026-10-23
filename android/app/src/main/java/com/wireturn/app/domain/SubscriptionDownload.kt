@@ -16,7 +16,7 @@ internal data class SubscriptionResponse(val code: Int, val bytes: ByteArray, va
 internal object SubscriptionDownload {
     suspend fun fetch(url: String, proxy: Proxy, requireTunnel: Boolean, userAgent: String,
                       totalTimeoutMs: Long = 120_000,
-                      factory: (Proxy) -> HttpURLConnection = { URL(url).openConnection(it) as HttpURLConnection }): SubscriptionResponse {
+                      factory: (URL, Proxy) -> HttpURLConnection = { address, route -> address.openConnection(route) as HttpURLConnection }): SubscriptionResponse {
         require(totalTimeoutMs > 0)
         try {
             return withTimeout(totalTimeoutMs) {
@@ -28,9 +28,11 @@ internal object SubscriptionDownload {
                             try { awaitCancellation() } finally { active.getAndSet(null)?.disconnect() }
                         }
                         try {
-                            val connection = SubscriptionHttpTransport.open(url, proxy, requireTunnel, userAgent) { route ->
+                            // Every redirect and permitted fallback must replace the active
+                            // connection before blocking on headers or reading its body.
+                            val connection = SubscriptionHttpTransport.openChain(url, proxy, requireTunnel, userAgent) { address, route ->
                                 owner.ensureActive()
-                                factory(route).also {
+                                factory(address, route).also {
                                     active.set(it)
                                     // Covers cancellation between creating and registering the connection.
                                     owner.ensureActive()
@@ -41,7 +43,9 @@ internal object SubscriptionDownload {
                             if (code == HttpURLConnection.HTTP_OK) connection.inputStream.use { input ->
                                 val buffer = ByteArray(8192)
                                 while (true) {
+                                    owner.ensureActive()
                                     val count = input.read(buffer)
+                                    owner.ensureActive()
                                     if (count < 0) break
                                     require(output.size() + count <= 4 * 1024 * 1024) { "Subscription too large" }
                                     output.write(buffer, 0, count)

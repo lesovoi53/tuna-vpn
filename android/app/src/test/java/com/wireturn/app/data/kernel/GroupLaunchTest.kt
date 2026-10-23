@@ -9,6 +9,74 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class GroupLaunchTest {
+    private class QueuedDispatcher : CoroutineDispatcher() {
+        private val queue = java.util.ArrayDeque<Runnable>()
+        override fun dispatch(context: kotlin.coroutines.CoroutineContext, block: Runnable) {
+            queue.add(block)
+        }
+        fun step() { check(queue.isNotEmpty()); queue.removeFirst().run() }
+        fun drain() {
+            var iterations = 0
+            while (queue.isNotEmpty()) {
+                check(iterations++ < 100) { "Unexpected busy loop" }
+                step()
+            }
+        }
+    }
+
+    @Test fun explicitStopRevokesQueuedAutomaticReplacement() {
+        val dispatcher = QueuedDispatcher()
+        val scope = CoroutineScope(SupervisorJob() + dispatcher)
+        try {
+            val runtime = Runtime()
+            runtime.status.value = CoreStatus.Connected
+            val runner = ConnectionGroupRunner(runtime, scope) { _, id, _, _ ->
+                GroupMeasurement(id, 10, measuredAt = System.currentTimeMillis())
+            }
+            dispatcher.drain()
+            val group = runtime.group.copy(automatic = true, intervalSeconds = 3600)
+            runner.connect(group)
+            dispatcher.drain()
+            assertFalse(runner.state.value.busy)
+            assertTrue(runner.state.value.automatic)
+            val before = runtime.activated.toList()
+            assertEquals(1, before.size)
+
+            runner.connect(group)
+            dispatcher.step() // Replacement waits for the previous job's cancellation.
+            runner.release() // Mirrors CoreService's explicit Stop action.
+            runtime.status.value = CoreStatus.Idle
+            dispatcher.drain()
+
+            assertEquals("A queued replacement must not reactivate after Stop", before, runtime.activated)
+            assertFalse(runner.state.value.automatic)
+            assertFalse(runner.hasPendingWork)
+        } finally { scope.cancel(); dispatcher.drain() }
+    }
+
+    @Test fun newerManualSelectionRevokesQueuedAutomaticReplacement() {
+        val dispatcher = QueuedDispatcher()
+        val scope = CoroutineScope(SupervisorJob() + dispatcher)
+        try {
+            val runtime = Runtime()
+            runtime.status.value = CoreStatus.Connected
+            val runner = ConnectionGroupRunner(runtime, scope) { _, id, _, _ ->
+                GroupMeasurement(id, 10, measuredAt = System.currentTimeMillis())
+            }
+            dispatcher.drain()
+            val group = runtime.group.copy(automatic = true, intervalSeconds = 3600)
+            runner.connect(group)
+            dispatcher.drain()
+            runner.connect(group)
+            dispatcher.step()
+            runner.selectMember(group, "b")
+            dispatcher.drain()
+            assertEquals(listOf("a", "b"), runtime.activated)
+            assertEquals("b", runner.state.value.selectedId)
+            assertFalse(runner.state.value.automatic)
+        } finally { scope.cancel(); dispatcher.drain() }
+    }
+
     @Test fun legacySpeedGroupsCannotProbeActivateOrStartAutomaticWork() = runBlocking {
         val scope = CoroutineScope(coroutineContext + SupervisorJob())
         try {

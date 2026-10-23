@@ -215,7 +215,8 @@ class MasterDnsResolversActivity : ComponentActivity() {
                                         modifier = Modifier.fillMaxWidth()) { Text("Проверить все домены") }
 
                                 } }
-                                items(config.domains, key = { "domain:" + it }) { domain ->
+                                // Old stored profiles may predate duplicate-domain validation.
+                                items(config.domains.distinctBy { it.lowercase(java.util.Locale.ROOT) }, key = { "domain:" + it }) { domain ->
                                     DnsPanel {
                                         Text(domain, style = MaterialTheme.typography.titleMedium)
                                         val effective = config.resolverList(domain)

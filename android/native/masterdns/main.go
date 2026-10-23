@@ -55,19 +55,13 @@ func main() {
 		fmt.Println("TUNA_MASTER_ERROR configuration rejected")
 		os.Exit(1)
 	}
+	if err = prepareRuntimeResolverEndpoints(&cfg); err != nil {
+		fmt.Println("TUNA_MASTER_ERROR resolver endpoints rejected")
+		os.Exit(1)
+	}
 	if *validate {
 		fmt.Println("TUNA_MASTER_VALID")
 		return
-	}
-	if *scan || *diagnostic {
-		// Upstream intentionally deduplicates its resolver file by IP only. The scan
-		// relay uses one localhost IP with different ports, so restore endpoint identity
-		// only for explicit standalone operations before building the connection map.
-		cfg.Resolvers, err = scanResolverEndpoints(cfg.ResolversPath())
-		if err != nil {
-			fmt.Println("TUNA_MASTER_ERROR scan resolvers rejected")
-			os.Exit(1)
-		}
 	}
 	if *diagnostic {
 		if err = validateDiagnosticConfig(cfg); err != nil {
@@ -114,6 +108,21 @@ func validateDiagnosticConfig(cfg config.ClientConfig) error {
 			return fmt.Errorf("diagnostic requires loopback relays")
 		}
 	}
+	return nil
+}
+
+func prepareRuntimeResolverEndpoints(cfg *config.ClientConfig) error {
+	// Explicit per-domain selections already provide their exact canonical union.
+	// Otherwise restore IP+port identity after upstream's IP-only file loader,
+	// for regular connections and pool children as well as isolated scans.
+	if cfg.TunaDomainResolvers != nil {
+		return nil
+	}
+	endpoints, err := scanResolverEndpoints(cfg.ResolversPath())
+	if err != nil {
+		return err
+	}
+	cfg.Resolvers = endpoints
 	return nil
 }
 

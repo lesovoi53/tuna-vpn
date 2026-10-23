@@ -88,7 +88,7 @@ data class VpnEditorDraft(val original: String, val fields: List<VpnEditorField>
             val tlsLabels = linkedMapOf("security" to "Защита TLS", "sni" to "SNI", "alpn" to "ALPN через запятую", "insecure" to "Пропустить проверку TLS", "allowInsecure" to "Пропустить проверку TLS (Xray)", "allow_insecure" to "Пропустить проверку TLS")
             val labels = when (protocol) {
                 "shadowsocks" -> linkedMapOf("type" to "Транспорт (tcp)")
-                "trojan" -> LinkedHashMap(tlsLabels).apply { putAll(mapOf("type" to "Транспорт", "path" to "Путь", "host" to "HTTP Host", "serviceName" to "Сервис gRPC", "fp" to "TLS fingerprint")) }
+                "trojan" -> LinkedHashMap(tlsLabels).apply { putAll(mapOf("type" to "Транспорт", "path" to "Путь", "host" to "HTTP Host", "serviceName" to "Сервис gRPC", "authority" to "gRPC authority (Xray)", "fp" to "TLS fingerprint")) }
                 "tuic" -> LinkedHashMap(tlsLabels).apply { putAll(mapOf("congestion_control" to "Контроль перегрузки", "udp_relay_mode" to "Передача UDP", "zero_rtt_handshake" to "0-RTT", "udp_over_stream" to "UDP через поток", "heartbeat" to "Heartbeat (например 10s)")) }
                 "anytls" -> LinkedHashMap(tlsLabels).apply { putAll(mapOf("idle_session_check_interval" to "Интервал проверки сессий", "idle_session_timeout" to "Таймаут неактивной сессии", "min_idle_session" to "Минимум неактивных сессий", "fp" to "TLS fingerprint")) }
                 "naive" -> linkedMapOf("sni" to "SNI", "security" to "Защита TLS", "extra-headers" to "HTTP-заголовки (JSON)",

@@ -26,7 +26,7 @@ object MasterDnsKernel : Kernel {
     override fun displayNameFromUri(uri: String) = MasterDnsConfig.parse(uri)?.name
     fun writeConfig(directory: File, c: MasterDnsConfig, listen: String, user: String, password: String, auth: Boolean): File {
         directory.mkdirs()
-        MemoryConfigs.write(File(directory, "client_resolvers.txt"), c.resolverList().joinToString("\n"))
+        MemoryConfigs.write(File(directory, "client_resolvers.txt"), c.runtimeResolverList().joinToString("\n"))
         return MemoryConfigs.write(File(directory, "client.toml"), c.toml(listen,user,password,auth))
     }
     override fun buildCommand(ctx: KernelCommandContext, cfg: ClientConfig): List<String> {
