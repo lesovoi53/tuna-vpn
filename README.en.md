@@ -10,6 +10,12 @@ Release 1.65.3 includes per-domain MasterDnsVPN resolvers and fixes for connecti
 
 VPN profiles: **VLESS, Hysteria2, Snell, Mieru, Trojan, Shadowsocks, TUIC, AnyTLS, NaiveProxy, WireGuard, AmneziaWG and TrustTunnel**. Dedicated connection types: **qWDTT, MasterDnsVPN / StormDNS and WebDAV tunneling**. Full Xray JSON import is also supported; it is a configuration format, not a separate protocol. Compatibility depends on the profile parameters and bundled core. [Protocol details](docs/user/protocols.md).
 
+## DNS tunnel server
+
+**[TUNA DNS Tunnel](https://github.com/lesovoi53/tuna-dns-tunnel)** is the standalone Linux server installer for MasterDnsVPN / StormDNS connections. It does not require X-Manager. Its console manages domains, encryption, exported client settings and Direct or an existing external SOCKS5 proxy.
+
+Export a separate `stormdns://` link per DNS zone or one `tuna://` link containing all domains of the same server, then import it into TUNA VPN. Multiple domains on one server are distinct from a group of independent servers. Public recursive resolvers require delegated DNS zones and a reachable authoritative server on UDP port 53. See the server repository for installation, upstream attribution and validation limits; compatibility depends on the client version.
+
 ## CDN and Cloudflare categories
 
 List placement uses the **individual profile name**, including names supplied by a subscription, not automatic IP/DNS/CDN detection:
