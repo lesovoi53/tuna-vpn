@@ -14,6 +14,9 @@
 
 ## Скачать
 
+Предварительная версия: [1.65.3-rc1 — исправление экрана DNS-резолверов и отдельные наборы для доменов](https://github.com/lesovoi53/tuna-vpn/releases/tag/v1.65.3-rc1).
+Внутреннее имя проверенного APK — `1.65.3-dns-test3`. [Проверки и ограничения](docs/releases/1.65.3-rc1.md).
+
 | Продукт | Готовый файл | Для чего |
 | --- | --- | --- |
 | **TUNA VPN 1.65.2** | [Android APK, arm64-v8a](https://github.com/lesovoi53/tuna-vpn/releases/download/v1.65.2/TUNA-VPN-1.65.2-arm64-v8a.apk) | Подключения, подписки, URL-test, маршрутизация и DNS |

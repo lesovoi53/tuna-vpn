@@ -8,6 +8,54 @@ import org.junit.Test
 import java.util.Base64
 
 class MasterDnsConfigTest {
+    @Test fun domainSelectionsRoundTripAndNeverCrossProductOrFallback() {
+        val config = example.copy(domains = listOf("a.example.net", "b.example.net", "off.example.net"),
+            localResolvers = "9.9.9.9", useLocalResolvers = true,
+            localDomainResolvers = mapOf("a.example.net" to "1.1.1.1:53", "b.example.net" to "8.8.8.8:5353"))
+        config.validate()
+        assertEquals(listOf("1.1.1.1:53"), config.resolverList("a.example.net"))
+        assertEquals(listOf("8.8.8.8:5353"), config.resolverList("b.example.net"))
+        assertTrue(config.resolverList("off.example.net").isEmpty())
+        assertEquals(listOf("1.1.1.1:53", "8.8.8.8:5353"), config.resolverList())
+        val restored = MasterDnsConfig.parse(config.toUri())!!
+        assertEquals(config.localDomainResolvers, restored.localDomainResolvers)
+        assertEquals(config.effectiveDomainResolvers(), restored.effectiveDomainResolvers())
+        assertEquals(config.localDomainResolvers, Gson().fromJson(Gson().toJson(config), MasterDnsConfig::class.java).localDomainResolvers)
+        val toml = config.toml("127.0.0.1:2081", "u", "p", true)
+        assertTrue(toml.contains("TUNA_DOMAIN_RESOLVERS = { \"a.example.net\" = [\"1.1.1.1:53\"], \"b.example.net\" = [\"8.8.8.8:5353\"], \"off.example.net\" = [] }"))
+        val source = config.copy(useLocalResolvers = false)
+        assertEquals(example.profileResolverList(), source.resolverList("off.example.net"))
+        assertFalse(source.toml("127.0.0.1:2081", "u", "p", true).contains("TUNA_DOMAIN_RESOLVERS"))
+        assertFalse(config.copy(localDomainResolvers = emptyMap()).isValid())
+        assertFalse(config.copy(localDomainResolvers = mapOf("a.example.net" to "1.1.1.1:0")).isValid())
+    }
+
+    @Test fun legacySharedResolverSelectionStillAppliesToEveryDomain() {
+        val config = example.copy(domains = listOf("a.example.net", "b.example.net"),
+            localResolvers = "9.9.9.9", useLocalResolvers = true)
+        assertEquals(listOf("9.9.9.9"), config.resolverList("a.example.net"))
+        assertEquals(config.resolverList("a.example.net"), config.resolverList("b.example.net"))
+        assertFalse(config.toml("127.0.0.1:2081", "u", "p", true).contains("TUNA_DOMAIN_RESOLVERS"))
+    }
+
+    @Test fun oneTwoFourDomainsSurviveExportStorageAndNativeConfig() {
+        for (count in listOf(1, 2, 4)) {
+            val domains = (0 until count).map { "d$it.example.invalid" }
+            val original = example.copy(domains = domains)
+            val root = JsonParser.parseString(String(Base64.getDecoder().decode(original.toUri().substringAfter("://")))).asJsonObject
+            val profile = root.getAsJsonObject("profile")
+            assertEquals(domains, profile.getAsJsonArray("domains").map { it.asString })
+            assertEquals(domains.first(), profile.getAsJsonObject("server")["domain"].asString)
+            val imported = MasterDnsConfig.parse(original.toUri())!!
+            val restored = Gson().fromJson(Gson().toJson(imported), MasterDnsConfig::class.java)
+            assertEquals(domains, restored.domains)
+            assertEquals(original.key, restored.key)
+            assertEquals(original.resolvers, restored.resolvers)
+            assertEquals(original.settings, restored.settings)
+            assertTrue(restored.toml("127.0.0.1:2081", "u", "p", true)
+                .lineSequence().contains("DOMAINS = ${Gson().toJson(domains)}"))
+        }
+    }
     private val example = MasterDnsConfig("Example",listOf("dns.example.net"),"example-only-key",5,"1.1.1.1\n8.8.8.8",
         mapOf("RX_TX_WORKERS" to "4", "TUNNEL_PROCESS_WORKERS" to "0", "BASE_ENCODE_DATA" to "true", "PACKET_DUPLICATION_COUNT" to "4",
             "SETUP_PACKET_DUPLICATION_COUNT" to "4", "MIN_UPLOAD_MTU" to "28", "MAX_UPLOAD_MTU" to "200", "MIN_DOWNLOAD_MTU" to "60", "MAX_DOWNLOAD_MTU" to "900",

@@ -7,6 +7,19 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ConnectionFactsTest {
+    @Test fun masterDnsDetailsShowEveryDomainWithItsEffectiveResolvers() {
+        val config = MasterDnsConfig(domains = listOf("a.example", "b.example", "c.example"),
+            key = "fixture", resolvers = "192.0.2.9", useLocalResolvers = true,
+            localDomainResolvers = mapOf("a.example" to "192.0.2.1", "b.example" to "192.0.2.2", "c.example" to ""))
+        val facts = ConnectionFacts.from(KernelConfig.MasterDns(config))
+        assertEquals("a.example, b.example, c.example", facts.server)
+        val row = facts.rows.single { it.label == R.string.cd_resolvers }
+        assertEquals("a.example\n192.0.2.1\n\nb.example\n192.0.2.2\n\nc.example\n—", row.value)
+        assertTrue(row.sensitive)
+        assertFalse(row.value.contains("192.0.2.9"))
+        assertFalse(facts.toString().contains("fixture"))
+    }
+
     @Test fun snellReuseDetailsUseTheEffectiveSettingAndLocalizedValues() {
         val base = VpnConfig("snell://fixture@192.0.2.1:443?version=5&reuse=true", "sing-box")
         val enabled = ConnectionFacts.from(KernelConfig.Vpn(base)).rows.single { it.label == R.string.cd_reuse }

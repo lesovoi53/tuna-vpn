@@ -27,7 +27,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.wireturn.app.data.KernelConfig
 import com.wireturn.app.data.ThemeMode
 import com.wireturn.app.domain.MasterDnsResolverResult
-import com.wireturn.app.domain.MasterDnsResolverRecommendation
 import com.wireturn.app.ui.activities.kernel.MasterDnsConfigActivity
 import com.wireturn.app.ui.AppTopAppBar
 import com.wireturn.app.ui.theme.WireturnTheme
@@ -51,14 +50,16 @@ class MasterDnsResolversActivity : ComponentActivity() {
         val id = intent.getStringExtra("EXTRA_PROFILE_ID") ?: return finish()
         model.load(id)
         setContent {
-            val state by model.state.collectAsStateWithLifecycle()
+            // Capture one immutable screen snapshot for this composition. LazyColumn's
+            // deferred DSL must not read a newer delegated State while retaining an older
+            // nullable config; initial profile loading previously crashed at domains.
+            val state = model.state.collectAsStateWithLifecycle().value
             val theme by model.prefs.themeModeFlow.collectAsStateWithLifecycle(ThemeMode.SYSTEM)
             val dynamic by model.prefs.dynamicThemeFlow.collectAsStateWithLifecycle(false)
             var resultsOpen by rememberSaveable { mutableStateOf(false) }
             var profilesOpen by remember { mutableStateOf(false) }
             var networksOpen by remember { mutableStateOf(false) }
             var sourcesOpen by rememberSaveable { mutableStateOf(false) }
-            var diagnosticsOpen by remember { mutableStateOf(false) }
             val config = (state.profile?.kernelConfig as? KernelConfig.MasterDns)?.config
             var localSource by remember(config?.useLocalResolvers, state.profile?.id) { mutableStateOf(config?.useLocalResolvers == true) }
             val editable = !state.busy && !state.applying
@@ -80,7 +81,7 @@ class MasterDnsResolversActivity : ComponentActivity() {
                 Scaffold(topBar = {
                     AppTopAppBar(if (resultsOpen) "Результаты проверки" else "DNS-резолверы", onBack = { back() })
                 }, bottomBar = {
-                    if (resultsOpen && state.profile != null) {
+                    if (resultsOpen && state.profile != null && config != null) {
                         Surface(tonalElevation = 3.dp, shadowElevation = 6.dp) {
                             Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 18.dp, vertical = 12.dp),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -97,9 +98,11 @@ class MasterDnsResolversActivity : ComponentActivity() {
                                     else "Выбор меняет только этот профиль. Исходный список подписки сохранится.",
                                     style = MaterialTheme.typography.bodySmall)
                                 Button(onClick = model::applySelection,
-                                    enabled = editable && state.measuredAt != null && state.selected.size in 1..128,
+                                    enabled = editable && (state.activeMeasuredAt != null || state.selected.isEmpty()) && state.selected.size <= 128 &&
+                                        (state.selected.isNotEmpty() || config.domains.any { it != state.activeDomain && config.resolverList(it).isNotEmpty() }),
                                     modifier = Modifier.fillMaxWidth()) {
-                                    Text(if (state.reconnectsOnApply) "Применить и переподключить (${state.selected.size})"
+                                    Text(if (state.selected.isEmpty()) "Отключить этот домен"
+                                        else if (state.reconnectsOnApply) "Применить и переподключить (${state.selected.size})"
                                         else "Использовать выбранные (${state.selected.size})")
                                 }
                                 }
@@ -109,7 +112,7 @@ class MasterDnsResolversActivity : ComponentActivity() {
                 }) { padding ->
                     LazyColumn(Modifier.fillMaxSize().padding(padding),
                         contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                        if (state.profile == null) item {
+                        if (state.profile == null || config == null) item {
                             Text("Профиль MasterDnsVPN не найден. Вернитесь к списку серверов.")
                         } else {
                             item {
@@ -136,9 +139,9 @@ class MasterDnsResolversActivity : ComponentActivity() {
                             }
                             if (!resultsOpen) {
                                 item { DnsPanel {
-                                    Text("Режим: ${config!!.performanceMode()?.title ?: "Из профиля"}",
+                                    Text("Режим: ${config.performanceMode()?.title ?: "Из профиля"}",
                                         style = MaterialTheme.typography.titleMedium)
-                                    Text("Режим задаёт балансировку и число копий пакета. Сравнение наборов использует сохранённый режим.",
+                                    Text("Проверка использует сохранённые параметры профиля и не меняет режим подключения.",
                                         style = MaterialTheme.typography.bodySmall)
                                     OutlinedButton(enabled = editable, onClick = {
                                         startActivity(Intent(this@MasterDnsResolversActivity, MasterDnsConfigActivity::class.java)
@@ -149,7 +152,7 @@ class MasterDnsResolversActivity : ComponentActivity() {
                                 } }
                                 item { DnsPanel {
                                     Text("Какие резолверы использовать", style = MaterialTheme.typography.titleMedium)
-                                    SourceChoice("Из профиля / подписки", "Адресов: ${config!!.profileResolverList().size} · исходный список",
+                                    SourceChoice("Из профиля / подписки", "Адресов: ${config.profileResolverList().size} · исходный список",
                                         !localSource, editable) { localSource = false }
                                     SourceChoice("Мой выбранный набор", "Адресов: ${config.localResolverList().size} · сохраняется при обновлении",
                                         localSource, editable && config.localResolverList().isNotEmpty()) { localSource = true }
@@ -207,74 +210,66 @@ class MasterDnsResolversActivity : ComponentActivity() {
                                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     Text("Мобильная сеть доступна в списке, когда Android предоставляет её приложению.",
                                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    if (!state.busy) Button(onClick = model::scan,
+                                    if (!state.busy) Button(onClick = { model.scan() },
                                         enabled = editable && state.catalogue != null && state.networkStamp != null,
-                                        modifier = Modifier.fillMaxWidth()) { Text("Сканировать базу") }
-                                    if (state.results.isNotEmpty() && !state.busy) OutlinedButton(onClick = { resultsOpen = true },
-                                        modifier = Modifier.fillMaxWidth()) { Text("Результаты последней проверки") }
+                                        modifier = Modifier.fillMaxWidth()) { Text("Проверить все домены") }
+
                                 } }
+                                items(config.domains, key = { "domain:" + it }) { domain ->
+                                    DnsPanel {
+                                        Text(domain, style = MaterialTheme.typography.titleMedium)
+                                        val effective = config.resolverList(domain)
+                                        Text("Используется: ${effective.size} резолверов")
+                                        if (effective.isEmpty()) Text("Домен отключён: нет выбранных резолверов",
+                                            color = MaterialTheme.colorScheme.error)
+                                        val chosen = state.selectedByDomain[domain].orEmpty()
+                                        Text("Сохранённый выбор: ${config.localResolverList(domain).size}",
+                                            style = MaterialTheme.typography.bodySmall)
+                                        if (chosen.isNotEmpty()) Text(chosen.joinToString(", "), style = MaterialTheme.typography.bodySmall)
+                                        val time = state.domainMeasuredAt[domain]
+                                        if (time == null) Text("Нет актуальной проверки для этой сети. Сохранённые адреса не означают успешный тест.",
+                                            style = MaterialTheme.typography.bodySmall)
+                                        else Text("Проверено: ${date(time)} · прошли ${state.results.count { it.domain == domain && it.valid }}",
+                                            style = MaterialTheme.typography.bodySmall)
+                                        OutlinedButton(onClick = { model.selectDomain(domain); model.scan(domain) },
+                                            enabled = editable && state.catalogue != null && state.networkStamp != null,
+                                            modifier = Modifier.fillMaxWidth()) { Text("Найти резолверы для домена") }
+                                        TextButton(onClick = { model.selectDomain(domain); resultsOpen = true },
+                                            enabled = editable, modifier = Modifier.fillMaxWidth()) { Text("Результаты и выбор резолверов") }
+                                    }
+                                }
                             } else {
                                 item {
-                                    Text("Прошли проверку: ${state.results.count { it.valid }} из ${state.results.size}")
-                                    state.measuredAt?.let { Text("Проверено: ${date(it)} · результаты действуют 30 минут",
+                                    Text(state.activeDomain.orEmpty(), style = MaterialTheme.typography.titleLarge)
+                                    Text("Прошли проверку: ${state.domainResults.count { it.valid }} из ${state.domainResults.size}")
+                                    Text("Показаны только проверенные пары домен–резолвер. Адреса вне этого списка не проверены.",
+                                        style = MaterialTheme.typography.bodySmall)
+                                    state.activeMeasuredAt?.let { Text("Проверено: ${date(it)} · результаты действуют 30 минут",
                                         style = MaterialTheme.typography.bodySmall) }
-                                    if (state.measuredAt == null) Text("Проверка не завершена. Применение недоступно.",
+                                    if (state.activeMeasuredAt == null) Text("Нет актуальной проверки. Сохранённые адреса остаются в профиле; для изменения выполните проверку.",
                                         color = MaterialTheme.colorScheme.error)
                                     else if (!state.scanComplete) Text("Частичная проверка. Доступны только подтверждённые адреса.",
                                         color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Text("Рекомендация учитывает MTU, потери и задержку. MTU — полезная нагрузка DNS, байт.",
+                                    Text("Выбираются все адреса, прошедшие туннельную проверку для этого домена. Можно оставить только нужные вручную.",
                                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    OutlinedButton(onClick = model::recommend,
-                                        enabled = editable && state.measuredAt != null && state.results.any { it.valid },
-                                        modifier = Modifier.fillMaxWidth()) { Text("Выбрать рекомендованные") }
-                                    if (state.measuredAt != null && state.results.none { it.valid })
+                                    OutlinedButton(onClick = model::selectWorking,
+                                        enabled = editable && state.activeMeasuredAt != null && state.domainResults.any { it.valid },
+                                        modifier = Modifier.fillMaxWidth()) { Text("Выбрать рабочие") }
+                                    TextButton(onClick = model::clearSelection, enabled = editable && state.selected.isNotEmpty(),
+                                        modifier = Modifier.fillMaxWidth()) { Text("Снять выбор для этого домена") }
+                                    if (state.activeMeasuredAt != null && state.domainResults.none { it.valid })
                                         Text("Подходящих резолверов нет. Повторите проверку или используйте другой список.",
                                             style = MaterialTheme.typography.bodySmall)
                                 }
-                                item { DnsPanel {
-                                    Text("Сравнить скорость наборов", style = MaterialTheme.typography.titleMedium)
-                                    Text("Режим: ${config!!.performanceMode()?.title ?: "Из профиля"}. До четырёх наборов: " +
-                                        "короткая HTTPS-загрузка через отдельный туннель до Cloudflare. " +
-                                        "До 1 МиБ данных, примерно до 32 МиБ DNS-трафика и до 13 минут. VPN не переключается.",
-                                        style = MaterialTheme.typography.bodySmall)
-                                    Text("На мобильной сети расходуется трафик. Проверка запускается только этой кнопкой.",
-                                        style = MaterialTheme.typography.bodySmall)
-                                    Button(onClick = model::comparePools, enabled = editable && state.measuredAt != null &&
-                                        state.results.any { it.valid }, modifier = Modifier.fillMaxWidth()) {
-                                        Text("Измерить и сравнить наборы")
-                                    }
-                                    state.poolMeasurements.forEachIndexed { index, pool ->
-                                        Text(if (pool.successful)
-                                            "Набор ${index + 1}: ${pool.resolvers.size} адресов · " +
-                                                "%.1f КиБ/с".format(pool.bytesPerSecond / 1024)
-                                            else "Набор ${index + 1}: ${pool.error ?: "Недостаточно данных"}",
-                                            style = MaterialTheme.typography.bodyMedium)
-                                    }
-                                    if (state.poolMeasurements.any { it.successful }) {
-                                        Text("Это скорость всего набора в одной короткой загрузке. Разницу до 10% не считаем улучшением.",
-                                            style = MaterialTheme.typography.bodySmall)
-                                        TextButton(onClick = { diagnosticsOpen = !diagnosticsOpen }) {
-                                            Text(if (diagnosticsOpen) "Скрыть параметры" else "Параметры после подключения")
-                                        }
-                                        if (diagnosticsOpen) state.poolMeasurements.filter { it.successful }.forEach { pool ->
-                                            Text("${pool.resolvers.size} адресов · ${pool.payloadBytes / 1024} КиБ данных · " +
-                                                "${pool.wireBytes / 1024} КиБ DNS\n${pool.effectiveParameters.orEmpty()}",
-                                                style = MaterialTheme.typography.bodySmall)
-                                        }
-                                    }
-                                } }
-                                val recommended = MasterDnsResolverRecommendation.recommend(state.results).toSet()
-                                val sorted = state.results.sortedWith(compareByDescending<MasterDnsResolverResult> { it.valid }
-                                    .thenByDescending { it.resolver in recommended }
-                                    .thenBy { if (it.attempts > 0) 1.0 - it.successes.toDouble() / it.attempts else 1.0 }
-                                    .thenBy { it.latencyMs })
+                                val sorted = state.domainResults.sortedWith(compareByDescending<MasterDnsResolverResult> { it.valid }
+                                    .thenBy { it.resolver })
                                 items(sorted, key = { it.resolver + "|" + it.domain }) { result ->
                                     Column {
-                                        Row(Modifier.fillMaxWidth().clickable(enabled = editable && result.valid && state.measuredAt != null) {
+                                        Row(Modifier.fillMaxWidth().clickable(enabled = editable && result.valid && state.activeMeasuredAt != null) {
                                             model.toggle(result.resolver, result.resolver !in state.selected)
                                         }.padding(vertical = 8.dp), verticalAlignment = Alignment.Top) {
                                             Checkbox(result.resolver in state.selected,
-                                                { model.toggle(result.resolver, it) }, enabled = editable && result.valid && state.measuredAt != null)
+                                                { model.toggle(result.resolver, it) }, enabled = editable && result.valid && state.activeMeasuredAt != null)
                                             Column(Modifier.weight(1f).padding(top = 8.dp)) {
                                                 Text(result.resolver, style = MaterialTheme.typography.titleMedium)
                                                 Text(result.domain, style = MaterialTheme.typography.bodySmall)

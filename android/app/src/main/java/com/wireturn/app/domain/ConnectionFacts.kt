@@ -85,7 +85,10 @@ data class ConnectionFacts(val protocol: String, val server: String, val rows: L
                     "rx_tx_workers" to R.string.cd_rx_tx_workers, "resolver_balancing_strategy" to R.string.cd_resolver_balancing_strategy,
                     "upload_compression_type" to R.string.cd_upload_compression_type, "download_compression_type" to R.string.cd_download_compression_type)
                 ConnectionFacts("MasterDNS / StormDNS", c.domains.joinToString(", "),
-                    listOf(ConnectionFact(R.string.cd_resolvers, c.resolvers, sensitive = true),
+                    listOf(ConnectionFact(R.string.cd_resolvers,
+                        c.domains.joinToString("\n\n") { domain ->
+                            domain + "\n" + c.resolverList(domain).joinToString("\n").ifEmpty { "—" }
+                        }, sensitive = true),
                         ConnectionFact(R.string.cd_encryption_method, c.encryption.toString())) +
                         c.settings.mapNotNull { (key, value) -> labels[key]?.let { ConnectionFact(it, value) } })
             }

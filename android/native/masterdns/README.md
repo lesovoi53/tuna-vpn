@@ -6,6 +6,33 @@ Upstream: masterking32/MasterDnsVPN, 7de2476f1c33e69eec35360c52810dab43c5c986, M
 
 `prepare.py` creates a Go overlay adding stdout lifecycle markers after local listener startup and on session reset. These markers are independent of user LOG_LEVEL. It appends `scan.go.inc` to the upstream MTU implementation and adds its host tests through the Go overlay. No DNS wire-format code is modified. Upstream source remains pinned; overlay artifacts are under build/.
 
+The same overlay repairs single-copy packet scheduling for strategy 6 (Loss Then
+Latency, used by the SPEED preset). After the unchanged upstream loss and latency
+filters build a shortlist, single-target selections rotate through that shortlist
+using the existing atomic round-robin counter. Distinct tunnel domains on one
+resolver remain distinct candidates. A sole eligible pair is still selected;
+inactive or out-of-tier pairs are not added to improve distribution. Before this
+fix, dynamic single-target selection always took the first shortlist entry.
+Other strategies and multi-copy stream routing retain their upstream semantics,
+including the sticky preferred pair for duplication greater than one. This is
+packet scheduling within one session whose domains reach the same backend, not
+balancing across independent backend sessions or evidence of a throughput gain.
+
+`balancer_test.go`, injected as `internal/client/tuna_balancer_test.go`, exercises
+the actual `SelectTargets` entry point: DATA/RESEND packets, equal healthy domains
+on one resolver, a missing stream route, loss/latency degradation, unavailable
+peers, one/no available pair, and unique duplicated targets with an existing
+preferred pair. After `prepare.py --source <pinned checkout>`, run from that
+checkout:
+
+```powershell
+& <go.exe> test -count=1 -timeout=120s -overlay <android/build/masterdns-overlay/overlay.json> ./internal/config ./internal/client
+```
+
+Any changed overlay requires a native rebuild and regenerated provenance before
+APK delivery. Host selector tests do not establish Android, server, or throughput
+acceptance.
+
 The scan adapter uses eight workers and a 25-second per-pair limit. It calls the
 original MTU discovery and then sends five original download MTU probes at the
 discovered upload/download sizes. Upstream validation checks response type, fresh

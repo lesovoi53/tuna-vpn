@@ -52,6 +52,10 @@ def generate():
     assert digest(ROOT / 'native/masterdns/prepare.py') == master['overlayScriptSha256'].lower()
     assert digest(ROOT / 'native/masterdns/scan.go.inc') == master['scanOverlaySha256'].lower()
     assert digest(ROOT / 'native/masterdns/scan_test.go') == master['scanTestsSha256'].lower()
+    assert digest(ROOT / 'native/masterdns/domain_resolvers.go') == master['domainResolversSha256'].lower()
+    assert digest(ROOT / 'native/masterdns/domain_resolvers_test.go') == master['domainResolverTestsSha256'].lower()
+    assert digest(ROOT / 'native/masterdns/domain_pairs_test.go') == master['domainPairTestsSha256'].lower()
+    assert digest(ROOT / 'native/masterdns/balancer_test.go') == master['balancerTestsSha256'].lower()
     assert digest(ROOT / 'native/masterdns/diagnostic.go') == master['diagnosticOverlaySha256'].lower()
     assert digest(ROOT / 'native/masterdns/adapter_test.go') == master['adapterTestsSha256'].lower()
     pool_sources = {path.name: digest(path) for path in (ROOT / 'native/masterdns').glob('pool*') if path.is_file()}

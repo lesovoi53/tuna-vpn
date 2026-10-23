@@ -110,4 +110,35 @@ class MasterDnsScanCacheTest {
         file.writeText(Gson().toJson(saved.copy(poolMeasurements = listOf(measurement, measurement))))
         assertNull(MasterDnsScanCache.load(directory, profile, network, now))
     }
+    @Test fun scanningAnotherDomainDoesNotRefreshOldDomainEvidence() {
+        val directory = temporary.newFolder()
+        val now = System.currentTimeMillis()
+        val second = "other.example.invalid"
+        val both = profile.copy(kernelConfig = KernelConfig.MasterDns(config.copy(domains = config.domains + second)))
+        val old = now - MasterDnsScanCache.MAX_AGE_MS - 1
+        val saved = MasterDnsSavedScan(profileStamp = MasterDnsScanCache.profileStamp(both), networkStamp = network,
+            measuredAt = now, results = listOf(result, result.copy(domain = second)),
+            domainMeasuredAt = mapOf(result.domain to old, second to now))
+        MasterDnsScanCache.save(directory, both, saved)
+        val loaded = requireNotNull(MasterDnsScanCache.load(directory, both, network, now))
+        assertEquals(listOf(second), loaded.results.map { it.domain })
+        assertEquals(mapOf(second to now), loaded.measurementTimes())
+    }
+
+    @Test fun domainChoiceDoesNotInvalidatePairMeasurements() {
+        val changed = profile.copy(kernelConfig = KernelConfig.MasterDns(config.copy(
+            localDomainResolvers = mapOf(result.domain to result.resolver), useLocalResolvers = true)))
+        assertEquals(MasterDnsScanCache.profileStamp(profile), MasterDnsScanCache.profileStamp(changed))
+    }
+
+    @Test fun mixedDomainPoolEvidenceIsRejected() {
+        val directory = temporary.newFolder()
+        val second = "other.example.invalid"
+        val both = profile.copy(kernelConfig = KernelConfig.MasterDns(config.copy(domains = config.domains + second)))
+        val saved = MasterDnsSavedScan(profileStamp = MasterDnsScanCache.profileStamp(both), networkStamp = network,
+            measuredAt = System.currentTimeMillis(), results = listOf(result, result.copy(domain = second)),
+            poolMeasurements = listOf(MasterDnsPoolMeasurement(listOf(result.resolver), 262144, 2000, 524288)))
+        assertThrows(IllegalArgumentException::class.java) { MasterDnsScanCache.save(directory, both, saved) }
+    }
+
 }

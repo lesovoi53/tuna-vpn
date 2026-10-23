@@ -88,6 +88,7 @@ object SubscriptionProfileMerge {
             val selected = if (merged is KernelConfig.MasterDns && existing.kernelConfig is KernelConfig.MasterDns) {
                 KernelConfig.MasterDns(merged.config.copy(
                     localResolvers = existing.kernelConfig.config.localResolvers,
+                    localDomainResolvers = existing.kernelConfig.config.localDomainResolvers,
                     useLocalResolvers = existing.kernelConfig.config.useLocalResolvers,
                     localPerformanceMode = existing.kernelConfig.config.localPerformanceMode,
                     localPool = existing.kernelConfig.config.localPool))
@@ -101,6 +102,7 @@ object SubscriptionProfileMerge {
             existing.kernelConfig is KernelConfig.MasterDns && incoming.kernelConfig is KernelConfig.MasterDns ->
                 KernelConfig.MasterDns(incoming.kernelConfig.config.copy(
                     localResolvers = existing.kernelConfig.config.localResolvers,
+                    localDomainResolvers = existing.kernelConfig.config.localDomainResolvers,
                     useLocalResolvers = existing.kernelConfig.config.useLocalResolvers,
                     localPerformanceMode = existing.kernelConfig.config.localPerformanceMode,
                     localPool = existing.kernelConfig.config.localPool

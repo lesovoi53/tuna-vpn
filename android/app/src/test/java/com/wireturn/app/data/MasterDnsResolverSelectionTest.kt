@@ -9,6 +9,20 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class MasterDnsResolverSelectionTest {
+    @Test fun perDomainSelectionPersistsIntoActiveSnapshotAndRefresh() {
+        val pairs = mapOf("dns.example.invalid" to "198.51.100.53:5353")
+        val p = mutablePreferencesOf(AppPreferences.PROFILES_JSON to gson.toJson(listOf(profile)), AppPreferences.CURRENT_PROFILE_ID to "a")
+        MasterDnsResolverSelection.commit(p, listOf(profile), profile, null, true, gson, pairs)
+        val saved = gson.fromJson(JsonParser.parseString(p[AppPreferences.PROFILES_JSON]).asJsonArray[0], Profile::class.java)
+        val active = gson.fromJson(p[AppPreferences.ACTIVE_KERNEL_JSON], KernelSnapshot::class.java)
+        assertEquals(pairs, (saved.kernelConfig as KernelConfig.MasterDns).config.localDomainResolvers)
+        assertEquals(pairs, active.masterdns!!.localDomainResolvers)
+        val refreshed = SubscriptionProfileMerge.kernel(saved, profile.copy(kernelConfig = KernelConfig.MasterDns(config.copy(resolvers = "192.0.2.54"))))
+        assertEquals(pairs, (refreshed as KernelConfig.MasterDns).config.localDomainResolvers)
+        assertEquals(listOf("198.51.100.53:5353"), refreshed.config.resolverList())
+        assertEquals(listOf("192.0.2.54"), refreshed.config.profileResolverList())
+    }
+
     private val gson = GsonBuilder().registerTypeAdapter(KernelConfig::class.java, KernelConfigAdapter()).create()
     private val config = MasterDnsConfig(domains = listOf("dns.example.invalid"), key = "synthetic-key", resolvers = "192.0.2.53")
     private val profile = Profile("a", "DNS", KernelConfig.MasterDns(config), subscriptionId = "sub",

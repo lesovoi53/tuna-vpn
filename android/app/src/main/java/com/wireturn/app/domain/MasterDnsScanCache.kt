@@ -15,8 +15,11 @@ data class MasterDnsSavedScan(
     val results: List<MasterDnsResolverResult>,
     val complete: Boolean = true,
     // Nullable for old Gson snapshots. Shares the scan's profile/network/expiry boundary.
-    val poolMeasurements: List<MasterDnsPoolMeasurement>? = null
+    val poolMeasurements: List<MasterDnsPoolMeasurement>? = null,
+    val domainMeasuredAt: Map<String, Long>? = null
 ) {
+    fun measurementTimes(): Map<String, Long> = domainMeasuredAt ?: results.map { it.domain }.distinct().associateWith { measuredAt }
+
     fun accepts(profile: Profile, network: String, now: Long = System.currentTimeMillis()): Boolean =
         version == 1 && profileStamp == MasterDnsScanCache.profileStamp(profile) &&
             networkStamp == network && measuredAt > 0 && now >= measuredAt && now - measuredAt <= MasterDnsScanCache.MAX_AGE_MS
@@ -32,7 +35,7 @@ object MasterDnsScanCache {
             ?: error("Нужен профиль MasterDnsVPN")
         // The local choice does not change the tunnel being measured. Never store its key.
         return digest(profile.id + "\n" + Gson().toJson(config.copy(
-            localResolvers = null, useLocalResolvers = null, originalJson = ""
+            localResolvers = null, localDomainResolvers = null, useLocalResolvers = null, originalJson = ""
         )))
     }
 
@@ -44,7 +47,10 @@ object MasterDnsScanCache {
             require(record.accepts(profile, network, now))
             validateResults(profile, record.results)
             validatePools(record)
-            record
+            validateTimes(profile, record)
+            val times = record.measurementTimes().filterValues { it > 0 && now >= it && now - it <= MAX_AGE_MS }
+            if (times.size == record.measurementTimes().size) record else record.copy(results = record.results.filter { it.domain in times }, domainMeasuredAt = times,
+                poolMeasurements = record.poolMeasurements.takeIf { times.keys.containsAll(record.results.map { it.domain }) })
         }.getOrNull()
     }
 
@@ -52,6 +58,7 @@ object MasterDnsScanCache {
         require(record.accepts(profile, record.networkStamp))
         validateResults(profile, record.results)
         validatePools(record)
+        validateTimes(profile, record)
         directory.mkdirs()
         val file = File(directory, digest(profile.id + record.networkStamp) + ".json")
         val temporary = File.createTempFile("scan-", ".tmp", directory)
@@ -83,9 +90,17 @@ object MasterDnsScanCache {
         }
     }
 
+    private fun validateTimes(profile: Profile, record: MasterDnsSavedScan) {
+        val times = record.domainMeasuredAt ?: return
+        val domains = (profile.kernelConfig as KernelConfig.MasterDns).config.domains
+        require(times.keys.all { it in domains })
+        require(times.values.all { it > 0 && it <= record.measuredAt })
+    }
+
     private fun validatePools(record: MasterDnsSavedScan) {
         val pools = record.poolMeasurements ?: return
         require(pools.size <= MasterDnsResolverRecommendation.MAX_POOLS)
+        if (pools.isNotEmpty()) require(record.results.map { it.domain }.distinct().size == 1)
         val valid = record.results.filter { it.valid }
             .map { requireNotNull(MasterDnsEndpoint.parse(it.resolver)).canonical }.toSet()
         val seen = HashSet<Set<String>>()

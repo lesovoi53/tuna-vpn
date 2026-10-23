@@ -59,12 +59,42 @@ object MasterDnsResolverCheck {
         onProgress: (String) -> Unit,
         onResult: (MasterDnsResolverResult) -> Unit
     ) = withContext(Dispatchers.IO) {
+        // A resolver that answers one delegated zone need not answer another. Build
+        // the catalogue shortlist independently before native probes for each domain.
+        val failed = mutableListOf<String>()
+        val manager = context.getSystemService(ConnectivityManager::class.java)
+        for ((index, domain) in config.domains.distinct().withIndex()) {
+            ensureActive()
+            try {
+                scanDomain(context, config.copy(domains = listOf(domain),
+                    localResolvers = config.localResolverList(domain).joinToString("\n"),
+                    localDomainResolvers = null, useLocalResolvers = false), network, candidates,
+                    onProgress = { onProgress("${index + 1}/${config.domains.size} · $domain\n$it") },
+                    onResult = onResult)
+            } catch (error: Exception) {
+                currentCoroutineContext().ensureActive()
+                if (error is CancellationException && error !is TimeoutCancellationException) throw error
+                check(isPhysicalNetwork(manager, network)) { "Выбранная сеть отключилась; сканирование остановлено" }
+                failed += domain
+            }
+        }
+        check(failed.isEmpty()) { "Не завершена проверка доменов: ${failed.joinToString()}. Завершённые пробы сохранены." }
+    }
+
+    private suspend fun scanDomain(
+        context: Context,
+        config: MasterDnsConfig,
+        network: Network,
+        candidates: List<String>,
+        onProgress: (String) -> Unit,
+        onResult: (MasterDnsResolverResult) -> Unit
+    ) = withContext(Dispatchers.IO) {
         val manager = context.getSystemService(ConnectivityManager::class.java)
         check(isPhysicalNetwork(manager, network)) { "Выбранная Wi-Fi или мобильная сеть недоступна" }
         config.copy(resolvers = "192.0.2.1", localResolvers = null, useLocalResolvers = false).validate()
         val supplied = candidates.mapNotNull(MasterDnsEndpoint::parse).distinctBy { it.canonical }
-        require(supplied.isNotEmpty() && supplied.size <= 100_256) { "Нужно до 100 000 адресов каталога и до 256 адресов профиля" }
-        val endpoints = (supplied + (config.resolverList() + config.profileResolverList()).mapNotNull(MasterDnsEndpoint::parse))
+        require(supplied.isNotEmpty() && supplied.size <= 102_048) { "Нужно до 100 000 адресов каталога и до 2048 адресов профиля" }
+        val endpoints = (supplied + (config.localResolverList() + config.profileResolverList()).mapNotNull(MasterDnsEndpoint::parse))
             .distinctBy { it.canonical }
         val networkMonitor = launch(Dispatchers.Default) {
             while (isActive) {
@@ -75,7 +105,7 @@ object MasterDnsResolverCheck {
         try {
             val shortlist = if (endpoints.size <= MAX_CANDIDATES) endpoints else {
                 withContext(Dispatchers.Main) { onProgress("Предварительный DNS-отбор ${endpoints.size} адресов; это ещё не проверка туннеля") }
-                val preferred = (config.resolverList() + config.profileResolverList()).mapNotNull(MasterDnsEndpoint::parse)
+                val preferred = (config.localResolverList() + config.profileResolverList()).mapNotNull(MasterDnsEndpoint::parse)
                     .map { it.canonical }.toSet()
                 fastPass(network, endpoints, config.domains.first(), preferred, onProgress)
             }

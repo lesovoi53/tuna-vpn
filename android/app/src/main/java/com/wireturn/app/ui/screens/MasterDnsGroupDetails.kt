@@ -29,7 +29,10 @@ internal fun MasterDnsPlanDetails(plan: MasterDnsPoolPlan, privacy: Boolean) {
                 Text(if (privacy) "Адреса скрыты" else member.config.domains.joinToString(", "))
                 Text(if (member.config.useLocalResolvers == true) "Локально выбранные резолверы" else "Резолверы профиля",
                     style = MaterialTheme.typography.labelMedium)
-                Text(if (privacy) "••••••••" else member.config.resolverList().joinToString("\n"))
+                Text(if (privacy) "••••••••" else member.config.domains.joinToString("\n\n") { domain ->
+                    domain + "\n" + member.config.resolverList(domain).joinToString("\n")
+                        .ifEmpty { "Не используется: резолверы не выбраны" }
+                })
             }
         }
     }

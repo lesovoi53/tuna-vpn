@@ -94,7 +94,7 @@ object MasterDnsGoodput {
                     .distinctBy { it.canonical }
                 require(endpoints.size in 1..128)
                 config.copy(resolvers = endpoints.joinToString("\n") { it.canonical },
-                    localResolvers = null, useLocalResolvers = false).validate()
+                    localResolvers = null, localDomainResolvers = null, useLocalResolvers = false).validate()
                 MasterDnsScanRelay(endpoints, byteBudget = limits.maxWireBytes) { network.bindSocket(it) }.use { relay ->
                     val effective = AtomicReference<String?>(null)
                     val transferred = java.util.concurrent.atomic.AtomicLong()
@@ -120,7 +120,7 @@ object MasterDnsGoodput {
                         val isolated = config.copy(
                             domains = config.domains.map { it.lowercase(Locale.ROOT) }.distinct(),
                             resolvers = relay.resolverMapping.keys.joinToString("\n"),
-                            localResolvers = null, useLocalResolvers = false,
+                            localResolvers = null, localDomainResolvers = null, useLocalResolvers = false,
                             settings = config.settings + mapOf("SAVE_MTU_SERVERS_TO_FILE" to "false", "LOG_LEVEL" to "ERROR")
                         )
                         val file = MasterDnsKernel.writeConfig(directory, isolated, "127.0.0.1:$port", user, password, true)

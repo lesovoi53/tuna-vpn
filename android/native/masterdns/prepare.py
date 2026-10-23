@@ -9,6 +9,20 @@ source=parser.parse_args().source.resolve()
 cache=r/'build/masterdns-overlay'
 cache.mkdir(parents=True,exist_ok=True)
 replacements={
+ 'internal/config/client.go': [
+     ('type ClientConfig struct {', 'type ClientConfig struct {\n\tTunaDomainResolvers map[string][]string `toml:"TUNA_DOMAIN_RESOLVERS"`'),
+     ('cfg.ResolverMap = resolverMap\n\treturn cfg, nil', 'cfg.ResolverMap = resolverMap\n\tif err := cfg.PrepareTunaDomainResolvers(); err != nil { return cfg, err }\n\treturn cfg, nil')],
+ 'internal/client/client_utils.go': [
+     ('for _, resolver := range resolvers {\n\t\t\tlabel :=', 'for _, resolver := range resolvers {\n\t\t\tif !c.cfg.TunaResolverAllowed(domain, resolver) { continue }\n\t\t\tlabel :='),
+     ('pointers := make([]*Connection, len(connections))', 'if len(connections) == 0 { return fmt.Errorf("no selected domain resolver pairs") }\n\tpointers := make([]*Connection, len(connections))')],
+ 'internal/client/balancer.go': [(
+     'return b.limitConnectionPoolLocked(pool, count, pick)',
+     '''// TUNA: spread single-copy packets across the existing quality shortlist.
+            // Keep duplicated/sticky routing and all other strategies unchanged.
+            if b.strategy == BalancingLossThenLatency && count == 1 {
+                pick = poolPickRoundRobin
+            }
+            return b.limitConnectionPoolLocked(pool, count, pick)''')],
  'internal/client/tcp_listener.go': [('l.listeners = listeners','l.listeners = listeners\n\tl.client.tunaEmitDiagnosticPolicy()\n\tfmt.Println("TUNA_MASTER_READY")')],
  'internal/client/session.go': [('c.logSessionClientPolicyChanges(before, settings, policy)', 'c.logSessionClientPolicyChanges(before, settings, policy)\n\tc.tunaEmitDiagnosticPolicy()')],
  'internal/client/client.go': [('c.successMTUChecks = false\n\tc.log.Infof','c.successMTUChecks = false\n\tfmt.Println("TUNA_MASTER_CONNECTING")\n\tc.log.Infof'),('case <-c.sessionResetSignal:', 'case <-c.sessionResetSignal:\n\t\t\t\tfmt.Println("TUNA_MASTER_CONNECTING")')]
@@ -58,7 +72,7 @@ for name,patches in replacements.items():
  for old,new in patches:
   assert data.count(old)==1, name
   data=data.replace(old,new)
- out=cache/p.name
+ out=cache/(name.replace('/', '_'))
  out.write_text(data,encoding='utf-8')
  overlay[str(p)]=str(out)
 mtu=source/'internal/client/mtu.go'
@@ -66,5 +80,9 @@ mtu_output=cache/'mtu.go'
 mtu_output.write_text(mtu.read_text(encoding='utf-8')+'\n'+(Path(__file__).parent/'scan.go.inc').read_text(encoding='utf-8'),encoding='utf-8')
 overlay[str(mtu)]=str(mtu_output)
 overlay[str(source/'internal/client/tuna_scan_test.go')]=str(Path(__file__).parent/'scan_test.go')
+overlay[str(source/'internal/client/tuna_balancer_test.go')]=str(Path(__file__).parent/'balancer_test.go')
 overlay[str(source/'internal/client/tuna_diagnostic.go')]=str(Path(__file__).parent/'diagnostic.go')
+overlay[str(source/'internal/config/tuna_domain_resolvers.go')]=str(Path(__file__).parent/'domain_resolvers.go')
+overlay[str(source/'internal/config/tuna_domain_resolvers_test.go')]=str(Path(__file__).parent/'domain_resolvers_test.go')
+overlay[str(source/'internal/client/tuna_domain_pairs_test.go')]=str(Path(__file__).parent/'domain_pairs_test.go')
 (cache/'overlay.json').write_text(json.dumps({'Replace':overlay}),encoding='utf-8')

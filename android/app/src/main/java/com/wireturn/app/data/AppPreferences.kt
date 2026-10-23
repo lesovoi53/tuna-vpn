@@ -691,9 +691,9 @@ class AppPreferences(val context: Context) {
 
     /** Save only this profile's resolver choice, rejecting results from a stale editor/scan. */
     suspend fun saveMasterDnsResolverSelection(expected: Profile, localResolvers: String?,
-                                              useLocalResolvers: Boolean) {
+                                              useLocalResolvers: Boolean, domainResolvers: Map<String, String>? = null) {
         appCtx.internalDataStore.edit { p ->
-            MasterDnsResolverSelection.commit(p, readProfiles(p), expected, localResolvers, useLocalResolvers, gson)
+            MasterDnsResolverSelection.commit(p, readProfiles(p), expected, localResolvers, useLocalResolvers, gson, domainResolvers)
         }
     }
 

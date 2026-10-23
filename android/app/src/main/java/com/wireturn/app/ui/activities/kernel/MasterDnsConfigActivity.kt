@@ -48,6 +48,7 @@ class MasterDnsConfigActivity : ComponentActivity() {
                     ?: if (editing) (client.kernelConfig as? KernelConfig.MasterDns)?.config ?: MasterDnsConfig() else MasterDnsConfig())
             }
             var name by remember { mutableStateOf(profile?.name ?: intent.getStringExtra("EXTRA_PROFILE_NAME")?.takeIf { it.isNotBlank() } ?: config.name) }
+            var domainsText by remember { mutableStateOf(config.domains.joinToString("\n")) }
             var uri by remember { mutableStateOf("") }
             var importing by remember { mutableStateOf(config.domains.isEmpty()) }
             var reveal by remember { mutableStateOf(false) }
@@ -59,7 +60,8 @@ class MasterDnsConfigActivity : ComponentActivity() {
             var showOriginalResolvers by remember { mutableStateOf(false) }
             val save: () -> Unit = {
                 try {
-                    val candidate = config.copy(name = name.ifBlank { "MasterDnsVPN" }, localPool = null)
+                    val candidate = config.copy(name = name.ifBlank { "MasterDnsVPN" }, localPool = null,
+                        domains = domainsText.lines().map(String::trim).filter(String::isNotEmpty))
                     candidate.validate()
                     val kc = KernelConfig.MasterDns(candidate)
                     if (editing) {
@@ -85,10 +87,10 @@ class MasterDnsConfigActivity : ComponentActivity() {
                             OutlinedTextField(uri,{uri=it},label={Text("Ссылка профиля")},modifier=Modifier.fillMaxWidth(),visualTransformation=PasswordVisualTransformation())
                             TextButton(onClick={
                                 val parsed=MasterDnsConfig.parse(uri)
-                                if(parsed==null) error="Не удалось импортировать профиль MasterDnsVPN" else { config=parsed; name=parsed.name; importing=false; error=null }
+                                if(parsed==null) error="Не удалось импортировать профиль MasterDnsVPN" else { config=parsed; domainsText=parsed.domains.joinToString("\n"); name=parsed.name; importing=false; error=null }
                             }) { Text("Импортировать все параметры") }
                         }
-                        item { OutlinedTextField(config.domains.joinToString("\n"),{config=config.copy(domains=it.lines().map(String::trim).filter(String::isNotEmpty))}, label={Text("Домены — каждый на своей строке")},modifier=Modifier.fillMaxWidth()) }
+                        item { OutlinedTextField(domainsText,{domainsText=it}, label={Text("Домены — каждый на своей строке")},modifier=Modifier.fillMaxWidth()) }
                         item {
                             OutlinedTextField(config.key,{config=config.copy(key=it)},label={Text("Ключ шифрования")},modifier=Modifier.fillMaxWidth(),visualTransformation=if(reveal) VisualTransformation.None else PasswordVisualTransformation())
                             TextButton(onClick={reveal=!reveal}) { Text(if(reveal) "Скрыть ключ" else "Показать ключ") }
@@ -103,10 +105,15 @@ class MasterDnsConfigActivity : ComponentActivity() {
                                     Text(if (local) "Используется: мой выбранный набор"
                                         else "Используется: список профиля / подписки",
                                         style = MaterialTheme.typography.bodyMedium)
-                                    Text("Адресов: ${activeResolvers.size}", style = MaterialTheme.typography.bodySmall)
-                                    SelectionContainer {
-                                        Text(activeResolvers.joinToString("\n").ifEmpty { "Адреса не заданы" },
-                                            style = MaterialTheme.typography.bodyMedium)
+                                    Text("Доменов: ${config.domains.size} · уникальных адресов: ${activeResolvers.size}", style = MaterialTheme.typography.bodySmall)
+                                    config.domains.forEach { domain ->
+                                        val selected = config.resolverList(domain)
+                                        Text(domain, style = MaterialTheme.typography.titleSmall)
+                                        Text("Резолверов: ${selected.size}", style = MaterialTheme.typography.bodySmall)
+                                        SelectionContainer {
+                                            Text(selected.joinToString("\n").ifEmpty { "Домен отключён: резолверы не выбраны" },
+                                                style = MaterialTheme.typography.bodyMedium)
+                                        }
                                     }
                                     if (local) Text("Эти адреса выбраны для подключения и сохраняются при обновлении подписки.",
                                         style = MaterialTheme.typography.bodySmall)
@@ -126,13 +133,14 @@ class MasterDnsConfigActivity : ComponentActivity() {
                         item {
                             if (editing && profile != null) {
                                 val saved = (profile.kernelConfig as? KernelConfig.MasterDns)?.config
-                                OutlinedButton(enabled = config == saved, onClick = {
+                                val unchanged = config == saved && domainsText == config.domains.joinToString("\n")
+                                OutlinedButton(enabled = unchanged, onClick = {
                                     startActivity(Intent(this@MasterDnsConfigActivity,
                                         com.wireturn.app.ui.activities.MasterDnsResolversActivity::class.java)
                                         .putExtra("EXTRA_PROFILE_ID", profile.id))
                                     finish()
                                 }) { Text("DNS-резолверы: база и сканирование") }
-                                if (config != saved) Text("Сначала сохраните изменения профиля.", style = MaterialTheme.typography.bodySmall)
+                                if (!unchanged) Text("Сначала сохраните изменения профиля.", style = MaterialTheme.typography.bodySmall)
                             } else Text("После сохранения откройте DNS-резолверы в меню профиля: там доступны база и сканирование.",
                                 style = MaterialTheme.typography.bodySmall)
                         }

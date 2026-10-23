@@ -7,14 +7,14 @@ import com.google.gson.JsonParser
 /** Called inside the DataStore transaction with profiles read from that same state. */
 internal object MasterDnsResolverSelection {
     fun commit(p: MutablePreferences, profiles: List<Profile>, expected: Profile,
-               localResolvers: String?, useLocalResolvers: Boolean, gson: Gson) {
+               localResolvers: String?, useLocalResolvers: Boolean, gson: Gson, domainResolvers: Map<String, String>? = null) {
         val current = profiles.singleOrNull { it.id == expected.id }
         check(current != null && current.kernelConfig == expected.kernelConfig) {
             "Профиль изменился. Откройте выбор резолверов заново."
         }
         val kernel = current.kernelConfig as? KernelConfig.MasterDns
             ?: error("Профиль больше не использует MasterDnsVPN")
-        val config = kernel.config.copy(localResolvers = localResolvers, useLocalResolvers = useLocalResolvers)
+        val config = kernel.config.copy(localResolvers = localResolvers, useLocalResolvers = useLocalResolvers, localDomainResolvers = domainResolvers)
         config.validate()
         val replacement = current.copy(kernelConfig = KernelConfig.MasterDns(config))
         val array = JsonParser.parseString(p[AppPreferences.PROFILES_JSON] ?: "[]").asJsonArray
@@ -24,6 +24,8 @@ internal object MasterDnsResolverSelection {
         if (localResolvers == null) stored.remove("localResolvers")
         else stored.addProperty("localResolvers", localResolvers)
         stored.addProperty("useLocalResolvers", useLocalResolvers)
+        if (domainResolvers == null) stored.remove("localDomainResolvers")
+        else stored.add("localDomainResolvers", gson.toJsonTree(domainResolvers))
         p[AppPreferences.PROFILES_JSON] = array.toString()
         if (p[AppPreferences.CURRENT_PROFILE_ID] == current.id) {
             ProfileActivation.write(p, current.id, replacement,

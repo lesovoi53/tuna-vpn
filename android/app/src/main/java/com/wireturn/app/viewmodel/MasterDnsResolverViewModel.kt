@@ -25,18 +25,22 @@ data class MasterDnsResolverScreenState(
     val networkStamp: String? = null,
     val catalogue: MasterDnsCatalogSnapshot? = null,
     val results: List<MasterDnsResolverResult> = emptyList(),
-    val selected: Set<String> = emptySet(),
+    val activeDomain: String? = null,
+    val selectedByDomain: Map<String, Set<String>> = emptyMap(),
+    val domainMeasuredAt: Map<String, Long> = emptyMap(),
     val measuredAt: Long? = null,
     val scanComplete: Boolean = false,
     val busy: Boolean = false,
-    val comparing: Boolean = false,
-    val poolMeasurements: List<MasterDnsPoolMeasurement> = emptyList(),
     val applying: Boolean = false,
     val reconnectsOnApply: Boolean = false,
     val progress: String = "",
     val message: String? = null,
     val error: String? = null
-)
+) {
+    val selected: Set<String> get() = selectedByDomain[activeDomain].orEmpty()
+    val domainResults: List<MasterDnsResolverResult> get() = results.filter { it.domain == activeDomain }
+    val activeMeasuredAt: Long? get() = domainMeasuredAt[activeDomain]
+}
 
 class MasterDnsResolverViewModel(application: Application) : AndroidViewModel(application) {
     val prefs = AppPreferences(application)
@@ -153,21 +157,35 @@ class MasterDnsResolverViewModel(application: Application) : AndroidViewModel(ap
         restoreResults()
     }
 
+    fun selectDomain(domain: String) {
+        val config = (mutable.value.profile?.kernelConfig as? KernelConfig.MasterDns)?.config ?: return
+        if (domain !in config.domains) return
+        mutable.update { it.copy(activeDomain = domain, message = null, error = null) }
+    }
+
     private fun restoreResults() {
         cacheRead?.cancel()
-        mutable.update { it.copy(results = emptyList(), selected = emptySet(), measuredAt = null,
-            poolMeasurements = emptyList()) }
-        val profile = mutable.value.profile ?: return
+        val profile = mutable.value.profile
+        val config = (profile?.kernelConfig as? KernelConfig.MasterDns)?.config
+        val selections = config?.let(MasterDnsDomainSelection::saved).orEmpty()
+        mutable.update { it.copy(results = emptyList(), selectedByDomain = selections, measuredAt = null,
+            domainMeasuredAt = emptyMap(), scanComplete = false,
+            activeDomain = it.activeDomain?.takeIf { domain -> domain in config?.domains.orEmpty() } ?: config?.domains?.firstOrNull()) }
+        profile ?: return
         val network = mutable.value.networkStamp ?: return
         val expected = MasterDnsScanCache.profileStamp(profile)
         cacheRead = viewModelScope.launch {
             val saved = withContext(Dispatchers.IO) { MasterDnsScanCache.load(resultsDir, profile, network) }
             if (mutable.value.profile?.let(MasterDnsScanCache::profileStamp) != expected || mutable.value.networkStamp != network ||
                 mutable.value.busy) return@launch
-            val preferred = (profile.kernelConfig as KernelConfig.MasterDns).config.localResolvers.orEmpty().lines().toSet()
-            mutable.update { it.copy(results = saved?.results.orEmpty(), measuredAt = saved?.measuredAt, scanComplete = saved?.complete == true,
-                poolMeasurements = saved?.poolMeasurements.orEmpty(),
-                selected = saved?.results.orEmpty().filter { result -> result.valid && result.resolver in preferred }.map { it.resolver }.toSet()) }
+            val results = saved?.results.orEmpty().mapNotNull { result ->
+                config?.let { MasterDnsDomainSelection.profileDomain(it, result.domain) }?.let { result.copy(domain = it) }
+            }
+            val times = saved?.measurementTimes().orEmpty().mapNotNull { (domain, time) ->
+                config?.let { MasterDnsDomainSelection.profileDomain(it, domain) }?.let { it to time }
+            }.toMap()
+            mutable.update { it.copy(results = results, measuredAt = saved?.measuredAt, scanComplete = saved?.complete == true,
+                domainMeasuredAt = times) }
         }
     }
 
@@ -196,32 +214,44 @@ class MasterDnsResolverViewModel(application: Application) : AndroidViewModel(ap
         }
     }
 
-    fun scan() {
+    fun scan(domain: String? = null) {
         if (mutable.value.busy || mutable.value.applying) return
         val profile = mutable.value.profile ?: return
         val network = mutable.value.networks.find { it.stamp == mutable.value.networkStamp } ?: return
         val catalogue = mutable.value.catalogue ?: return
         val config = (profile.kernelConfig as KernelConfig.MasterDns).config
+        if (domain != null && domain !in config.domains) return
+        val scanningDomains = if (domain == null) config.domains.toSet() else setOf(domain)
+        val scanConfig = config.copy(domains = scanningDomains.toList())
         val token = MasterDnsScanCache.profileStamp(profile) to network.stamp
         scanStamp = token
         cacheRead?.cancel()
-        mutable.update { it.copy(busy = true, progress = "Подготовка проверки…", results = emptyList(),
-            poolMeasurements = emptyList(),
-            selected = emptySet(), measuredAt = null, scanComplete = false, error = null, message = null) }
+        mutable.update { it.copy(busy = true, progress = "Подготовка проверки…", results = it.results.filterNot { r -> r.domain in scanningDomains },
+            domainMeasuredAt = it.domainMeasuredAt - scanningDomains, scanComplete = false, error = null, message = null) }
         work = viewModelScope.launch {
+            val probeTimes = mutableMapOf<String, Long>()
             try {
-                MasterDnsResolverCheck.scan(getApplication(), config, network.network,
-                    (config.resolverList() + catalogue.endpoints.map { it.value }).distinct(),
+                MasterDnsResolverCheck.scan(getApplication(), scanConfig, network.network,
+                    (config.profileResolverList() + scanningDomains.flatMap { config.localResolverList(it) } +
+                        catalogue.endpoints.map { it.value }).distinct(),
                     onProgress = { progress -> if (scanStamp == token) mutable.update { it.copy(progress = progress) } },
-                    onResult = { result -> if (scanStamp == token) mutable.update { it.copy(results =
-                        it.results.filterNot { old -> old.resolver == result.resolver && old.domain == result.domain } + result) } })
+                    onResult = { result ->
+                        val domain = MasterDnsDomainSelection.profileDomain(config, result.domain)
+                        if (scanStamp == token && domain != null) {
+                            probeTimes[domain] = System.currentTimeMillis()
+                            mutable.update { it.copy(results =
+                                it.results.filterNot { old -> old.resolver == result.resolver && old.domain == domain } + result.copy(domain = domain)) }
+                        }
+                    })
                 ensureActive()
                 check(scanStamp == token && physicalNetworks().any { it.stamp == token.second }) { "Сеть изменилась" }
+                val now = System.currentTimeMillis()
+                val times = mutable.value.domainMeasuredAt + scanningDomains.associateWith { probeTimes[it] ?: now }
                 val record = MasterDnsSavedScan(profileStamp = token.first, networkStamp = token.second,
-                    measuredAt = System.currentTimeMillis(), results = mutable.value.results)
+                    measuredAt = now, results = mutable.value.results, domainMeasuredAt = times)
                 withContext(Dispatchers.IO) { MasterDnsScanCache.save(resultsDir, profile, record) }
-                mutable.update { it.copy(measuredAt = record.measuredAt, scanComplete = true,
-                    message = "Проверка завершена. Выберите резолверы для этого профиля.") }
+                mutable.update { it.copy(measuredAt = record.measuredAt, domainMeasuredAt = times, scanComplete = true,
+                    message = "Проверка базы завершена. Выберите рабочие резолверы отдельно для каждого домена.") }
             } catch (e: Exception) {
                 if (e is CancellationException) {
                     // A child timeout leaves this coroutine active. User/network/profile
@@ -233,14 +263,16 @@ class MasterDnsResolverViewModel(application: Application) : AndroidViewModel(ap
                     else e.message ?: "Проверка не завершена"
                 // Completed per-pair probes remain usable when the overall scan deadline expires.
                 // Never retain measurements invalidated by a network/profile transition.
-                val usable = mutable.value.results.any { it.valid && it.attempts == 5 }
+                val usable = mutable.value.results.any { it.domain in scanningDomains && it.valid && it.attempts == 5 }
                 if (usable && scanStamp == token && physicalNetworks().any { it.stamp == token.second } &&
                     mutable.value.profile?.let(MasterDnsScanCache::profileStamp) == token.first) {
+                    val now = System.currentTimeMillis()
+                    val times = mutable.value.domainMeasuredAt + probeTimes
                     val partial = MasterDnsSavedScan(profileStamp = token.first, networkStamp = token.second,
-                        measuredAt = System.currentTimeMillis(), results = mutable.value.results, complete = false)
+                        measuredAt = now, results = mutable.value.results, complete = false, domainMeasuredAt = times)
                     try {
                         withContext(Dispatchers.IO) { MasterDnsScanCache.save(resultsDir, profile, partial) }
-                        mutable.update { it.copy(error = failureMessage, measuredAt = partial.measuredAt,
+                        mutable.update { it.copy(error = failureMessage, measuredAt = partial.measuredAt, domainMeasuredAt = times,
                             scanComplete = false, message = "Можно выбрать адреса с завершёнными туннельными пробами. Остальные не проверены.") }
                     } catch (cancelled: CancellationException) { throw cancelled }
                     catch (_: Exception) {
@@ -266,125 +298,69 @@ class MasterDnsResolverViewModel(application: Application) : AndroidViewModel(ap
 
     fun toggle(resolver: String, selected: Boolean) {
         if (mutable.value.busy || mutable.value.applying) return
-        mutable.update { it.copy(selected = if (selected) it.selected + resolver else it.selected - resolver, message = null) }
+        val s = mutable.value
+        val domain = s.activeDomain ?: return
+        if (selected && (s.activeMeasuredAt == null || s.domainResults.none { it.resolver == resolver && it.valid })) return
+        mutable.update { it.copy(selectedByDomain = it.selectedByDomain +
+            (domain to if (selected) it.selected + resolver else it.selected - resolver), message = null) }
     }
 
-    fun recommend() {
+    fun clearSelection() {
         if (mutable.value.busy || mutable.value.applying) return
-        val winner = MasterDnsResolverRecommendation.winner(mutable.value.poolMeasurements)
-        val selected = (winner?.resolvers ?: MasterDnsResolverRecommendation.recommend(mutable.value.results)).toSet()
-        mutable.update { it.copy(selected = selected, error = null,
-            message = if (selected.isEmpty()) "Нет резолверов, прошедших проверку."
-                else if (winner != null) "Отмечен набор по результатам передачи данных. Примените выбранные адреса."
-                else "Отмечено ${selected.size} адресов по MTU, потерям и задержке. Скорость ещё не измерена; можно сравнить наборы.") }
+        val domain = mutable.value.activeDomain ?: return
+        mutable.update { it.copy(selectedByDomain = it.selectedByDomain + (domain to emptySet()), message = null) }
     }
 
-    fun comparePools() {
-        val snapshot = mutable.value
-        if (snapshot.busy || snapshot.applying) return
-        val profile = snapshot.profile ?: return
-        val network = snapshot.networks.find { it.stamp == snapshot.networkStamp } ?: return
-        val measuredAt = snapshot.measuredAt ?: return
-        val config = (profile.kernelConfig as KernelConfig.MasterDns).config
-        val token = MasterDnsScanCache.profileStamp(profile) to network.stamp
-        val record = MasterDnsSavedScan(profileStamp = token.first, networkStamp = token.second,
-            measuredAt = measuredAt, results = snapshot.results, complete = snapshot.scanComplete)
-        if (!record.accepts(profile, network.stamp)) {
-            mutable.update { it.copy(error = "Результаты устарели. Сначала повторите сканирование.") }; return
+    fun selectWorking() {
+        if (mutable.value.busy || mutable.value.applying) return
+        val s = mutable.value
+        val domain = s.activeDomain ?: return
+        val time = s.activeMeasuredAt ?: return
+        val now = System.currentTimeMillis()
+        if (now < time || now - time > MasterDnsScanCache.MAX_AGE_MS) {
+            mutable.update { it.copy(error = "Результаты устарели. Повторите проверку базы.") }; return
         }
-        val pools = MasterDnsResolverRecommendation.candidatePools(snapshot.results,
-            snapshot.selected.toList().ifEmpty { config.resolverList() })
-        if (pools.isEmpty()) return
-        scanStamp = token
-        cacheRead?.cancel()
-        mutable.update { it.copy(busy = true, comparing = true, poolMeasurements = emptyList(),
-            progress = "Подготовка сравнения наборов…", error = null, message = null) }
-        work = viewModelScope.launch {
-            var comparisonSaved = false
-            try {
-                val measurements = mutableListOf<MasterDnsPoolMeasurement>()
-                withTimeout(13 * 60_000L) {
-                    for ((index, pool) in pools.withIndex()) {
-                        ensureActive()
-                        check(scanStamp == token && physicalNetworks().any { it.stamp == token.second } &&
-                            mutable.value.profile?.let(MasterDnsScanCache::profileStamp) == token.first) { "Сеть или профиль изменились" }
-                        val before = MasterDnsResolverRecommendation.winner(measurements)
-                        val measurement = try {
-                            val result = MasterDnsGoodput.measure(getApplication(), config, network.network, pool,
-                                onProgress = { progress -> if (scanStamp == token) mutable.update { it.copy(progress =
-                                    "Набор ${index + 1}/${pools.size} · ${pool.size} адресов\n${progress.phase}\n" +
-                                        "Данные: ${progress.payloadBytes / 1024} КиБ · DNS-трафик: ${progress.wireBytes / 1024} КиБ") } })
-                            MasterDnsPoolMeasurement(pool, result.payloadBytes, result.elapsedMs,
-                                result.wireBytes, result.effectiveParameters)
-                        } catch (e: Exception) {
-                            currentCoroutineContext().ensureActive()
-                            if (e is CancellationException && e !is TimeoutCancellationException) throw e
-                            MasterDnsPoolMeasurement(pool, 0, 0,
-                                error = if (e is TimeoutCancellationException) "Истекло время проверки набора"
-                                    else "Набор не измерен: ${e.javaClass.simpleName}")
-                        }
-                        ensureActive()
-                        check(scanStamp == token && physicalNetworks().any { it.stamp == token.second })
-                        measurements += measurement
-                        mutable.update { it.copy(poolMeasurements = measurements.toList()) }
-                        // Stop growing a successful smaller pool once the next measured size
-                        // no longer improves throughput. A failed trial is not a speed result.
-                        if (before != null && measurement.successful && pool.size > before.resolvers.size &&
-                            measurement.bytesPerSecond <= before.bytesPerSecond * 1.10) break
-                    }
-                }
-                ensureActive()
-                check(scanStamp == token && physicalNetworks().any { it.stamp == token.second } &&
-                    mutable.value.profile?.let(MasterDnsScanCache::profileStamp) == token.first)
-                withContext(Dispatchers.IO) {
-                    MasterDnsScanCache.save(resultsDir, profile, record.copy(poolMeasurements = measurements))
-                }
-                comparisonSaved = true
-                val winner = MasterDnsResolverRecommendation.winner(measurements)
-                mutable.update { it.copy(selected = winner?.resolvers?.toSet() ?: it.selected,
-                    message = if (winner == null) "Передачу данных измерить не удалось. Предварительный выбор доступен по MTU, потерям и задержке."
-                        else "Выбран набор: ${winner.resolvers.size} адресов. Результат одной короткой загрузки; примените выбранные адреса.") }
-            } catch (e: CancellationException) {
-                currentCoroutineContext().ensureActive()
-                mutable.update { it.copy(error = "Истекло время сравнения. Повторите проверку.") }
-            } catch (_: Exception) {
-                mutable.update { it.copy(error = "Сравнение не сохранено: сеть, профиль или срок результатов изменились.") }
-            } finally {
-                scanStamp = null
-                mutable.update { it.copy(busy = false, comparing = false, progress = "",
-                    poolMeasurements = if (comparisonSaved) it.poolMeasurements else snapshot.poolMeasurements) }
-                if (mutable.value.profile?.let(MasterDnsScanCache::profileStamp) != token.first ||
-                    mutable.value.networkStamp != token.second) restoreResults()
-            }
-        }
+        val selected = MasterDnsDomainSelection.working(s.results, domain)
+        mutable.update { it.copy(selectedByDomain = it.selectedByDomain + (domain to selected), error = null,
+            message = if (selected.isEmpty()) "Нет резолверов, прошедших проверку для $domain."
+                else "Отмечены все рабочие адреса для $domain: ${selected.size}. Примените выбранные адреса.") }
     }
 
     fun setSource(local: Boolean) {
         val profile = mutable.value.profile ?: return
         val config = (profile.kernelConfig as KernelConfig.MasterDns).config
-        persistSelection(profile, config.localResolvers, local)
+        persistSelection(profile, config.localResolvers, local, config.localDomainResolvers)
     }
 
     fun applySelection() {
         val s = mutable.value
         val profile = s.profile ?: return
-        val network = s.networkStamp ?: return
-        val saved = MasterDnsSavedScan(profileStamp = MasterDnsScanCache.profileStamp(profile),
-            networkStamp = network, measuredAt = s.measuredAt ?: return, results = s.results)
-        if (!saved.accepts(profile, network) || physicalNetworks().none { it.stamp == network }) {
-            mutable.update { it.copy(error = "Результаты устарели или сеть изменилась. Повторите проверку.") }; return
+        val config = (profile.kernelConfig as KernelConfig.MasterDns).config
+        val domain = s.activeDomain ?: return
+        if (s.selected.isNotEmpty()) {
+            val network = s.networkStamp ?: return
+            val measuredAt = s.activeMeasuredAt ?: return
+            val now = System.currentTimeMillis()
+            if (now < measuredAt || now - measuredAt > MasterDnsScanCache.MAX_AGE_MS ||
+                physicalNetworks().none { it.stamp == network }) {
+                mutable.update { it.copy(error = "Результаты устарели или сеть изменилась. Повторите проверку.") }; return
+            }
+            val valid = s.domainResults.filter { it.valid }.map { it.resolver }.toSet()
+            if (s.selected.size > 128 || !valid.containsAll(s.selected)) return
         }
-        val valid = s.results.filter { it.valid }.map { it.resolver }.toSet()
-        if (s.selected.isEmpty() || s.selected.size > 128 || !valid.containsAll(s.selected)) return
-        persistSelection(profile, s.selected.joinToString("\n"), true)
+        val domains = try { MasterDnsDomainSelection.merge(config, domain, s.selected) }
+        catch (_: IllegalArgumentException) {
+            mutable.update { it.copy(error = "Оставьте хотя бы один домен с резолверами.") }; return
+        }
+        persistSelection(profile, config.localResolvers, true, domains)
     }
 
-    private fun persistSelection(profile: Profile, local: String?, enabled: Boolean) {
+    private fun persistSelection(profile: Profile, local: String?, enabled: Boolean, domains: Map<String, String>?) {
         if (mutable.value.busy || mutable.value.applying) return
         mutable.update { it.copy(applying = true, error = null, message = null) }
         viewModelScope.launch {
             try {
-                prefs.saveMasterDnsResolverSelection(profile, local, enabled)
+                prefs.saveMasterDnsResolverSelection(profile, local, enabled, domains)
                 mutable.update { it.copy(message = "Выбор сохранён для этого профиля.") }
             } catch (e: CancellationException) { throw e }
             catch (_: Exception) { mutable.update { it.copy(error = "Профиль изменился или выбранный набор недопустим. Повторите действие.") } }

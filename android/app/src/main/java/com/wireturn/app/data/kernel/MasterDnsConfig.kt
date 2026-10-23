@@ -5,6 +5,7 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import java.util.Base64
 import java.util.Locale
+import com.wireturn.app.domain.MasterDnsEndpoint
 
 data class MasterDnsConfig(
     val name: String = "MasterDnsVPN",
@@ -21,14 +22,21 @@ data class MasterDnsConfig(
     // Null inherits the original profile, including when read from older Gson storage.
     val localPerformanceMode: String? = null,
     // Local profile IDs are intentionally excluded from portable stormdns links.
-    val localPool: MasterDnsPoolSelection? = null
+    val localPool: MasterDnsPoolSelection? = null,
+    // Null preserves legacy shared selection; empty/missing entries disable that domain.
+    val localDomainResolvers: Map<String, String>? = null
 ) {
     fun value(field: MasterDnsField): String = settings[field.key] ?: field.defaultValue
     fun performanceMode(): MasterDnsPerformanceMode? = localPerformanceMode?.let(MasterDnsPerformanceMode::fromWire)
     fun effectiveValue(field: MasterDnsField): String = performanceMode()?.overrides?.get(field.key) ?: value(field)
     fun profileResolverList() = parseResolvers(resolvers)
-    fun localResolverList() = parseResolvers(localResolvers.orEmpty())
-    fun resolverList() = if (useLocalResolvers == true) localResolverList() else profileResolverList()
+    fun localResolverList(domain: String): List<String> = localDomainResolvers?.let { selected ->
+        parseResolvers(selected.entries.firstOrNull { it.key.equals(domain, ignoreCase = true) }?.value.orEmpty())
+    } ?: parseResolvers(localResolvers.orEmpty())
+    fun localResolverList() = domains.flatMap(::localResolverList).distinct()
+    fun resolverList(domain: String) = if (useLocalResolvers == true) localResolverList(domain) else profileResolverList()
+    fun resolverList() = domains.flatMap(::resolverList).distinct()
+    fun effectiveDomainResolvers(): Map<String, List<String>> = domains.associateWith(::resolverList)
     fun validate() {
         localPool?.validate()
         performanceMode() // Reject invalid persisted overrides instead of silently running another mode.
@@ -37,8 +45,23 @@ data class MasterDnsConfig(
         }) { "Проверьте домены туннеля" }
         require(key.isNotBlank() && key.length <= 4096 && encryption in 0..5) { "Проверьте ключ и метод шифрования" }
         validateResolvers(profileResolverList())
-        if (localResolvers != null && localResolvers.isNotBlank()) validateResolvers(localResolverList())
-        if (useLocalResolvers == true) validateResolvers(localResolverList())
+        if (localResolvers != null && localResolvers.isNotBlank()) validateResolvers(parseResolvers(localResolvers))
+        localDomainResolvers?.let { selected ->
+            require(selected.size <= 16 && selected.keys.map { it.lowercase(Locale.ROOT) }.distinct().size == selected.size) {
+                "Некорректный набор доменов резолверов"
+            }
+            selected.forEach { (domain, text) ->
+                require(domain.length in 1..253 && domain.split('.').all { label ->
+                    label.length in 1..63 && label.matches(Regex("[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?"))
+                }) { "Некорректный домен резолверов" }
+                val endpoints = parseResolvers(text)
+                if (endpoints.isNotEmpty()) validateResolvers(endpoints)
+            }
+        }
+        if (useLocalResolvers == true) {
+            require(localResolverList().isNotEmpty()) { "Выберите резолверы хотя бы для одного домена" }
+            if (localDomainResolvers == null) validateResolvers(localResolverList())
+        }
         settings.forEach { (key, value) ->
             val f = requireNotNull(MasterDnsFields.byKey[key]) { "Неизвестная настройка ядра: $key" }
             validateValue(f, value)
@@ -59,6 +82,12 @@ data class MasterDnsConfig(
         val g = Gson()
         return buildString {
             appendLine("DOMAINS = ${g.toJson(domains)}")
+            if (useLocalResolvers == true && localDomainResolvers != null) {
+                val pairs = effectiveDomainResolvers().entries.joinToString(", ") { (domain, endpoints) ->
+                    "${g.toJson(domain.lowercase(Locale.ROOT))} = ${g.toJson(endpoints.map { requireNotNull(MasterDnsEndpoint.parse(it)).canonical })}"
+                }
+                appendLine("TUNA_DOMAIN_RESOLVERS = { $pairs }")
+            }
             appendLine("DATA_ENCRYPTION_METHOD = $encryption")
             appendLine("ENCRYPTION_KEY = ${g.toJson(key)}")
             appendLine("PROTOCOL_TYPE = \"SOCKS5\"")
@@ -92,10 +121,11 @@ data class MasterDnsConfig(
         p.addProperty("resolvers", resolvers)
         // Preserve the portable source list and explicitly describe the TUNA-only choice.
         p.remove("tuna_resolver_selection")
-        if (localResolvers != null || useLocalResolvers != null) {
+        if (localResolvers != null || useLocalResolvers != null || localDomainResolvers != null) {
             p.add("tuna_resolver_selection", JsonObject().apply {
                 addProperty("source", if (useLocalResolvers == true) "local" else "profile")
                 localResolvers?.let { addProperty("resolvers", it) }
+                localDomainResolvers?.let { add("domain_resolvers", Gson().toJsonTree(it)) }
             })
         }
         // This TUNA-only extension never replaces the portable source settings.
@@ -131,7 +161,7 @@ data class MasterDnsConfig(
 
         private fun validateResolvers(values: List<String>) {
             require(values.size in 1..128 && values.all {
-                it.length <= 128 && it.matches(Regex("[0-9a-fA-F.:\\[\\]]+"))
+                MasterDnsEndpoint.parse(it) != null
             }) { "Нужны IP резолверов, каждый на отдельной строке (не более 128)" }
         }
 
@@ -160,10 +190,14 @@ data class MasterDnsConfig(
             val selection = p.get("tuna_resolver_selection")?.let {
                 require(it.isJsonObject) { "Некорректный выбор резолверов" }
                 it.asJsonObject.also { choice ->
-                    require(choice.keySet().all { key -> key in setOf("source", "resolvers") })
+                    require(choice.keySet().all { key -> key in setOf("source", "resolvers", "domain_resolvers") })
                     require(choice["source"]?.isJsonPrimitive == true &&
                         choice["source"].asJsonPrimitive.isString &&
                         choice["source"].asString in setOf("local", "profile"))
+                    choice["domain_resolvers"]?.let { values ->
+                        require(values.isJsonObject && values.asJsonObject.size() <= 16)
+                        require(values.asJsonObject.entrySet().all { (_, value) -> value.isJsonPrimitive && value.asJsonPrimitive.isString })
+                    }
                     choice["resolvers"]?.let { values ->
                         require(values.isJsonPrimitive && values.asJsonPrimitive.isString)
                     }
@@ -187,7 +221,8 @@ data class MasterDnsConfig(
                 p["resolvers"].asString, options, root.toString(),
                 localResolvers = selection?.get("resolvers")?.asString,
                 useLocalResolvers = selection?.get("source")?.asString?.let { it == "local" },
-                localPerformanceMode = performanceMode
+                localPerformanceMode = performanceMode,
+                localDomainResolvers = selection?.getAsJsonObject("domain_resolvers")?.entrySet()?.associate { it.key to it.value.asString }
             ).also { it.validate() }
         }.getOrNull()
     }

@@ -25,7 +25,7 @@ internal object SubscriptionProfileRefresh {
         // owns the personal selection. Never import another profile's local choice.
         val source = when (val kernel = incoming.kernelConfig) {
             is KernelConfig.MasterDns -> incoming.copy(kernelConfig = KernelConfig.MasterDns(
-                kernel.config.copy(localResolvers = null, useLocalResolvers = null, localPerformanceMode = null,
+                kernel.config.copy(localResolvers = null, localDomainResolvers = null, useLocalResolvers = null, localPerformanceMode = null,
                     localPool = null)))
             else -> incoming
         }
